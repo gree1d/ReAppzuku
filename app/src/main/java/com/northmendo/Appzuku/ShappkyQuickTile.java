@@ -1,6 +1,8 @@
 package com.northmendo.Appzuku;
 
 import android.content.ComponentName;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
@@ -102,8 +104,14 @@ public class ShappkyQuickTile extends TileService {
                 final String killedPackage = packageName;
                 String cmd = "am force-stop " + killedPackage;
                 shellManager.runShellCommand(cmd, () -> {
+                    logKilledPackage(killedPackage);
                     handler.post(() -> {
                         Toast.makeText(this, "Killed: " + killedPackage, Toast.LENGTH_SHORT).show();
+                        updateTileState();
+                    });
+                }, () -> {
+                    handler.post(() -> {
+                        Toast.makeText(this, "Failed to kill: " + killedPackage, Toast.LENGTH_SHORT).show();
                         updateTileState();
                     });
                 });
@@ -162,6 +170,43 @@ public class ShappkyQuickTile extends TileService {
             if (potentialPkg.contains(".") && Character.isLetter(potentialPkg.charAt(0))) {
                 return potentialPkg;
             }
+        }
+        return null;
+    }
+
+    private void logKilledPackage(String packageName) {
+        executor.execute(() -> {
+            try {
+                com.northmendo.Appzuku.db.AppStatsDao appStatsDao =
+                        com.northmendo.Appzuku.db.AppDatabase.getInstance(getApplicationContext()).appStatsDao();
+                com.northmendo.Appzuku.db.AppStats stats = appStatsDao.getStats(packageName);
+                String appName = resolveInstalledAppName(packageName);
+
+                if (stats == null) {
+                    stats = new com.northmendo.Appzuku.db.AppStats(packageName);
+                    stats.appName = appName;
+                    appStatsDao.insert(stats);
+                } else if ((stats.appName == null || stats.appName.trim().isEmpty())
+                        && appName != null && !appName.trim().isEmpty()) {
+                    appStatsDao.updateAppName(packageName, appName);
+                }
+
+                appStatsDao.incrementKill(packageName, System.currentTimeMillis());
+            } catch (Exception ignored) {
+                // Keep tile kill flow non-blocking even if stats logging fails.
+            }
+        });
+    }
+
+    private String resolveInstalledAppName(String packageName) {
+        try {
+            PackageManager pm = getPackageManager();
+            ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
+            CharSequence label = pm.getApplicationLabel(appInfo);
+            if (label != null) {
+                return label.toString();
+            }
+        } catch (PackageManager.NameNotFoundException ignored) {
         }
         return null;
     }

@@ -33,6 +33,12 @@ public interface AppStatsDao {
 
     @Query("UPDATE app_stats SET killCount = killCount + 1, lastKillTime = :time WHERE packageName = :packageName")
     void incrementKill(String packageName, long time);
+
+    @Query("UPDATE app_stats SET totalRecoveredKb = totalRecoveredKb + :recoveredKb WHERE packageName = :packageName")
+    void addRecoveredKb(String packageName, long recoveredKb);
+
+    @Query("UPDATE app_stats SET appName = :appName WHERE packageName = :packageName")
+    void updateAppName(String packageName, String appName);
     
     @Query("DELETE FROM app_stats WHERE lastKillTime < :threshold AND lastRelaunchTime < :threshold")
     void deleteOldStats(long threshold);

@@ -2,20 +2,28 @@ package com.northmendo.Appzuku;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.os.Handler;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -35,19 +43,29 @@ import com.northmendo.Appzuku.databinding.ActivitySettingsBinding;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
-import androidx.work.ExistingPeriodicWorkPolicy;
 
 import static com.northmendo.Appzuku.PreferenceKeys.*;
 import static com.northmendo.Appzuku.AppConstants.*;
 
 public class SettingsActivity extends BaseActivity {
     private static final String TAG = "SettingsActivity";
+    private static final int TOP_OFFENDERS_LIMIT = 50;
+    private static final String[] TOP_OFFENDER_FILTER_LABELS = {
+            "Last 12 hours",
+            "Last 24 hours",
+            "Last 7 days",
+            "All time"
+    };
+    private static final long[] TOP_OFFENDER_FILTER_WINDOWS_MS = {
+            STATS_HISTORY_DURATION_MS,
+            24 * 60 * 60 * 1000L,
+            7 * 24 * 60 * 60 * 1000L,
+            -1L
+    };
 
     private ActivitySettingsBinding binding;
     private BackgroundAppManager appManager;
@@ -150,18 +168,11 @@ public class SettingsActivity extends BaseActivity {
             updateAutomationOptionsVisibility(isChecked, periodicEnabled);
 
             if (isChecked) {
-                // Start the background service
-                startService(new Intent(this, ShappkyService.class));
-                // Schedule backup worker (min 15m interval)
-                PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
-                        AutoKillWorker.class, 15, TimeUnit.MINUTES)
-                        .build();
-                WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                        "AutoKillWorker", ExistingPeriodicWorkPolicy.UPDATE, request);
+                startAutomationService();
+                AutoKillWorker.schedule(this);
             } else {
-                // Stop the service
                 stopService(new Intent(this, ShappkyService.class));
-                WorkManager.getInstance(this).cancelUniqueWork("AutoKillWorker");
+                AutoKillWorker.cancel(this);
             }
         });
 
@@ -195,7 +206,7 @@ public class SettingsActivity extends BaseActivity {
             if (isChecked && !sharedPreferences.getBoolean("system_apps_warning_shown", false)) {
                 // Show warning on first enable
                 new AlertDialog.Builder(this)
-                        .setTitle("⚠️ Warning: System Apps")
+                        .setTitle("âš ï¸ Warning: System Apps")
                         .setMessage(
                                 "System apps are critical for device stability. Blocking or killing system apps (like 'Security' on Xiaomi devices) may cause crashes, boot loops, or device malfunction.\n\nOnly modify system apps if you know what you're doing.")
                         .setPositiveButton("I Understand", (dialog, which) -> {
@@ -242,6 +253,7 @@ public class SettingsActivity extends BaseActivity {
 
         // Statistics
         binding.layoutStats.setOnClickListener(v -> showStatsDialog());
+        binding.layoutTopOffenders.setOnClickListener(v -> showTopOffendersDialog());
 
         // Backup & Restore
         binding.layoutBackupRestore.setOnClickListener(v -> showBackupRestoreDialog());
@@ -343,8 +355,9 @@ public class SettingsActivity extends BaseActivity {
         executor.execute(() -> {
             // Get stats for last 12 hours
             long twelveHoursAgo = System.currentTimeMillis() - STATS_HISTORY_DURATION_MS;
-            java.util.List<com.northmendo.Appzuku.db.AppStats> statsList = com.northmendo.Appzuku.db.AppDatabase
-                    .getInstance(this).appStatsDao().getAllStatsSince(twelveHoursAgo);
+            com.northmendo.Appzuku.db.AppStatsDao appStatsDao = com.northmendo.Appzuku.db.AppDatabase
+                    .getInstance(this).appStatsDao();
+            java.util.List<com.northmendo.Appzuku.db.AppStats> statsList = appStatsDao.getAllStatsSince(twelveHoursAgo);
 
             final List<String> highRelaunchPackages = new ArrayList<>();
             StringBuilder sb = new StringBuilder();
@@ -357,18 +370,8 @@ public class SettingsActivity extends BaseActivity {
 
                 for (com.northmendo.Appzuku.db.AppStats stats : statsList) {
                     if (stats.killCount > 0 || stats.relaunchCount > 0) {
-                        // App name - prefer stored appName, fall back to package name
-                        String displayName;
-                        if (stats.appName != null && !stats.appName.isEmpty()) {
-                            displayName = stats.appName;
-                        } else {
-                            displayName = stats.packageName;
-                            int lastDot = displayName.lastIndexOf('.');
-                            if (lastDot != -1 && lastDot < displayName.length() - 1) {
-                                displayName = displayName.substring(lastDot + 1);
-                            }
-                        }
-                        sb.append("● ").append(displayName).append("\n");
+                        String displayName = resolveStatsAppName(stats, appStatsDao);
+                        sb.append("- ").append(displayName).append("\n");
 
                         // Kill stats
                         if (stats.killCount > 0) {
@@ -419,6 +422,287 @@ public class SettingsActivity extends BaseActivity {
                 builder.show();
             });
         });
+    }
+
+    private void showTopOffendersDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_top_offenders, null);
+        Spinner filterSpinner = dialogView.findViewById(R.id.top_offenders_filter);
+        TextView summaryText = dialogView.findViewById(R.id.top_offenders_summary);
+        ProgressBar loading = dialogView.findViewById(R.id.top_offenders_loading);
+        ListView listView = dialogView.findViewById(R.id.top_offenders_list);
+        TextView emptyView = dialogView.findViewById(R.id.top_offenders_empty);
+
+        TopOffendersAdapter offendersAdapter = new TopOffendersAdapter();
+        listView.setAdapter(offendersAdapter);
+        listView.setEmptyView(emptyView);
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            TopOffender offender = offendersAdapter.getItem(position);
+            if (offender != null) {
+                openAppInfo(offender.packageName);
+            }
+        });
+
+        ArrayAdapter<String> filterAdapter = new ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, TOP_OFFENDER_FILTER_LABELS);
+        filterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        filterSpinner.setAdapter(filterAdapter);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Top Offenders")
+                .setView(dialogView)
+                .setNegativeButton("Close", null)
+                .create();
+        dialog.getWindow().setBackgroundDrawable(
+                new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
+        dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                .setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+
+        filterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                loadTopOffenders(position, offendersAdapter, summaryText, loading, listView, emptyView);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void loadTopOffenders(int filterIndex, TopOffendersAdapter adapter, TextView summaryText,
+                                  ProgressBar loading, ListView listView, TextView emptyView) {
+        if (filterIndex < 0 || filterIndex >= TOP_OFFENDER_FILTER_WINDOWS_MS.length) {
+            filterIndex = 0;
+        }
+
+        final int selectedFilterIndex = filterIndex;
+        loading.setVisibility(View.VISIBLE);
+        listView.setVisibility(View.GONE);
+        emptyView.setVisibility(View.GONE);
+        summaryText.setText("Loading...");
+
+        executor.execute(() -> {
+            long windowMs = TOP_OFFENDER_FILTER_WINDOWS_MS[selectedFilterIndex];
+            com.northmendo.Appzuku.db.AppStatsDao appStatsDao =
+                    com.northmendo.Appzuku.db.AppDatabase.getInstance(this).appStatsDao();
+            List<com.northmendo.Appzuku.db.AppStats> stats;
+            if (windowMs > 0) {
+                long since = System.currentTimeMillis() - windowMs;
+                stats = appStatsDao.getAllStatsSince(since);
+            } else {
+                stats = appStatsDao.getAllStats();
+            }
+
+            List<TopOffender> offenders = buildTopOffenders(stats, appStatsDao);
+
+            int totalKills = 0;
+            int totalRelaunches = 0;
+            long totalRecoveredKb = 0;
+            for (TopOffender offender : offenders) {
+                totalKills += offender.killCount;
+                totalRelaunches += offender.relaunchCount;
+                totalRecoveredKb += offender.recoveredKb;
+            }
+
+            String summary = String.format(Locale.US,
+                    "%s: %d apps | Kills %d | Relaunches %d | Recovered %s",
+                    TOP_OFFENDER_FILTER_LABELS[selectedFilterIndex],
+                    offenders.size(),
+                    totalKills,
+                    totalRelaunches,
+                    formatRecoveredSize(totalRecoveredKb));
+
+            handler.post(() -> {
+                if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    return;
+                }
+                adapter.setItems(offenders);
+                summaryText.setText(summary);
+                loading.setVisibility(View.GONE);
+                listView.setVisibility(View.VISIBLE);
+                emptyView.setVisibility(offenders.isEmpty() ? View.VISIBLE : View.GONE);
+            });
+        });
+    }
+
+    private List<TopOffender> buildTopOffenders(List<com.northmendo.Appzuku.db.AppStats> statsList,
+                                                 com.northmendo.Appzuku.db.AppStatsDao appStatsDao) {
+        List<TopOffender> offenders = new ArrayList<>();
+        for (com.northmendo.Appzuku.db.AppStats stats : statsList) {
+            if (stats == null || stats.packageName == null) {
+                continue;
+            }
+            if (stats.killCount <= 0 && stats.relaunchCount <= 0 && stats.totalRecoveredKb <= 0) {
+                continue;
+            }
+
+            String appName = resolveStatsAppName(stats, appStatsDao);
+            double score = calculateOffenderScore(stats.killCount, stats.relaunchCount, stats.totalRecoveredKb);
+            offenders.add(new TopOffender(appName, stats.packageName, stats.killCount, stats.relaunchCount,
+                    stats.totalRecoveredKb, score));
+        }
+
+        Collections.sort(offenders, (a, b) -> {
+            int scoreCompare = Double.compare(b.score, a.score);
+            if (scoreCompare != 0) {
+                return scoreCompare;
+            }
+            int killCompare = Integer.compare(b.killCount, a.killCount);
+            if (killCompare != 0) {
+                return killCompare;
+            }
+            int relaunchCompare = Integer.compare(b.relaunchCount, a.relaunchCount);
+            if (relaunchCompare != 0) {
+                return relaunchCompare;
+            }
+            return Long.compare(b.recoveredKb, a.recoveredKb);
+        });
+
+        if (offenders.size() > TOP_OFFENDERS_LIMIT) {
+            return new ArrayList<>(offenders.subList(0, TOP_OFFENDERS_LIMIT));
+        }
+        return offenders;
+    }
+
+    private String resolveStatsAppName(com.northmendo.Appzuku.db.AppStats stats,
+                                       com.northmendo.Appzuku.db.AppStatsDao appStatsDao) {
+        if (stats.appName != null && !stats.appName.trim().isEmpty()) {
+            return stats.appName;
+        }
+
+        String resolvedName = resolveInstalledAppName(stats.packageName);
+        if (resolvedName != null && !resolvedName.trim().isEmpty()) {
+            stats.appName = resolvedName;
+            appStatsDao.updateAppName(stats.packageName, resolvedName);
+            return resolvedName;
+        }
+
+        return stats.packageName;
+    }
+
+    private String resolveInstalledAppName(String packageName) {
+        if (packageName == null || packageName.isEmpty()) {
+            return packageName;
+        }
+        try {
+            ApplicationInfo appInfo = getPackageManager().getApplicationInfo(packageName, 0);
+            CharSequence label = getPackageManager().getApplicationLabel(appInfo);
+            if (label != null) {
+                return label.toString();
+            }
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+        return packageName;
+    }
+
+    private double calculateOffenderScore(int killCount, int relaunchCount, long recoveredKb) {
+        return (killCount * 1.0) + (relaunchCount * 2.0) + (recoveredKb / 102400.0);
+    }
+
+    private String formatRecoveredSize(long kb) {
+        if (kb < 1024) {
+            return kb + " KB";
+        } else if (kb < 1024 * 1024) {
+            return String.format(Locale.US, "%.2f MB", kb / 1024f);
+        } else {
+            return String.format(Locale.US, "%.2f GB", kb / (1024f * 1024f));
+        }
+    }
+
+    private String formatScore(double score) {
+        return String.format(Locale.US, "%.1f", score);
+    }
+
+    private void openAppInfo(String packageName) {
+        try {
+            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + packageName));
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "Unable to open app info", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private static class TopOffender {
+        final String appName;
+        final String packageName;
+        final int killCount;
+        final int relaunchCount;
+        final long recoveredKb;
+        final double score;
+
+        TopOffender(String appName, String packageName, int killCount, int relaunchCount, long recoveredKb,
+                    double score) {
+            this.appName = appName;
+            this.packageName = packageName;
+            this.killCount = killCount;
+            this.relaunchCount = relaunchCount;
+            this.recoveredKb = recoveredKb;
+            this.score = score;
+        }
+    }
+
+    private class TopOffendersAdapter extends BaseAdapter {
+        private final List<TopOffender> items = new ArrayList<>();
+        private final LayoutInflater inflater = LayoutInflater.from(SettingsActivity.this);
+
+        void setItems(List<TopOffender> newItems) {
+            items.clear();
+            if (newItems != null) {
+                items.addAll(newItems);
+            }
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public int getCount() {
+            return items.size();
+        }
+
+        @Override
+        public TopOffender getItem(int position) {
+            if (position < 0 || position >= items.size()) {
+                return null;
+            }
+            return items.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view = convertView;
+            if (view == null) {
+                view = inflater.inflate(R.layout.item_top_offender, parent, false);
+            }
+
+            TopOffender item = getItem(position);
+            if (item == null) {
+                return view;
+            }
+
+            TextView rankView = view.findViewById(R.id.offender_rank);
+            TextView nameView = view.findViewById(R.id.offender_name);
+            TextView packageView = view.findViewById(R.id.offender_package);
+            TextView metricsView = view.findViewById(R.id.offender_metrics);
+            TextView scoreView = view.findViewById(R.id.offender_score);
+
+            rankView.setText("#" + (position + 1));
+            nameView.setText(item.appName);
+            packageView.setText(item.packageName);
+            metricsView.setText(String.format(Locale.US,
+                    "Killed: %dx | Relaunched: %dx | Recovered: %s",
+                    item.killCount,
+                    item.relaunchCount,
+                    formatRecoveredSize(item.recoveredKb)));
+            scoreView.setText("Score " + formatScore(item.score));
+
+            return view;
+        }
     }
 
     private void updateThemeText(int themeValue) {
@@ -740,7 +1024,7 @@ public class SettingsActivity extends BaseActivity {
                 // Show warning if system apps are selected
                 if (systemAppCount > 0) {
                     new AlertDialog.Builder(SettingsActivity.this)
-                            .setTitle("⚠️ System Apps Selected")
+                            .setTitle("âš ï¸ System Apps Selected")
                             .setMessage("You have selected " + systemAppCount
                                     + " system app(s) to block from auto-starting.\n\nBlocking system apps may cause device instability or prevent critical functions from working properly.\n\nDo you want to continue?")
                             .setPositiveButton("Yes, Apply", (d2, w2) -> {
@@ -864,9 +1148,10 @@ public class SettingsActivity extends BaseActivity {
                 boolean success = backupManager.restoreBackupJson(sb.toString());
                 handler.post(() -> {
                     if (success) {
+                        applyAutomationStateFromPreferences();
+                        loadSettings();
+                        updateKillModeVisibility();
                         Toast.makeText(this, "Restore successful", Toast.LENGTH_SHORT).show();
-                        // Reload lists if they are currently displayed? 
-                        // Since dialogs are closed, next open will reload from prefs.
                     } else {
                         Toast.makeText(this, "Restore failed: Invalid data", Toast.LENGTH_SHORT).show();
                     }
@@ -876,5 +1161,25 @@ public class SettingsActivity extends BaseActivity {
                 handler.post(() -> Toast.makeText(this, "Import failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         });
+    }
+
+    private void startAutomationService() {
+        Intent serviceIntent = new Intent(this, ShappkyService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.startForegroundService(this, serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
+    private void applyAutomationStateFromPreferences() {
+        boolean automationEnabled = sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false);
+        if (automationEnabled) {
+            startAutomationService();
+            AutoKillWorker.schedule(this);
+        } else {
+            stopService(new Intent(this, ShappkyService.class));
+            AutoKillWorker.cancel(this);
+        }
     }
 }

@@ -25,7 +25,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+        <activity
+            android:name=".KillShortcutActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.Transparent" />
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
@@ -49,7 +58,7 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
-        <receiver android:name=".KillTriggerReceiver" android:exported="true" />
+        <receiver android:name=".KillTriggerReceiver" android:exported="false" />
 
         <receiver android:name=".BootReceiver" android:exported="false">
             <intent-filter>

@@ -55,5 +55,5 @@ captures/
 
 # Log files
 *.log
+running-log.md
 .ralph-state/
-

@@ -20,10 +20,12 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -49,44 +51,6 @@ public class BackgroundAppManager {
         this.executor = executor;
         this.shellManager = shellManager;
         this.sharedpreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-    }
-
-    /**
-     * Toggles autostart prevention for a specific app by enabling/disabling its BOOT_COMPLETED receivers.
-     */
-    public void toggleAutostart(AppModel app, Runnable onComplete) {
-         if (!shellManager.hasAnyShellPermission()) {
-            shellManager.checkShellPermissions();
-            return;
-        }
-
-        executor.execute(() -> {
-            boolean newState = !app.isAutostartBlocked();
-            // If blocking (newState=true), we want to DISABLE the components.
-            // If unblocking (newState=false), we want to ENABLE them.
-            String stateCmd = newState ? "disable" : "enable";
-            
-            StringBuilder command = new StringBuilder();
-            for (String component : app.getBootReceiverComponents()) {
-                // Component is just class name, need full component name: pkg/class
-                command.append("pm ").append(stateCmd).append(" ").append(app.getPackageName()).append("/").append(component).append("; ");
-            }
-
-            if (command.length() > 0) {
-                shellManager.runShellCommand(command.toString(), () -> {
-                    app.setAutostartBlocked(newState);
-                    handler.post(() -> {
-                         Toast.makeText(context, "Autostart " + (newState ? "Disabled" : "Enabled"), Toast.LENGTH_SHORT).show();
-                         if (onComplete != null) onComplete.run();
-                    });
-                });
-            } else {
-                 handler.post(() -> {
-                     Toast.makeText(context, "No autostart components found for this app", Toast.LENGTH_SHORT).show();
-                     if (onComplete != null) onComplete.run();
-                 });
-            }
-        });
     }
 
     /**
@@ -233,23 +197,11 @@ public class BackgroundAppManager {
                     .collect(Collectors.toList());
 
             if (!toKill.isEmpty()) {
-                // DB Logging
-                long now = System.currentTimeMillis();
-                com.northmendo.Appzuku.db.AppDatabase db = com.northmendo.Appzuku.db.AppDatabase.getInstance(context);
-                for (String pkg : toKill) {
-                    com.northmendo.Appzuku.db.AppStats stats = db.appStatsDao().getStats(pkg);
-                    if (stats == null) {
-                        stats = new com.northmendo.Appzuku.db.AppStats(pkg);
-                        // Populate appName from PackageManager
-                        try {
-                            ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
-                            stats.appName = pm.getApplicationLabel(appInfo).toString();
-                        } catch (PackageManager.NameNotFoundException ignored) {
-                        }
-                        db.appStatsDao().insert(stats);
-                    }
-                    db.appStatsDao().incrementKill(pkg, now);
+                Map<String, Long> recoveredKbByPackage = new HashMap<>();
+                for (AppModel app : currentAppsList) {
+                    recoveredKbByPackage.put(app.getPackageName(), app.getAppRamBytes());
                 }
+                recordSuccessfulKills(toKill, recoveredKbByPackage);
 
                 String killCommand = toKill.stream()
                         .map(pkg -> "am force-stop " + pkg)
@@ -268,6 +220,7 @@ public class BackgroundAppManager {
                     Thread.sleep(RELAUNCH_CHECK_DELAY_MS);
                 } catch (InterruptedException ignored) {
                 }
+                com.northmendo.Appzuku.db.AppDatabase db = com.northmendo.Appzuku.db.AppDatabase.getInstance(context);
                 checkRelaunches(toKill, db);
             }
 
@@ -318,23 +271,6 @@ public class BackgroundAppManager {
             return String.format(java.util.Locale.US, "%.2f MB", kb / 1024f);
         else
             return String.format(java.util.Locale.US, "%.2f GB", kb / (1024f * 1024f));
-    }
-
-    private long parseMemoryToKb(String ram) {
-        if (ram == null || ram.isEmpty() || ram.equals("-"))
-            return 0;
-        ram = ram.trim().toUpperCase();
-        try {
-            if (ram.endsWith("KB"))
-                return (long) Float.parseFloat(ram.replace("KB", "").trim().replace(",", "."));
-            if (ram.endsWith("MB"))
-                return (long) (Float.parseFloat(ram.replace("MB", "").trim().replace(",", ".")) * 1024);
-            if (ram.endsWith("GB"))
-                return (long) (Float.parseFloat(ram.replace("GB", "").trim().replace(",", ".")) * 1024 * 1024);
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 
     // Load background apps using 'ps' command via Shizuku
@@ -551,12 +487,12 @@ public class BackgroundAppManager {
 
     // Get the set of hidden app package names
     public Set<String> getHiddenApps() {
-        return sharedpreferences.getStringSet(KEY_HIDDEN_APPS, new HashSet<>());
+        return new HashSet<>(sharedpreferences.getStringSet(KEY_HIDDEN_APPS, new HashSet<>()));
     }
 
     // Save the set of hidden app package names
     public void saveHiddenApps(Set<String> hiddenApps) {
-        sharedpreferences.edit().putStringSet(KEY_HIDDEN_APPS, hiddenApps).apply();
+        sharedpreferences.edit().putStringSet(KEY_HIDDEN_APPS, new HashSet<>(hiddenApps)).apply();
     }
 
     // Get the set of whitelisted (never kill) app package names
@@ -566,7 +502,7 @@ public class BackgroundAppManager {
 
     // Save the set of whitelisted app package names
     public void saveWhitelistedApps(Set<String> whitelistedApps) {
-        sharedpreferences.edit().putStringSet(KEY_WHITELISTED_APPS, whitelistedApps).apply();
+        sharedpreferences.edit().putStringSet(KEY_WHITELISTED_APPS, new HashSet<>(whitelistedApps)).apply();
     }
 
     // Get the set of apps with autostart disabled
@@ -576,7 +512,7 @@ public class BackgroundAppManager {
 
     // Save the set of apps with autostart disabled
     public void saveAutostartDisabledApps(Set<String> packageNames) {
-        sharedpreferences.edit().putStringSet(KEY_AUTOSTART_DISABLED_APPS, packageNames).apply();
+        sharedpreferences.edit().putStringSet(KEY_AUTOSTART_DISABLED_APPS, new HashSet<>(packageNames)).apply();
     }
 
     public Set<String> getBlacklistedApps() {
@@ -584,7 +520,7 @@ public class BackgroundAppManager {
     }
 
     public void saveBlacklistedApps(Set<String> apps) {
-        sharedpreferences.edit().putStringSet(KEY_BLACKLISTED_APPS, apps).apply();
+        sharedpreferences.edit().putStringSet(KEY_BLACKLISTED_APPS, new HashSet<>(apps)).apply();
     }
 
     public int getKillMode() {
@@ -627,7 +563,9 @@ public class BackgroundAppManager {
 
             if (commandBuilder.length() > 0) {
                 shellManager.runShellCommand(commandBuilder.toString(), () -> {
-                    handler.post(() -> Toast.makeText(context, "Autostart settings applied", Toast.LENGTH_SHORT).show());
+                    Toast.makeText(context, "Autostart settings applied", Toast.LENGTH_SHORT).show();
+                }, () -> {
+                    Toast.makeText(context, "Failed to apply autostart settings", Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -648,11 +586,6 @@ public class BackgroundAppManager {
         return isNowWhitelisted;
     }
 
-    // Check if an app is whitelisted
-    public boolean isWhitelisted(String packageName) {
-        return getWhitelistedApps().contains(packageName);
-    }
-
     // Kill specified packages using shell
     public void killPackages(List<String> packageNames, Runnable onComplete) {
         if (!shellManager.hasAnyShellPermission()) {
@@ -670,12 +603,18 @@ public class BackgroundAppManager {
             return;
         }
         long totalKb = 0;
+        Map<String, Long> recoveredKbByPackage = new HashMap<>();
         for (String pkg : packageNames) {
+            long appRamKb = 0;
             for (AppModel app : currentAppsList) {
                 if (app.getPackageName().equals(pkg)) {
-                    totalKb += app.getAppRamBytes(); // Use raw bytes for better accuracy
+                    appRamKb = app.getAppRamBytes();
                     break;
                 }
+            }
+            if (appRamKb > 0) {
+                recoveredKbByPackage.put(pkg, appRamKb);
+                totalKb += appRamKb;
             }
         }
 
@@ -683,9 +622,17 @@ public class BackgroundAppManager {
                 .map(pkg -> "am force-stop " + pkg)
                 .collect(Collectors.joining("; "));
         final long finalTotalKb = totalKb;
+        final List<String> packagesToLog = new ArrayList<>(packageNames);
+        final Map<String, Long> recoveredToLog = new HashMap<>(recoveredKbByPackage);
         shellManager.runShellCommand(command, () -> {
+            executor.execute(() -> recordSuccessfulKills(packagesToLog, recoveredToLog));
             String message = "Free up " + formatMemorySize(finalTotalKb);
-            handler.post(() -> Toast.makeText(context, message, Toast.LENGTH_LONG).show());
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            if (onComplete != null) {
+                onComplete.run();
+            }
+        }, () -> {
+            Toast.makeText(context, "Failed to kill selected apps", Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -716,12 +663,23 @@ public class BackgroundAppManager {
                 break;
             }
         }
+        final String packageToKill = packageName;
+        final Map<String, Long> recoveredKbByPackage = new HashMap<>();
+        if (appRamBytes > 0) {
+            recoveredKbByPackage.put(packageToKill, appRamBytes);
+        }
         final long finalAppRamBytes = appRamBytes;
-        shellManager.runShellCommand("am force-stop " + packageName, () -> {
+        shellManager.runShellCommand("am force-stop " + packageToKill, () -> {
+            executor.execute(() -> recordSuccessfulKills(Collections.singletonList(packageToKill), recoveredKbByPackage));
             if (finalAppRamBytes > 0) {
                 String message = "Free up " + formatMemorySize(finalAppRamBytes);
-                handler.post(() -> Toast.makeText(context, message, Toast.LENGTH_LONG).show());
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
             }
+            if (onComplete != null) {
+                onComplete.run();
+            }
+        }, () -> {
+            Toast.makeText(context, "Failed to stop " + packageName, Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -746,7 +704,12 @@ public class BackgroundAppManager {
 
         String command = "pm uninstall " + packageName;
         shellManager.runShellCommand(command, () -> {
-            handler.post(() -> Toast.makeText(context, "Uninstall command sent for " + packageName, Toast.LENGTH_SHORT).show());
+            Toast.makeText(context, "Uninstall command sent for " + packageName, Toast.LENGTH_SHORT).show();
+            if (onComplete != null) {
+                onComplete.run();
+            }
+        }, () -> {
+            Toast.makeText(context, "Failed to uninstall " + packageName, Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -763,11 +726,6 @@ public class BackgroundAppManager {
         this.showPersistentApps = show;
     }
 
-    // Return a copy of the current apps list
-    public List<AppModel> getAppsList() {
-        return new ArrayList<>(currentAppsList);
-    }
-
     public void clearCaches(Runnable onComplete) {
         if (!shellManager.hasAnyShellPermission()) {
             if (onComplete != null)
@@ -778,13 +736,64 @@ public class BackgroundAppManager {
         executor.execute(() -> {
             // Standard Android command to trim caches to 0
             shellManager.runShellCommand("pm trim-caches 4096G", () -> {
-                handler.post(() -> {
-                    Toast.makeText(context, "Caches cleared", Toast.LENGTH_SHORT).show();
-                    if (onComplete != null)
-                        onComplete.run();
-                });
+                Toast.makeText(context, "Caches cleared", Toast.LENGTH_SHORT).show();
+                if (onComplete != null)
+                    onComplete.run();
+            }, () -> {
+                Toast.makeText(context, "Failed to clear caches", Toast.LENGTH_SHORT).show();
+                if (onComplete != null)
+                    onComplete.run();
             });
         });
+    }
+
+    private void recordSuccessfulKills(List<String> packageNames, Map<String, Long> recoveredKbByPackage) {
+        if (packageNames == null || packageNames.isEmpty()) {
+            return;
+        }
+
+        com.northmendo.Appzuku.db.AppStatsDao appStatsDao =
+                com.northmendo.Appzuku.db.AppDatabase.getInstance(context).appStatsDao();
+        PackageManager packageManager = context.getPackageManager();
+        long now = System.currentTimeMillis();
+
+        Set<String> uniquePackages = new HashSet<>(packageNames);
+        for (String packageName : uniquePackages) {
+            if (packageName == null || packageName.isEmpty()) {
+                continue;
+            }
+
+            com.northmendo.Appzuku.db.AppStats stats = appStatsDao.getStats(packageName);
+            String appName = resolveInstalledAppName(packageManager, packageName);
+
+            if (stats == null) {
+                stats = new com.northmendo.Appzuku.db.AppStats(packageName);
+                stats.appName = appName;
+                appStatsDao.insert(stats);
+            } else if ((stats.appName == null || stats.appName.trim().isEmpty())
+                    && appName != null && !appName.trim().isEmpty()) {
+                appStatsDao.updateAppName(packageName, appName);
+            }
+
+            appStatsDao.incrementKill(packageName, now);
+
+            long recoveredKb = recoveredKbByPackage != null ? recoveredKbByPackage.getOrDefault(packageName, 0L) : 0L;
+            if (recoveredKb > 0) {
+                appStatsDao.addRecoveredKb(packageName, recoveredKb);
+            }
+        }
+    }
+
+    private String resolveInstalledAppName(PackageManager packageManager, String packageName) {
+        try {
+            ApplicationInfo appInfo = packageManager.getApplicationInfo(packageName, 0);
+            CharSequence label = packageManager.getApplicationLabel(appInfo);
+            if (label != null) {
+                return label.toString();
+            }
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+        return null;
     }
 
     /**

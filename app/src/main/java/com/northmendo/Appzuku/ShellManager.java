@@ -24,7 +24,6 @@ import rikka.shizuku.ShizukuRemoteProcess;
 public class ShellManager {
     private static final String TAG = "ShellManager";
 
-    private final Context context;
     private final Handler handler;
     private final ExecutorService executor;
 
@@ -36,7 +35,6 @@ public class ShellManager {
     private Shizuku.OnRequestPermissionResultListener shizukuPermissionListener;
 
     public ShellManager(Context context, Handler handler, ExecutorService executor) {
-        this.context = context;
         this.handler = handler;
         this.executor = executor;
 
@@ -179,16 +177,29 @@ public class ShellManager {
      * Executes on background thread and posts callback to main handler.
      */
     public void runShellCommand(String command, Runnable onSuccess) {
+        runShellCommand(command, onSuccess, null);
+    }
+
+    /**
+     * Run a shell command with separate success/failure callbacks.
+     * Executes on background thread and posts callbacks to main handler.
+     */
+    public void runShellCommand(String command, Runnable onSuccess, Runnable onFailure) {
         executor.execute(() -> {
-            boolean executed = false;
+            boolean succeeded = false;
             if (hasRootAccess()) {
-                executed = executeRootCommand(command, onSuccess, null);
+                succeeded = executeRootCommand(command, null);
             }
-            if (!executed && hasShizukuPermission()) {
-                executed = executeShizukuCommand(command, onSuccess);
+            if (!succeeded && hasShizukuPermission()) {
+                succeeded = executeShizukuCommand(command);
             }
-            if (!executed && onSuccess != null) {
-                handler.post(onSuccess);
+
+            if (succeeded) {
+                if (onSuccess != null) {
+                    handler.post(onSuccess);
+                }
+            } else if (onFailure != null) {
+                handler.post(onFailure);
             }
         });
     }
@@ -200,7 +211,7 @@ public class ShellManager {
         executor.execute(() -> {
             boolean executed = false;
             if (hasRootAccess()) {
-                executed = executeRootCommand(command, null, outputProcessor);
+                executed = executeRootCommand(command, outputProcessor);
             }
             if (!executed && hasShizukuPermission()) {
                 executed = executeShizukuCommandWithOutput(command, outputProcessor);
@@ -223,10 +234,9 @@ public class ShellManager {
 
     // --- Private helper methods ---
 
-    private boolean executeRootCommand(String command, Runnable onSuccess, Consumer<String> outputProcessor) {
+    private boolean executeRootCommand(String command, Consumer<String> outputProcessor) {
         Process process = null;
         DataOutputStream os = null;
-        BufferedReader reader = null;
         try {
             process = Runtime.getRuntime().exec("su");
             os = new DataOutputStream(process.getOutputStream());
@@ -249,12 +259,15 @@ public class ShellManager {
                     }
                 }
             }
-            process.waitFor();
-            if (onSuccess != null) {
-                handler.post(onSuccess);
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                Log.w(TAG, "Root command exited with code " + exitCode + ": " + command);
             }
-            return true;
+            return exitCode == 0;
         } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             Log.e(TAG, "Root command failed", e);
             return false;
         } finally {
@@ -268,29 +281,28 @@ public class ShellManager {
         }
     }
 
-    private boolean executeShizukuCommand(String command, Runnable onSuccess) {
+    private boolean executeShizukuCommand(String command) {
         ShizukuRemoteProcess remote = null;
-        BufferedReader reader = null;
         try {
             remote = Shizuku.newProcess(new String[] { "sh", "-c", command }, null, "/");
-            reader = new BufferedReader(new InputStreamReader(remote.getInputStream()));
-            while (reader.readLine() != null) {
-                // Consume output
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(remote.getInputStream()))) {
+                while (reader.readLine() != null) {
+                    // Consume output
+                }
             }
-            remote.waitFor();
-            if (onSuccess != null) {
-                handler.post(onSuccess);
+
+            int exitCode = remote.waitFor();
+            if (exitCode != 0) {
+                Log.w(TAG, "Shizuku command exited with code " + exitCode + ": " + command);
             }
-            return true;
+            return exitCode == 0;
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             Log.e(TAG, "Shizuku command failed", e);
             return false;
         } finally {
-            try {
-                if (reader != null)
-                    reader.close();
-            } catch (IOException ignored) {
-            }
             if (remote != null) {
                 remote.destroy();
             }
@@ -299,7 +311,6 @@ public class ShellManager {
 
     private boolean executeShizukuCommandWithOutput(String command, Consumer<String> outputProcessor) {
         ShizukuRemoteProcess remote = null;
-        BufferedReader reader = null;
         try {
             remote = Shizuku.newProcess(new String[] { "sh", "-c", command }, null, "/");
             try (BufferedReader readerInput = new BufferedReader(new InputStreamReader(remote.getInputStream()));
@@ -314,9 +325,15 @@ public class ShellManager {
                     handler.post(() -> outputProcessor.accept("ERROR: " + finalLine));
                 }
             }
-            remote.waitFor();
-            return true;
+            int exitCode = remote.waitFor();
+            if (exitCode != 0) {
+                Log.w(TAG, "Shizuku command with output exited with code " + exitCode + ": " + command);
+            }
+            return exitCode == 0;
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             Log.e(TAG, "Shizuku command with output failed", e);
             return false;
         } finally {
@@ -329,7 +346,6 @@ public class ShellManager {
     private String executeRootCommandAndGetFullOutput(String command) {
         Process process = null;
         DataOutputStream os = null;
-        BufferedReader reader = null;
         StringBuilder output = new StringBuilder();
         try {
             process = Runtime.getRuntime().exec("su");
@@ -351,6 +367,9 @@ public class ShellManager {
             process.waitFor();
             return output.toString();
         } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             Log.e(TAG, "Root command get output failed", e);
             return null;
         } finally {
@@ -366,7 +385,6 @@ public class ShellManager {
 
     private String executeShizukuCommandAndGetFullOutput(String command) {
         ShizukuRemoteProcess remote = null;
-        BufferedReader reader = null;
         StringBuilder output = new StringBuilder();
         try {
             remote = Shizuku.newProcess(new String[] { "sh", "-c", command }, null, "/");
@@ -383,6 +401,9 @@ public class ShellManager {
             remote.waitFor();
             return output.toString();
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             Log.e(TAG, "Shizuku command get output failed", e);
             return null;
         } finally {

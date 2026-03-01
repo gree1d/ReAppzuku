@@ -89,18 +89,6 @@ public final class ProtectedApps {
     }
 
     /**
-     * Check if a package should be skipped during killing (protected OR
-     * whitelisted).
-     *
-     * @param context     Application context
-     * @param packageName Package name to check
-     * @return true if the package should not be killed
-     */
-    public static boolean shouldNotKill(Context context, String packageName) {
-        return isProtected(context, packageName) || isWhitelisted(context, packageName);
-    }
-
-    /**
      * Get the current keyboard/input method package name.
      */
     public static String getCurrentKeyboardPackage(Context context) {
@@ -127,10 +115,4 @@ public final class ProtectedApps {
         return null;
     }
 
-    /**
-     * Get all protected package names (static list only, not dynamic).
-     */
-    public static Set<String> getProtectedPackages() {
-        return new HashSet<>(PROTECTED_PACKAGES);
-    }
 }

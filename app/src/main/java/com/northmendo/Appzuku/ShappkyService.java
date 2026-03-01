@@ -14,14 +14,10 @@ import android.os.Looper;
 
 import androidx.core.app.NotificationCompat;
 
-import android.content.ComponentName;
-import android.service.quicksettings.TileService;
-
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.northmendo.Appzuku.db.AppDatabase;
 import android.content.IntentFilter;
 
 import static com.northmendo.Appzuku.PreferenceKeys.*;
@@ -39,7 +35,6 @@ public class ShappkyService extends Service {
     private ShellManager shellManager;
     private BackgroundAppManager appManager;
     private KillTriggerReceiver screenOffReceiver;
-    private AppDatabase db;
 
     public static boolean isRunning() {
         return isRunning;
@@ -50,7 +45,6 @@ public class ShappkyService extends Service {
         super.onCreate();
         shellManager = new ShellManager(this, handler, executor);
         appManager = new BackgroundAppManager(this, handler, executor, shellManager);
-        db = AppDatabase.getInstance(this);
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID_SERVICE)
@@ -154,12 +148,6 @@ public class ShappkyService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    private void requestTileUpdate() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            TileService.requestListeningState(this, new ComponentName(this, ShappkyQuickTile.class));
-        }
     }
 
     private void createNotificationChannel() {
