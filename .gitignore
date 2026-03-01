@@ -56,4 +56,5 @@ captures/
 # Log files
 *.log
 running-log.md
+brain.md
 .ralph-state/
