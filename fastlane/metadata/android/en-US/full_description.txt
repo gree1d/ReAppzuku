@@ -1,1 +1,0 @@
-<p>Shappky, short for Shell App Killer, is an app that stops background applications using Shizuku permissions, improving device performance, reducing memory usage, and lowering heat in a lightweight and safe way.</p>
