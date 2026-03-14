@@ -1,24 +1,18 @@
 package com.northmendo.Appzuku;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 // Transparent, no-UI activity invoked via the launcher long-press static shortcut.
-// Finds the most-recent non-launcher, non-self task from dumpsys activity recents and
-// force-stops it.
+// Resolves the current foreground app and force-stops it.
 public class KillShortcutActivity extends Activity {
 
     private ShellManager shellManager;
@@ -38,18 +32,12 @@ public class KillShortcutActivity extends Activity {
         }
 
         executor.execute(() -> {
-            String recentsOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity recents");
-            String targetPackage = null;
-
-            if (recentsOutput != null && !recentsOutput.isEmpty()) {
-                targetPackage = findKillablePackageFromRecents(recentsOutput);
-            }
-
+            String targetPackage = ForegroundAppResolver.resolveKillableForegroundPackage(shellManager, getPackageName());
             if (targetPackage != null) {
                 final String pkg = targetPackage;
                 // onSuccess/onFailure are delivered on the main thread by ShellManager.
                 // finish() is called inside each branch so it only runs after the kill completes,
-                // preventing shutdownNow() from racing with the am force-stop command.
+                // preventing shutdown from racing with the am force-stop command.
                 shellManager.runShellCommand("am force-stop " + pkg,
                         () -> {
                             logKilledPackage(pkg);
@@ -68,52 +56,6 @@ public class KillShortcutActivity extends Activity {
                 });
             }
         });
-    }
-
-    /**
-     * Parses `dumpsys activity recents` output to find the first task that is:
-     * - not a home/launcher task (type=home)
-     * - not our own package
-     * - not a known launcher package
-     */
-    private String findKillablePackageFromRecents(String output) {
-        Set<String> launcherPackages = new HashSet<>();
-        Intent homeIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
-        List<ResolveInfo> homeResolvers = getPackageManager().queryIntentActivities(homeIntent, 0);
-        for (ResolveInfo ri : homeResolvers) {
-            if (ri.activityInfo != null) {
-                launcherPackages.add(ri.activityInfo.packageName);
-            }
-        }
-
-        String myPackage = getPackageName();
-        boolean inHomeBlock = false;
-
-        for (String line : output.split("\n")) {
-            String trimmed = line.trim();
-
-            // Each task block starts with "* Recent #N:"
-            if (trimmed.startsWith("* Recent #")) {
-                inHomeBlock = trimmed.contains("type=home");
-                continue;
-            }
-
-            if (!trimmed.startsWith("affinity=")) continue;
-
-            String affinity = trimmed.substring("affinity=".length()).trim();
-            // Strip any trailing tokens after a space
-            int spaceIdx = affinity.indexOf(' ');
-            if (spaceIdx != -1) affinity = affinity.substring(0, spaceIdx);
-
-            if (inHomeBlock) continue;
-            if (affinity.equals(myPackage)) continue;
-            if (launcherPackages.contains(affinity)) continue;
-            if (!affinity.contains(".")) continue;
-
-            return affinity;
-        }
-
-        return null;
     }
 
     private void logKilledPackage(String packageName) {
@@ -145,7 +87,9 @@ public class KillShortcutActivity extends Activity {
             PackageManager pm = getPackageManager();
             ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
             CharSequence label = pm.getApplicationLabel(appInfo);
-            if (label != null) return label.toString();
+            if (label != null) {
+                return label.toString();
+            }
         } catch (PackageManager.NameNotFoundException ignored) {
         }
         return null;
