@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -701,7 +701,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:paddingVertical="24dp"
-                android:text="Appzuku v1.3.10"
+                android:text="Appzuku v1.3.12"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
@@ -709,3 +709,4 @@
     </ScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
