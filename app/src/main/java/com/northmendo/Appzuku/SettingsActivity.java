@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -22,8 +23,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.os.Handler;
@@ -241,9 +242,6 @@ public class SettingsActivity extends BaseActivity {
         binding.layoutBackgroundRestriction.setVisibility(
                 appManager.supportsBackgroundRestriction() ? View.VISIBLE : View.GONE);
         binding.layoutBackgroundRestriction.setOnClickListener(v -> showBackgroundRestrictionDialog());
-        binding.layoutRestrictionLog.setVisibility(
-                appManager.supportsBackgroundRestriction() ? View.VISIBLE : View.GONE);
-        binding.layoutRestrictionLog.setOnClickListener(v -> showBackgroundRestrictionLogDialog());
 
         // Kill Mode
         binding.layoutKillMode.setOnClickListener(v -> showKillModeDialog());
@@ -261,6 +259,9 @@ public class SettingsActivity extends BaseActivity {
         // Statistics
         binding.layoutStats.setOnClickListener(v -> showStatsDialog());
         binding.layoutTopOffenders.setOnClickListener(v -> showTopOffendersDialog());
+        binding.layoutRestrictionLog.setVisibility(
+                appManager.supportsBackgroundRestriction() ? View.VISIBLE : View.GONE);
+        binding.layoutRestrictionLog.setOnClickListener(v -> showBackgroundRestrictionLogDialog());
 
         // Backup & Restore
         binding.layoutBackupRestore.setOnClickListener(v -> showBackupRestoreDialog());
@@ -411,30 +412,29 @@ public class SettingsActivity extends BaseActivity {
 
             String message = sb.length() > 0 ? sb.toString().trim() : "No activity in the last 12 hours.";
             handler.post(() -> {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                        .setTitle("Kill History (Last 12h)")
-                        .setMessage(message)
-                        .setPositiveButton("OK", null);
-
+                View contentView = createDialogTextContent(message, false);
+                AlertDialog dialog = createSettingsSurfaceDialog("Kill History", "Last 12 hours", contentView);
+                dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Close", (d, w) -> d.dismiss());
                 if (appManager.supportsBackgroundRestriction() && !highRelaunchPackages.isEmpty()) {
-                    builder.setNeutralButton("Restrict Greedy Apps in Background", (d, w) -> {
+                    dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Restrict Greedy Apps in Background", (d, w) -> {
                         Set<String> currentRestricted = appManager.getBackgroundRestrictedApps();
                         currentRestricted.addAll(highRelaunchPackages);
                         appManager.applyBackgroundRestriction(currentRestricted, null);
                     });
                 }
-                builder.show();
+                dialog.show();
+                styleDialogButtons(dialog);
             });
         });
     }
 
     private void showTopOffendersDialog() {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_top_offenders, null);
-        Spinner filterSpinner = dialogView.findViewById(R.id.top_offenders_filter);
-        TextView summaryText = dialogView.findViewById(R.id.top_offenders_summary);
-        ProgressBar loading = dialogView.findViewById(R.id.top_offenders_loading);
-        ListView listView = dialogView.findViewById(R.id.top_offenders_list);
-        TextView emptyView = dialogView.findViewById(R.id.top_offenders_empty);
+        View contentView = getLayoutInflater().inflate(R.layout.dialog_top_offenders, null);
+        Spinner filterSpinner = contentView.findViewById(R.id.top_offenders_filter);
+        TextView summaryText = contentView.findViewById(R.id.top_offenders_summary);
+        ProgressBar loading = contentView.findViewById(R.id.top_offenders_loading);
+        ListView listView = contentView.findViewById(R.id.top_offenders_list);
+        TextView emptyView = contentView.findViewById(R.id.top_offenders_empty);
 
         TopOffendersAdapter offendersAdapter = new TopOffendersAdapter();
         listView.setAdapter(offendersAdapter);
@@ -451,16 +451,13 @@ public class SettingsActivity extends BaseActivity {
         filterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         filterSpinner.setAdapter(filterAdapter);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Top Offenders")
-                .setView(dialogView)
-                .setNegativeButton("Close", null)
-                .create();
-        dialog.getWindow().setBackgroundDrawable(
-                new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
+        AlertDialog dialog = createSettingsSurfaceDialog(
+                "Top Offenders",
+                "Rank apps by kills, relaunches, and RAM recovered.",
+                contentView);
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Close", (d, w) -> d.dismiss());
         dialog.show();
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-                .setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+        styleDialogButtons(dialog);
 
         filterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -1171,37 +1168,68 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void showBackgroundRestrictionLogDialog() {
-        ScrollView scrollView = new ScrollView(this);
-        int padding = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 20, getResources().getDisplayMetrics());
-        scrollView.setPadding(padding, padding, padding, padding);
-
-        TextView logView = new TextView(this);
-        logView.setText(appManager.getBackgroundRestrictionLogText());
-        logView.setTextIsSelectable(true);
-        logView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        logView.setTypeface(android.graphics.Typeface.MONOSPACE);
-        logView.setTextColor(ContextCompat.getColor(this, R.color.text_primary));
-        scrollView.addView(logView);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Restriction Log")
-                .setView(scrollView)
-                .setNegativeButton("Close", null)
-                .setNeutralButton("Clear", null)
-                .create();
-        dialog.getWindow().setBackgroundDrawable(
-                new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
+        TextView logView = createDialogTextView(appManager.getBackgroundRestrictionLogText(), true);
+        View contentView = (View) logView.getParent();
+        AlertDialog dialog = createSettingsSurfaceDialog(
+                "Restriction Log",
+                "Recent background restriction results. Stored in cache and capped automatically.",
+                contentView);
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Close", (d, w) -> d.dismiss());
+        dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Clear", (d, w) -> {
+        });
         dialog.show();
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-                .setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
-                .setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+        styleDialogButtons(dialog);
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             appManager.clearBackgroundRestrictionLog();
             logView.setText(appManager.getBackgroundRestrictionLogText());
             Toast.makeText(this, "Restriction log cleared", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private AlertDialog createSettingsSurfaceDialog(String title, String subtitle, View contentView) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_settings_surface, null);
+        TextView subtitleView = dialogView.findViewById(R.id.dialog_surface_subtitle);
+        FrameLayout contentContainer = dialogView.findViewById(R.id.dialog_surface_content);
+        subtitleView.setText(subtitle);
+        subtitleView.setVisibility(subtitle == null || subtitle.trim().isEmpty() ? View.GONE : View.VISIBLE);
+        contentContainer.addView(contentView);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setView(dialogView)
+                .create();
+        dialog.getWindow().setBackgroundDrawable(
+                new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
+        return dialog;
+    }
+
+    private View createDialogTextContent(String text, boolean monospace) {
+        return (View) createDialogTextView(text, monospace).getParent();
+    }
+
+    private TextView createDialogTextView(String text, boolean monospace) {
+        View contentView = getLayoutInflater().inflate(R.layout.dialog_settings_text_content, null);
+        TextView bodyView = contentView.findViewById(R.id.dialog_text_body);
+        bodyView.setText(text);
+        bodyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        bodyView.setTextColor(ContextCompat.getColor(this, R.color.text_primary));
+        if (monospace) {
+            bodyView.setTypeface(Typeface.MONOSPACE);
+        }
+        return bodyView;
+    }
+
+    private void styleDialogButtons(AlertDialog dialog) {
+        int color = ContextCompat.getColor(this, R.color.dialog_button_text);
+        if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(color);
+        }
+        if (dialog.getButton(AlertDialog.BUTTON_NEUTRAL) != null) {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(color);
+        }
+        if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color);
+        }
     }
 
     private void startAutomationService() {
