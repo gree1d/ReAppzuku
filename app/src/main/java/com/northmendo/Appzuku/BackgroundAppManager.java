@@ -60,6 +60,10 @@ public class BackgroundAppManager {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
     }
 
+    public boolean canApplyBackgroundRestrictionNow() {
+        return supportsBackgroundRestriction() && shellManager.hasAnyShellPermission();
+    }
+
     public void loadBackgroundRestrictionApps(Consumer<List<AppModel>> callback) {
         executor.execute(() -> {
             PackageManager pm = context.getPackageManager();

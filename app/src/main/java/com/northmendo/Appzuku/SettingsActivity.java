@@ -1152,16 +1152,25 @@ public class SettingsActivity extends BaseActivity {
                 boolean success = backupManager.restoreBackupJson(sb.toString());
                 handler.post(() -> {
                     if (success) {
+                        Set<String> restoredRestrictedApps = new java.util.HashSet<>(
+                                sharedPreferences.getStringSet(KEY_AUTOSTART_DISABLED_APPS, new java.util.HashSet<>()));
                         Runnable finishRestore = () -> {
                             applyAutomationStateFromPreferences();
                             loadSettings();
                             updateKillModeVisibility();
-                            Toast.makeText(this, "Restore successful", Toast.LENGTH_SHORT).show();
+                            if (appManager.supportsBackgroundRestriction()
+                                    && !restoredRestrictedApps.isEmpty()
+                                    && !appManager.canApplyBackgroundRestrictionNow()) {
+                                Toast.makeText(
+                                        this,
+                                        "Restore saved settings. Grant Shizuku/Root to reapply background restrictions.",
+                                        Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(this, "Restore successful", Toast.LENGTH_SHORT).show();
+                            }
                         };
 
-                        if (appManager.supportsBackgroundRestriction()) {
-                            Set<String> restoredRestrictedApps = new java.util.HashSet<>(
-                                    sharedPreferences.getStringSet(KEY_AUTOSTART_DISABLED_APPS, new java.util.HashSet<>()));
+                        if (appManager.canApplyBackgroundRestrictionNow()) {
                             appManager.applyBackgroundRestriction(restoredRestrictedApps, finishRestore);
                         } else {
                             finishRestore.run();
