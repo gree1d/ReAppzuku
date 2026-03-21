@@ -471,7 +471,7 @@
                 android:layout_marginBottom="8dp" />
 
             <LinearLayout
-                android:id="@+id/layout_autostart"
+                android:id="@+id/layout_background_restriction"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
@@ -481,14 +481,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Block Auto-Start"
+                    android:text="Background Restriction"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Prevent apps from running in background"
+                    android:text="Keep selected apps asleep in the background"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>

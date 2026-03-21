@@ -64,7 +64,7 @@ public class HelpActivity extends BaseActivity {
                 "<p><b>Blacklist Mode:</b> Kills ONLY the apps you select in the Blacklist.</p>" +
 
                 "<h3>7. Kill History</h3>" +
-                "<p>View statistics on which apps were killed and how often they relaunch. Apps that frequently restart ('greedy apps') can be blocked from autostarting.</p>"
+                "<p>View statistics on which apps were killed and how often they relaunch. Apps that frequently restart ('greedy apps') can be added to Background Restriction so Android keeps them asleep as aggressively as possible.</p>"
                 +
 
                 "<h3>\u26a0\ufe0f 8. System Apps Safety Warning</h3>" +
@@ -75,9 +75,9 @@ public class HelpActivity extends BaseActivity {
                 "<li>Android System UI (com.android.systemui)</li>" +
                 "<li>Phone services and system frameworks</li>" +
                 "</ul>" +
-                "<p><b>Risks of Blocking System Apps:</b><br/>Blocking or killing system apps may cause crashes, boot loops, loss of functionality, or device malfunction. Only modify system apps if you fully understand the consequences.</p>"
+                "<p><b>Risks of Blocking System Apps:</b><br/>Blocking or killing system apps may cause crashes, boot loops, loss of functionality, broken widgets, delayed notifications, or device malfunction. Only modify system apps if you fully understand the consequences.</p>"
                 +
-                "<p>The app will warn you when selecting system apps in filters or autostart prevention.</p>";
+                "<p>The app will warn you when selecting system apps in filters or Background Restriction.</p>";
 
         binding.helpContent.setText(Html.fromHtml(helpText, Html.FROM_HTML_MODE_COMPACT));
         binding.helpContent.setMovementMethod(LinkMovementMethod.getInstance());

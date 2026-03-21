@@ -186,13 +186,7 @@ public class ShellManager {
      */
     public void runShellCommand(String command, Runnable onSuccess, Runnable onFailure) {
         executor.execute(() -> {
-            boolean succeeded = false;
-            if (hasRootAccess()) {
-                succeeded = executeRootCommand(command, null);
-            }
-            if (!succeeded && hasShizukuPermission()) {
-                succeeded = executeShizukuCommand(command);
-            }
+            boolean succeeded = runShellCommandBlocking(command);
 
             if (succeeded) {
                 if (onSuccess != null) {
@@ -202,6 +196,21 @@ public class ShellManager {
                 handler.post(onFailure);
             }
         });
+    }
+
+    /**
+     * Run a shell command synchronously and return whether it succeeded.
+     * This method is blocking and should only be called from a background thread.
+     */
+    public boolean runShellCommandBlocking(String command) {
+        boolean succeeded = false;
+        if (hasRootAccess()) {
+            succeeded = executeRootCommand(command, null);
+        }
+        if (!succeeded && hasShizukuPermission()) {
+            succeeded = executeShizukuCommand(command);
+        }
+        return succeeded;
     }
 
     /**

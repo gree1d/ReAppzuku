@@ -235,8 +235,10 @@ public class SettingsActivity extends BaseActivity {
         // Hidden apps
         binding.layoutHiddenApps.setOnClickListener(v -> showHiddenAppsDialog());
 
-        // Autostart Prevention
-        binding.layoutAutostart.setOnClickListener(v -> showAutostartDialog());
+        // Background Restriction
+        binding.layoutBackgroundRestriction.setVisibility(
+                appManager.supportsBackgroundRestriction() ? View.VISIBLE : View.GONE);
+        binding.layoutBackgroundRestriction.setOnClickListener(v -> showBackgroundRestrictionDialog());
 
         // Kill Mode
         binding.layoutKillMode.setOnClickListener(v -> showKillModeDialog());
@@ -409,14 +411,11 @@ public class SettingsActivity extends BaseActivity {
                         .setMessage(message)
                         .setPositiveButton("OK", null);
 
-                if (!highRelaunchPackages.isEmpty()) {
-                    builder.setNeutralButton("Disable Autostart for Greedy Apps", (d, w) -> {
-                        Set<String> currentDisabled = appManager.getAutostartDisabledApps();
-                        currentDisabled.addAll(highRelaunchPackages);
-                        appManager.saveAutostartDisabledApps(currentDisabled);
-                        appManager.loadAutostartApps(allApps -> {
-                            appManager.applyAutostartPrevention(allApps, currentDisabled);
-                        });
+                if (appManager.supportsBackgroundRestriction() && !highRelaunchPackages.isEmpty()) {
+                    builder.setNeutralButton("Restrict Greedy Apps in Background", (d, w) -> {
+                        Set<String> currentRestricted = appManager.getBackgroundRestrictedApps();
+                        currentRestricted.addAll(highRelaunchPackages);
+                        appManager.applyBackgroundRestriction(currentRestricted, null);
                     });
                 }
                 builder.show();
@@ -942,7 +941,7 @@ public class SettingsActivity extends BaseActivity {
         });
     }
 
-    private void showAutostartDialog() {
+    private void showBackgroundRestrictionDialog() {
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_filter, null);
         ListView listView = dialogView.findViewById(R.id.filter_list_view);
@@ -951,35 +950,32 @@ public class SettingsActivity extends BaseActivity {
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Autostart Prevention")
+                .setTitle("Background Restriction")
                 .setView(dialogView);
 
-        AlertDialog autostartDialog = builder.create();
-        autostartDialog.getWindow().setBackgroundDrawable(
+        AlertDialog restrictionDialog = builder.create();
+        restrictionDialog.getWindow().setBackgroundDrawable(
                 new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
 
-        autostartDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", (dialog, which) -> dialog.dismiss());
-        autostartDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", (dialog, which) -> {
+        restrictionDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", (dialog, which) -> dialog.dismiss());
+        restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", (dialog, which) -> {
         });
 
         progressBar.setVisibility(View.VISIBLE);
         listView.setVisibility(View.GONE);
         searchBox.setVisibility(View.GONE);
-        autostartDialog.show();
+        restrictionDialog.show();
 
-        autostartDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
-        autostartDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+        restrictionDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+        restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
 
-        appManager.loadAutostartApps(allApps -> {
-            Set<String> disabledApps = appManager.getAutostartDisabledApps();
-            // Sync the model state for consistency, though UI uses the Set
+        appManager.loadBackgroundRestrictionApps(allApps -> {
+            Set<String> restrictedApps = appManager.getBackgroundRestrictedApps();
             for (AppModel app : allApps) {
-                if (disabledApps.contains(app.getPackageName())) {
-                    app.setAutostartBlocked(true);
-                }
+                app.setBackgroundRestricted(restrictedApps.contains(app.getPackageName()));
             }
 
-            FilterAppsAdapter filterAdapter = new FilterAppsAdapter(this, allApps, disabledApps);
+            FilterAppsAdapter filterAdapter = new FilterAppsAdapter(this, allApps, restrictedApps);
             listView.setAdapter(filterAdapter);
             listView.setOnItemClickListener(null);
 
@@ -991,7 +987,7 @@ public class SettingsActivity extends BaseActivity {
             setupFilterListeners(dialogView, filterAdapter);
             
             appManager.updateRunningState(allApps, () -> {
-                if (!autostartDialog.isShowing()) return;
+                if (!restrictionDialog.isShowing()) return;
                 filterAdapter.notifyDataSetChanged();
             });
 
@@ -1010,13 +1006,16 @@ public class SettingsActivity extends BaseActivity {
                 }
             });
 
-            autostartDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", (dialog, which) -> {
-                Set<String> packagesToDisable = filterAdapter.getSelectedPackages();
+            restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", (dialog, which) -> {
+                Set<String> targetPackages = filterAdapter.getSelectedPackages();
+                Set<String> currentRestricted = new java.util.HashSet<>(restrictedApps);
+                Set<String> packagesToRestrict = new java.util.HashSet<>(targetPackages);
+                packagesToRestrict.removeAll(currentRestricted);
 
                 // Count system apps in selection
                 int systemAppCount = 0;
                 for (AppModel app : allApps) {
-                    if (packagesToDisable.contains(app.getPackageName()) && app.isSystemApp()) {
+                    if (packagesToRestrict.contains(app.getPackageName()) && app.isSystemApp()) {
                         systemAppCount++;
                     }
                 }
@@ -1024,21 +1023,24 @@ public class SettingsActivity extends BaseActivity {
                 // Show warning if system apps are selected
                 if (systemAppCount > 0) {
                     new AlertDialog.Builder(SettingsActivity.this)
-                            .setTitle("âš ï¸ System Apps Selected")
+                            .setTitle("System Apps Selected")
                             .setMessage("You have selected " + systemAppCount
-                                    + " system app(s) to block from auto-starting.\n\nBlocking system apps may cause device instability or prevent critical functions from working properly.\n\nDo you want to continue?")
-                            .setPositiveButton("Yes, Apply", (d2, w2) -> {
-                                appManager.saveAutostartDisabledApps(packagesToDisable);
-                                appManager.applyAutostartPrevention(allApps, packagesToDisable);
-                            })
+                                    + " system app(s) for background restriction.\n\nThis can break notifications, widgets, VPNs, keyboards, accessibility services, companion devices, or device stability.\n\nDo you want to continue?")
+                            .setPositiveButton("Yes, Apply", (d2, w2) -> appManager.applyBackgroundRestriction(targetPackages, null))
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                } else if (!packagesToRestrict.isEmpty()) {
+                    new AlertDialog.Builder(SettingsActivity.this)
+                            .setTitle("Background Restriction Warning")
+                            .setMessage("Restricted apps may stop syncing, miss notifications, stop updating widgets, or fail to perform background tasks until you open them again.\n\nDo you want to continue?")
+                            .setPositiveButton("Apply", (d2, w2) -> appManager.applyBackgroundRestriction(targetPackages, null))
                             .setNegativeButton("Cancel", null)
                             .show();
                 } else {
-                    appManager.saveAutostartDisabledApps(packagesToDisable);
-                    appManager.applyAutostartPrevention(allApps, packagesToDisable);
+                    appManager.applyBackgroundRestriction(targetPackages, null);
                 }
             });
-            autostartDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+            restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
         });
     }
 

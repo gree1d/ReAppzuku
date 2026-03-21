@@ -180,8 +180,10 @@ public class MainActivity extends BaseActivity {
                 appManager.getBlacklistedApps().contains(packageName));
         popup.getMenu().findItem(R.id.action_hidden).setChecked(
                 appManager.getHiddenApps().contains(packageName));
-        popup.getMenu().findItem(R.id.action_autostart).setChecked(
-                appManager.getAutostartDisabledApps().contains(packageName));
+        popup.getMenu().findItem(R.id.action_background_restriction).setVisible(
+                appManager.supportsBackgroundRestriction());
+        popup.getMenu().findItem(R.id.action_background_restriction).setChecked(
+                appManager.getBackgroundRestrictedApps().contains(packageName));
 
         popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
@@ -200,8 +202,8 @@ public class MainActivity extends BaseActivity {
             } else if (id == R.id.action_hidden) {
                 toggleListMembership(app, "hidden");
                 return true;
-            } else if (id == R.id.action_autostart) {
-                toggleListMembership(app, "autostart");
+            } else if (id == R.id.action_background_restriction) {
+                toggleBackgroundRestriction(app);
                 return true;
             }
             return false;
@@ -255,11 +257,6 @@ public class MainActivity extends BaseActivity {
                 addedMsg = "App hidden";
                 removedMsg = "App unhidden";
                 break;
-            case "autostart":
-                currentSet = appManager.getAutostartDisabledApps();
-                addedMsg = "Autostart blocked";
-                removedMsg = "Autostart allowed";
-                break;
             default:
                 return;
         }
@@ -283,13 +280,28 @@ public class MainActivity extends BaseActivity {
             case "hidden":
                 appManager.saveHiddenApps(currentSet);
                 break;
-            case "autostart":
-                appManager.saveAutostartDisabledApps(currentSet);
-                break;
         }
 
         listAdapter.submitList(new ArrayList<>(appsDataList));
         Toast.makeText(this, wasInList ? removedMsg : addedMsg, Toast.LENGTH_SHORT).show();
+    }
+
+    private void toggleBackgroundRestriction(AppModel app) {
+        boolean enableRestriction = !appManager.getBackgroundRestrictedApps().contains(app.getPackageName());
+        if (enableRestriction && app.isSystemApp()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("System App Warning")
+                    .setMessage("Restricting background activity for a system app can break notifications, widgets, VPNs, keyboards, accessibility features, or device stability.\n\nOnly continue if you understand the risk.")
+                    .setPositiveButton("Apply", (dialog, which) -> applyBackgroundRestriction(app, true))
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            return;
+        }
+        applyBackgroundRestriction(app, enableRestriction);
+    }
+
+    private void applyBackgroundRestriction(AppModel app, boolean enableRestriction) {
+        appManager.setBackgroundRestricted(app.getPackageName(), enableRestriction, this::loadBackgroundApps);
     }
 
     // Load background apps with selection preservation

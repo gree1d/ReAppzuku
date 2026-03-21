@@ -23,8 +23,8 @@
                 android:title="Hidden"
                 android:checkable="true" />
             <item
-                android:id="@+id/action_autostart"
-                android:title="Block Autostart"
+                android:id="@+id/action_background_restriction"
+                android:title="Background Restriction"
                 android:checkable="true" />
         </menu>
     </item>

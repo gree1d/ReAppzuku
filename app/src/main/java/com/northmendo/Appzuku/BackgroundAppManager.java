@@ -3,10 +3,8 @@ package com.northmendo.Appzuku;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.util.Log;
@@ -28,6 +26,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
@@ -36,6 +36,8 @@ import static com.northmendo.Appzuku.AppConstants.*;
 
 public class BackgroundAppManager {
     private static final String TAG = "BackgroundAppManager";
+    private static final String BACKGROUND_RESTRICTION_OP = "RUN_ANY_IN_BACKGROUND";
+    private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+");
     private final Context context;
     private final Handler handler;
     private final ExecutorService executor;
@@ -53,77 +55,38 @@ public class BackgroundAppManager {
         this.sharedpreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 
-    /**
-     * Scans all installed apps for BOOT_COMPLETED receivers and updates the AppModels.
-     */
-    public void loadAutostartApps(Consumer<List<AppModel>> callback) {
+    public boolean supportsBackgroundRestriction() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
+    }
+
+    public void loadBackgroundRestrictionApps(Consumer<List<AppModel>> callback) {
         executor.execute(() -> {
             PackageManager pm = context.getPackageManager();
-            Intent intent = new Intent(Intent.ACTION_BOOT_COMPLETED);
-            // Query for all receivers that handle BOOT_COMPLETED, including disabled ones
-            List<ResolveInfo> receivers = pm.queryBroadcastReceivers(intent, 
-                    PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.GET_META_DATA);
-            
-            // Map: PackageName -> List of Receiver Class Names
-            java.util.Map<String, List<String>> pkgReceivers = new java.util.HashMap<>();
-            // Map: PackageName -> Are all receivers disabled?
-            java.util.Map<String, Boolean> pkgDisabledState = new java.util.HashMap<>();
-
-            for (ResolveInfo info : receivers) {
-                String pkg = info.activityInfo.packageName;
-                String cls = info.activityInfo.name;
-                
-                pkgReceivers.computeIfAbsent(pkg, k -> new ArrayList<>()).add(cls);
-                
-                // Check if currently disabled
-                ComponentName comp = new ComponentName(pkg, cls);
-                int state = pm.getComponentEnabledSetting(comp);
-                boolean isEnabled;
-                if (state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED || 
-                    state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER) {
-                    isEnabled = false; // Explicitly blocked
-                } else {
-                    // Treat ENABLED and DEFAULT as "Enabled" (Not Blocked) for the purpose of the UI.
-                    // This ensures apps disabled by default in manifest are not auto-selected as "Blocked by User".
-                    isEnabled = true;
-                }
-                
-                // If ANY receiver is enabled, the app is NOT fully blocked.
-                // Logic: Blocked if ALL relevant receivers are disabled.
-                pkgDisabledState.merge(pkg, !isEnabled, (oldVal, newVal) -> oldVal && newVal);
-            }
-
+            List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+            Set<String> restrictedPackages = getActualBackgroundRestrictedApps();
+            saveBackgroundRestrictedApps(restrictedPackages);
             List<AppModel> result = new ArrayList<>();
-             for (String pkg : pkgReceivers.keySet()) {
-                 if (pkg.equals(context.getPackageName())) continue; // Skip self
-                 
-                 try {
-                     ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
-                     if (getHiddenApps().contains(pkg)) continue;
-                     
-                     AppModel model = new AppModel(
+            for (ApplicationInfo appInfo : packages) {
+                String packageName = appInfo.packageName;
+                if (packageName.equals(context.getPackageName())) {
+                    continue;
+                }
+
+                AppModel model = new AppModel(
                         pm.getApplicationLabel(appInfo).toString(),
-                        pkg,
-                        "-", 0,
+                        packageName,
+                        "-",
+                        0,
                         pm.getApplicationIcon(appInfo),
                         (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0,
                         (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) != 0,
-                        ProtectedApps.isProtected(context, pkg)
-                     );
-                     
-                     model.setBootReceiverComponents(pkgReceivers.get(pkg));
-                     Boolean allDisabled = pkgDisabledState.get(pkg);
-                     model.setAutostartBlocked(allDisabled != null && allDisabled);
-                     
-                     result.add(model);
-                 } catch (PackageManager.NameNotFoundException e) {
-                     continue;
-                 }
-             }
-             
-             Collections.sort(result, (a, b) -> a.getAppName().compareToIgnoreCase(b.getAppName()));
-             
-             handler.post(() -> callback.accept(result));
+                        ProtectedApps.isProtected(context, packageName));
+                model.setBackgroundRestricted(restrictedPackages.contains(packageName));
+                result.add(model);
+            }
+
+            Collections.sort(result, (a, b) -> a.getAppName().compareToIgnoreCase(b.getAppName()));
+            handler.post(() -> callback.accept(result));
         });
     }
 
@@ -505,13 +468,11 @@ public class BackgroundAppManager {
         sharedpreferences.edit().putStringSet(KEY_WHITELISTED_APPS, new HashSet<>(whitelistedApps)).apply();
     }
 
-    // Get the set of apps with autostart disabled
-    public Set<String> getAutostartDisabledApps() {
+    public Set<String> getBackgroundRestrictedApps() {
         return new HashSet<>(sharedpreferences.getStringSet(KEY_AUTOSTART_DISABLED_APPS, new HashSet<>()));
     }
 
-    // Save the set of apps with autostart disabled
-    public void saveAutostartDisabledApps(Set<String> packageNames) {
+    public void saveBackgroundRestrictedApps(Set<String> packageNames) {
         sharedpreferences.edit().putStringSet(KEY_AUTOSTART_DISABLED_APPS, new HashSet<>(packageNames)).apply();
     }
 
@@ -531,44 +492,121 @@ public class BackgroundAppManager {
         sharedpreferences.edit().putInt(KEY_KILL_MODE, mode).apply();
     }
 
-    /**
-     * Apply autostart prevention by enabling/disabling BOOT_COMPLETED receivers.
-     * 
-     * @param allApps      List of all apps (must have bootReceiverComponents populated)
-     * @param disabledApps Set of apps that should have their receivers disabled
-     */
-    public void applyAutostartPrevention(List<AppModel> allApps, Set<String> disabledApps) {
+    public void setBackgroundRestricted(String packageName, boolean restricted, Runnable onComplete) {
+        Set<String> targetPackages = getBackgroundRestrictedApps();
+        if (restricted) {
+            targetPackages.add(packageName);
+        } else {
+            targetPackages.remove(packageName);
+        }
+        applyBackgroundRestriction(targetPackages, onComplete);
+    }
+
+    public void applyBackgroundRestriction(Set<String> targetPackages, Runnable onComplete) {
+        if (!supportsBackgroundRestriction()) {
+            Toast.makeText(context, "Background restriction requires Android 11+", Toast.LENGTH_SHORT).show();
+            if (onComplete != null) {
+                handler.post(onComplete);
+            }
+            return;
+        }
         if (!shellManager.hasAnyShellPermission()) {
             shellManager.checkShellPermissions();
+            if (onComplete != null) {
+                handler.post(onComplete);
+            }
             return;
         }
 
         executor.execute(() -> {
-            StringBuilder commandBuilder = new StringBuilder();
-            
-            for (AppModel app : allApps) {
-                List<String> receivers = app.getBootReceiverComponents();
-                if (receivers == null || receivers.isEmpty()) {
-                    continue;
-                }
-                
-                boolean shouldBlock = disabledApps.contains(app.getPackageName());
-                String action = shouldBlock ? "disable" : "enable";
-                
-                for (String receiver : receivers) {
-                    commandBuilder.append("pm ").append(action).append(" ")
-                        .append(app.getPackageName()).append("/").append(receiver).append("; ");
+            Set<String> desiredPackages = new HashSet<>();
+            if (targetPackages != null) {
+                for (String packageName : targetPackages) {
+                    if (packageName != null && !packageName.isEmpty() && !packageName.equals(context.getPackageName())) {
+                        desiredPackages.add(packageName);
+                    }
                 }
             }
 
-            if (commandBuilder.length() > 0) {
-                shellManager.runShellCommand(commandBuilder.toString(), () -> {
-                    Toast.makeText(context, "Autostart settings applied", Toast.LENGTH_SHORT).show();
-                }, () -> {
-                    Toast.makeText(context, "Failed to apply autostart settings", Toast.LENGTH_SHORT).show();
-                });
+            Set<String> currentPackages = getActualBackgroundRestrictedApps();
+            Set<String> packagesToAllow = new HashSet<>(currentPackages);
+            packagesToAllow.removeAll(desiredPackages);
+
+            Set<String> packagesToRestrict = new HashSet<>(desiredPackages);
+            packagesToRestrict.removeAll(currentPackages);
+
+            boolean success = true;
+            for (String packageName : packagesToAllow) {
+                if (!shellManager.runShellCommandBlocking(buildBackgroundRestrictionCommand(packageName, "allow"))) {
+                    success = false;
+                }
             }
+
+            for (String packageName : packagesToRestrict) {
+                if (!shellManager.runShellCommandBlocking(buildBackgroundRestrictionCommand(packageName, "ignore"))) {
+                    success = false;
+                    continue;
+                }
+                if (!shellManager.runShellCommandBlocking("am force-stop " + packageName)) {
+                    success = false;
+                }
+            }
+
+            Set<String> actualPackages = getActualBackgroundRestrictedApps();
+            saveBackgroundRestrictedApps(actualPackages);
+
+            final boolean finalSuccess = success;
+            handler.post(() -> {
+                Toast.makeText(context,
+                        finalSuccess ? "Background restriction settings applied"
+                                : "Some background restriction changes failed",
+                        Toast.LENGTH_SHORT).show();
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+            });
         });
+    }
+
+    private String buildBackgroundRestrictionCommand(String packageName, String mode) {
+        return "cmd appops set --user current " + packageName + " " + BACKGROUND_RESTRICTION_OP + " " + mode;
+    }
+
+    private Set<String> getActualBackgroundRestrictedApps() {
+        Set<String> fallbackPackages = getBackgroundRestrictedApps();
+        if (!supportsBackgroundRestriction() || !shellManager.hasAnyShellPermission()) {
+            return fallbackPackages;
+        }
+
+        Set<String> restrictedPackages = new HashSet<>();
+        boolean querySucceeded = false;
+
+        String ignoreOutput = shellManager.runShellCommandAndGetFullOutput(
+                "cmd appops query-op --user current " + BACKGROUND_RESTRICTION_OP + " ignore");
+        if (ignoreOutput != null) {
+            querySucceeded = true;
+            mergeBackgroundRestrictedPackages(restrictedPackages, ignoreOutput);
+        }
+
+        String denyOutput = shellManager.runShellCommandAndGetFullOutput(
+                "cmd appops query-op --user current " + BACKGROUND_RESTRICTION_OP + " deny");
+        if (denyOutput != null) {
+            querySucceeded = true;
+            mergeBackgroundRestrictedPackages(restrictedPackages, denyOutput);
+        }
+
+        return querySucceeded ? restrictedPackages : fallbackPackages;
+    }
+
+    private void mergeBackgroundRestrictedPackages(Set<String> packages, String output) {
+        if (output == null || output.trim().isEmpty()) {
+            return;
+        }
+
+        Matcher matcher = PACKAGE_NAME_PATTERN.matcher(output);
+        while (matcher.find()) {
+            packages.add(matcher.group());
+        }
     }
 
     // Toggle whitelist status for a package
