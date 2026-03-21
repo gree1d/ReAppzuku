@@ -53,20 +53,29 @@ public final class BackgroundRestrictionLog {
     }
 
     public static String readDisplayText(Context context) {
-        List<String> lines = readLines(context);
-        if (lines.isEmpty()) {
+        List<LogEntry> entries = readEntries(context);
+        if (entries.isEmpty()) {
             return "No background restriction events logged yet.\n\nEntries are stored temporarily in cache and trimmed automatically.";
         }
 
-        Collections.reverse(lines);
         StringBuilder display = new StringBuilder();
-        for (int i = 0; i < lines.size(); i++) {
+        for (int i = 0; i < entries.size(); i++) {
             if (i > 0) {
                 display.append('\n');
             }
-            display.append(lines.get(i));
+            display.append(entries.get(i).toDisplayLine());
         }
         return display.toString();
+    }
+
+    public static List<LogEntry> readEntries(Context context) {
+        List<String> lines = readLines(context);
+        Collections.reverse(lines);
+        List<LogEntry> entries = new ArrayList<>();
+        for (String line : lines) {
+            entries.add(parseEntry(line));
+        }
+        return entries;
     }
 
     public static void clear(Context context) {
@@ -139,11 +148,56 @@ public final class BackgroundRestrictionLog {
         }
         String normalized = value.replace('\r', ' ')
                 .replace('\n', ' ')
+                .replace('|', '/')
                 .replaceAll("\\s+", " ")
                 .trim();
         if (normalized.length() > MAX_DETAIL_LENGTH) {
             return normalized.substring(0, MAX_DETAIL_LENGTH - 3) + "...";
         }
         return normalized;
+    }
+
+    private static LogEntry parseEntry(String line) {
+        if (line == null || line.trim().isEmpty()) {
+            return new LogEntry("", "event", "-", "unknown", "");
+        }
+        String[] parts = line.split("\\s\\|\\s", 5);
+        String timestamp = parts.length > 0 ? parts[0].trim() : "";
+        String action = parts.length > 1 ? parts[1].trim() : "event";
+        String packageName = parts.length > 2 ? parts[2].trim() : "-";
+        String outcome = parts.length > 3 ? parts[3].trim() : "unknown";
+        String detail = parts.length > 4 ? parts[4].trim() : "";
+        return new LogEntry(timestamp, action, packageName, outcome, detail);
+    }
+
+    public static final class LogEntry {
+        public final String timestamp;
+        public final String action;
+        public final String packageName;
+        public final String outcome;
+        public final String detail;
+
+        private LogEntry(String timestamp, String action, String packageName, String outcome, String detail) {
+            this.timestamp = timestamp;
+            this.action = action;
+            this.packageName = packageName;
+            this.outcome = outcome;
+            this.detail = detail;
+        }
+
+        private String toDisplayLine() {
+            StringBuilder line = new StringBuilder()
+                    .append(timestamp)
+                    .append(" | ")
+                    .append(action)
+                    .append(" | ")
+                    .append(packageName)
+                    .append(" | ")
+                    .append(outcome);
+            if (!detail.isEmpty()) {
+                line.append(" | ").append(detail);
+            }
+            return line.toString();
+        }
     }
 }

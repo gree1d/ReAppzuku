@@ -371,59 +371,90 @@ public class SettingsActivity extends BaseActivity {
 
     private void showStatsDialog() {
         executor.execute(() -> {
-            // Get stats for last 12 hours
             long twelveHoursAgo = System.currentTimeMillis() - STATS_HISTORY_DURATION_MS;
             com.northmendo.Appzuku.db.AppStatsDao appStatsDao = com.northmendo.Appzuku.db.AppDatabase
                     .getInstance(this).appStatsDao();
             java.util.List<com.northmendo.Appzuku.db.AppStats> statsList = appStatsDao.getAllStatsSince(twelveHoursAgo);
 
             final List<String> highRelaunchPackages = new ArrayList<>();
-            StringBuilder sb = new StringBuilder();
+            List<KillHistoryEntry> historyEntries = new ArrayList<>();
+            int totalKills = 0;
+            int totalRelaunches = 0;
+            long totalRecoveredKb = 0;
+            java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("h:mm a",
+                    java.util.Locale.getDefault());
 
-            if (statsList.isEmpty()) {
-                sb.append("No activity in the last 12 hours.");
-            } else {
-                java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("h:mm a",
-                        java.util.Locale.getDefault());
-
-                for (com.northmendo.Appzuku.db.AppStats stats : statsList) {
-                    if (stats.killCount > 0 || stats.relaunchCount > 0) {
-                        String displayName = resolveStatsAppName(stats, appStatsDao);
-                        sb.append("- ").append(displayName).append("\n");
-
-                        // Kill stats
-                        if (stats.killCount > 0) {
-                            sb.append("   Killed: ").append(stats.killCount).append("x");
-                            if (stats.lastKillTime > 0) {
-                                sb.append(" (last: ").append(timeFormat.format(new java.util.Date(stats.lastKillTime)))
-                                        .append(")");
-                            }
-                            sb.append("\n");
-                        }
-
-                        // Relaunch stats
-                        if (stats.relaunchCount > 0) {
-                            sb.append("   Relaunched: ").append(stats.relaunchCount).append("x");
-                            if (stats.lastRelaunchTime > 0) {
-                                sb.append(" (last: ")
-                                        .append(timeFormat.format(new java.util.Date(stats.lastRelaunchTime)))
-                                        .append(")");
-                            }
-                            sb.append("\n");
-
-                            if (stats.relaunchCount > RELAUNCH_GREEDY_THRESHOLD) {
-                                highRelaunchPackages.add(stats.packageName);
-                            }
-                        }
-                        sb.append("\n");
-                    }
+            for (com.northmendo.Appzuku.db.AppStats stats : statsList) {
+                if (stats == null || stats.packageName == null) {
+                    continue;
                 }
+                if (stats.killCount <= 0 && stats.relaunchCount <= 0) {
+                    continue;
+                }
+
+                if (stats.relaunchCount > RELAUNCH_GREEDY_THRESHOLD) {
+                    highRelaunchPackages.add(stats.packageName);
+                }
+
+                List<String> detailParts = new ArrayList<>();
+                if (stats.killCount > 0) {
+                    String killDetail = "Killed " + stats.killCount + "x";
+                    if (stats.lastKillTime > 0) {
+                        killDetail += " (last " + timeFormat.format(new java.util.Date(stats.lastKillTime)) + ")";
+                    }
+                    detailParts.add(killDetail);
+                }
+                if (stats.relaunchCount > 0) {
+                    String relaunchDetail = "Relaunched " + stats.relaunchCount + "x";
+                    if (stats.lastRelaunchTime > 0) {
+                        relaunchDetail += " (last " + timeFormat.format(new java.util.Date(stats.lastRelaunchTime)) + ")";
+                    }
+                    detailParts.add(relaunchDetail);
+                }
+                if (stats.totalRecoveredKb > 0) {
+                    detailParts.add("Recovered " + formatRecoveredSize(stats.totalRecoveredKb));
+                }
+
+                long lastEventTime = Math.max(stats.lastKillTime, stats.lastRelaunchTime);
+                String badge = lastEventTime > 0 ? timeFormat.format(new java.util.Date(lastEventTime)) : "";
+                historyEntries.add(new KillHistoryEntry(
+                        resolveStatsAppName(stats, appStatsDao),
+                        stats.packageName,
+                        String.join(" | ", detailParts),
+                        badge,
+                        lastEventTime));
+                totalKills += stats.killCount;
+                totalRelaunches += stats.relaunchCount;
+                totalRecoveredKb += stats.totalRecoveredKb;
             }
 
-            String message = sb.length() > 0 ? sb.toString().trim() : "No activity in the last 12 hours.";
+            Collections.sort(historyEntries, (a, b) -> Long.compare(b.lastEventTime, a.lastEventTime));
+            List<SettingsSurfaceRow> rows = buildKillHistoryRows(historyEntries);
+            String summary = String.format(Locale.US,
+                    "Last 12 hours: %d apps | Kills %d | Relaunches %d | Recovered %s",
+                    rows.size(),
+                    totalKills,
+                    totalRelaunches,
+                    formatRecoveredSize(totalRecoveredKb));
+
             handler.post(() -> {
-                View contentView = createDialogTextContent(message, false);
-                AlertDialog dialog = createSettingsSurfaceDialog("Kill History", "Last 12 hours", contentView);
+                SettingsListContent content = createSettingsListContent("No activity in the last 12 hours.", false);
+                SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
+                adapter.setItems(rows);
+                content.listView.setAdapter(adapter);
+                content.listView.setEmptyView(content.emptyView);
+                content.listView.setOnItemClickListener((parent, view, position, id) -> {
+                    SettingsSurfaceRow row = adapter.getItem(position);
+                    if (row != null && row.packageName != null && !row.packageName.isEmpty()) {
+                        openAppInfo(row.packageName);
+                    }
+                });
+                content.summaryText.setText(summary);
+                content.loading.setVisibility(View.GONE);
+                content.listView.setVisibility(View.VISIBLE);
+                content.emptyView.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+
+                AlertDialog dialog = createSettingsSurfaceDialog("Kill History", "Last 12 hours", content.rootView);
                 dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Close", (d, w) -> d.dismiss());
                 if (appManager.supportsBackgroundRestriction() && !highRelaunchPackages.isEmpty()) {
                     dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Restrict Greedy Apps in Background", (d, w) -> {
@@ -439,20 +470,20 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void showTopOffendersDialog() {
-        View contentView = getLayoutInflater().inflate(R.layout.dialog_top_offenders, null);
-        Spinner filterSpinner = contentView.findViewById(R.id.top_offenders_filter);
-        TextView summaryText = contentView.findViewById(R.id.top_offenders_summary);
-        ProgressBar loading = contentView.findViewById(R.id.top_offenders_loading);
-        ListView listView = contentView.findViewById(R.id.top_offenders_list);
-        TextView emptyView = contentView.findViewById(R.id.top_offenders_empty);
+        SettingsListContent content = createSettingsListContent("No offenders for this period", true);
+        Spinner filterSpinner = content.filterSpinner;
+        TextView summaryText = content.summaryText;
+        ProgressBar loading = content.loading;
+        ListView listView = content.listView;
+        TextView emptyView = content.emptyView;
 
-        TopOffendersAdapter offendersAdapter = new TopOffendersAdapter();
+        SettingsSurfaceAdapter offendersAdapter = new SettingsSurfaceAdapter();
         listView.setAdapter(offendersAdapter);
         listView.setEmptyView(emptyView);
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            TopOffender offender = offendersAdapter.getItem(position);
-            if (offender != null) {
-                openAppInfo(offender.packageName);
+            SettingsSurfaceRow row = offendersAdapter.getItem(position);
+            if (row != null && row.packageName != null && !row.packageName.isEmpty()) {
+                openAppInfo(row.packageName);
             }
         });
 
@@ -464,7 +495,7 @@ public class SettingsActivity extends BaseActivity {
         AlertDialog dialog = createSettingsSurfaceDialog(
                 "Top Offenders",
                 "Rank apps by kills, relaunches, and RAM recovered.",
-                contentView);
+                content.rootView);
         dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Close", (d, w) -> d.dismiss());
         dialog.show();
         styleDialogButtons(dialog);
@@ -481,7 +512,7 @@ public class SettingsActivity extends BaseActivity {
         });
     }
 
-    private void loadTopOffenders(int filterIndex, TopOffendersAdapter adapter, TextView summaryText,
+    private void loadTopOffenders(int filterIndex, SettingsSurfaceAdapter adapter, TextView summaryText,
                                   ProgressBar loading, ListView listView, TextView emptyView) {
         if (filterIndex < 0 || filterIndex >= TOP_OFFENDER_FILTER_WINDOWS_MS.length) {
             filterIndex = 0;
@@ -528,7 +559,7 @@ public class SettingsActivity extends BaseActivity {
                 if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
                     return;
                 }
-                adapter.setItems(offenders);
+                adapter.setItems(buildTopOffenderRows(offenders));
                 summaryText.setText(summary);
                 loading.setVisibility(View.GONE);
                 listView.setVisibility(View.VISIBLE);
@@ -654,11 +685,65 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
-    private class TopOffendersAdapter extends BaseAdapter {
-        private final List<TopOffender> items = new ArrayList<>();
+    private static class KillHistoryEntry {
+        final String appName;
+        final String packageName;
+        final String detail;
+        final String badge;
+        final long lastEventTime;
+
+        KillHistoryEntry(String appName, String packageName, String detail, String badge, long lastEventTime) {
+            this.appName = appName;
+            this.packageName = packageName;
+            this.detail = detail;
+            this.badge = badge;
+            this.lastEventTime = lastEventTime;
+        }
+    }
+
+    private static class SettingsSurfaceRow {
+        final String leadingText;
+        final String title;
+        final String subtitle;
+        final String detail;
+        final String badge;
+        final String packageName;
+
+        SettingsSurfaceRow(String leadingText, String title, String subtitle, String detail, String badge,
+                           String packageName) {
+            this.leadingText = leadingText;
+            this.title = title;
+            this.subtitle = subtitle;
+            this.detail = detail;
+            this.badge = badge;
+            this.packageName = packageName;
+        }
+    }
+
+    private static class SettingsListContent {
+        final View rootView;
+        final Spinner filterSpinner;
+        final TextView summaryText;
+        final ProgressBar loading;
+        final ListView listView;
+        final TextView emptyView;
+
+        SettingsListContent(View rootView, Spinner filterSpinner, TextView summaryText,
+                            ProgressBar loading, ListView listView, TextView emptyView) {
+            this.rootView = rootView;
+            this.filterSpinner = filterSpinner;
+            this.summaryText = summaryText;
+            this.loading = loading;
+            this.listView = listView;
+            this.emptyView = emptyView;
+        }
+    }
+
+    private class SettingsSurfaceAdapter extends BaseAdapter {
+        private final List<SettingsSurfaceRow> items = new ArrayList<>();
         private final LayoutInflater inflater = LayoutInflater.from(SettingsActivity.this);
 
-        void setItems(List<TopOffender> newItems) {
+        void setItems(List<SettingsSurfaceRow> newItems) {
             items.clear();
             if (newItems != null) {
                 items.addAll(newItems);
@@ -672,7 +757,7 @@ public class SettingsActivity extends BaseActivity {
         }
 
         @Override
-        public TopOffender getItem(int position) {
+        public SettingsSurfaceRow getItem(int position) {
             if (position < 0 || position >= items.size()) {
                 return null;
             }
@@ -691,7 +776,7 @@ public class SettingsActivity extends BaseActivity {
                 view = inflater.inflate(R.layout.item_top_offender, parent, false);
             }
 
-            TopOffender item = getItem(position);
+            SettingsSurfaceRow item = getItem(position);
             if (item == null) {
                 return view;
             }
@@ -702,15 +787,11 @@ public class SettingsActivity extends BaseActivity {
             TextView metricsView = view.findViewById(R.id.offender_metrics);
             TextView scoreView = view.findViewById(R.id.offender_score);
 
-            rankView.setText("#" + (position + 1));
-            nameView.setText(item.appName);
-            packageView.setText(item.packageName);
-            metricsView.setText(String.format(Locale.US,
-                    "Killed: %dx | Relaunched: %dx | Recovered: %s",
-                    item.killCount,
-                    item.relaunchCount,
-                    formatRecoveredSize(item.recoveredKb)));
-            scoreView.setText("Score " + formatScore(item.score));
+            bindOptionalText(rankView, item.leadingText);
+            nameView.setText(item.title);
+            bindOptionalText(packageView, item.subtitle);
+            bindOptionalText(metricsView, item.detail);
+            bindOptionalText(scoreView, item.badge);
 
             return view;
         }
@@ -1193,20 +1274,47 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void showBackgroundRestrictionLogDialog() {
-        TextView logView = createDialogTextView(appManager.getBackgroundRestrictionLogText(), true);
-        View contentView = (View) logView.getParent();
+        SettingsListContent content = createSettingsListContent("No background restriction events logged yet.", false);
+        SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
+        content.listView.setAdapter(adapter);
+        content.listView.setEmptyView(content.emptyView);
+        content.listView.setOnItemClickListener((parent, view, position, id) -> {
+            SettingsSurfaceRow row = adapter.getItem(position);
+            if (row != null && row.packageName != null && row.packageName.contains(".")) {
+                openAppInfo(row.packageName);
+            }
+        });
+        content.loading.setVisibility(View.VISIBLE);
+        content.listView.setVisibility(View.GONE);
+        content.summaryText.setText("Loading...");
+
         AlertDialog dialog = createSettingsSurfaceDialog(
                 "Restriction Log",
                 "Recent background restriction results. Stored in cache and capped automatically.",
-                contentView);
+                content.rootView);
         dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Close", (d, w) -> d.dismiss());
         dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Clear", (d, w) -> {
         });
         dialog.show();
         styleDialogButtons(dialog);
+
+        Runnable reloadLog = () -> executor.execute(() -> {
+            List<SettingsSurfaceRow> rows = buildRestrictionLogRows(BackgroundRestrictionLog.readEntries(this));
+            String summary = String.format(Locale.US, "Recent events: %d entries | Cache-backed and capped at 200",
+                    rows.size());
+            handler.post(() -> {
+                adapter.setItems(rows);
+                content.summaryText.setText(summary);
+                content.loading.setVisibility(View.GONE);
+                content.listView.setVisibility(View.VISIBLE);
+                content.emptyView.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+            });
+        });
+        reloadLog.run();
+
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             appManager.clearBackgroundRestrictionLog();
-            logView.setText(appManager.getBackgroundRestrictionLogText());
+            reloadLog.run();
             Toast.makeText(this, "Restriction log cleared", Toast.LENGTH_SHORT).show();
         });
     }
@@ -1228,20 +1336,100 @@ public class SettingsActivity extends BaseActivity {
         return dialog;
     }
 
-    private View createDialogTextContent(String text, boolean monospace) {
-        return (View) createDialogTextView(text, monospace).getParent();
+    private SettingsListContent createSettingsListContent(String emptyText, boolean showFilter) {
+        View contentView = getLayoutInflater().inflate(R.layout.dialog_top_offenders, null);
+        Spinner filterSpinner = contentView.findViewById(R.id.top_offenders_filter);
+        TextView summaryText = contentView.findViewById(R.id.top_offenders_summary);
+        ProgressBar loading = contentView.findViewById(R.id.top_offenders_loading);
+        ListView listView = contentView.findViewById(R.id.top_offenders_list);
+        TextView emptyView = contentView.findViewById(R.id.top_offenders_empty);
+        filterSpinner.setVisibility(showFilter ? View.VISIBLE : View.GONE);
+        emptyView.setText(emptyText);
+        return new SettingsListContent(contentView, filterSpinner, summaryText, loading, listView, emptyView);
     }
 
-    private TextView createDialogTextView(String text, boolean monospace) {
-        View contentView = getLayoutInflater().inflate(R.layout.dialog_settings_text_content, null);
-        TextView bodyView = contentView.findViewById(R.id.dialog_text_body);
-        bodyView.setText(text);
-        bodyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        bodyView.setTextColor(ContextCompat.getColor(this, R.color.text_primary));
-        if (monospace) {
-            bodyView.setTypeface(Typeface.MONOSPACE);
+    private List<SettingsSurfaceRow> buildTopOffenderRows(List<TopOffender> offenders) {
+        List<SettingsSurfaceRow> rows = new ArrayList<>();
+        for (int i = 0; i < offenders.size(); i++) {
+            TopOffender offender = offenders.get(i);
+            rows.add(new SettingsSurfaceRow(
+                    "#" + (i + 1),
+                    offender.appName,
+                    offender.packageName,
+                    String.format(Locale.US,
+                            "Killed: %dx | Relaunched: %dx | Recovered: %s",
+                            offender.killCount,
+                            offender.relaunchCount,
+                            formatRecoveredSize(offender.recoveredKb)),
+                    "Score " + formatScore(offender.score),
+                    offender.packageName));
         }
-        return bodyView;
+        return rows;
+    }
+
+    private List<SettingsSurfaceRow> buildKillHistoryRows(List<KillHistoryEntry> historyEntries) {
+        List<SettingsSurfaceRow> rows = new ArrayList<>();
+        for (int i = 0; i < historyEntries.size(); i++) {
+            KillHistoryEntry entry = historyEntries.get(i);
+            rows.add(new SettingsSurfaceRow(
+                    "#" + (i + 1),
+                    entry.appName,
+                    entry.packageName,
+                    entry.detail,
+                    entry.badge,
+                    entry.packageName));
+        }
+        return rows;
+    }
+
+    private List<SettingsSurfaceRow> buildRestrictionLogRows(List<BackgroundRestrictionLog.LogEntry> logEntries) {
+        List<SettingsSurfaceRow> rows = new ArrayList<>();
+        for (int i = 0; i < logEntries.size(); i++) {
+            BackgroundRestrictionLog.LogEntry entry = logEntries.get(i);
+            String title = entry.packageName == null || entry.packageName.equals("-")
+                    ? humanizeLogAction(entry.action)
+                    : entry.packageName;
+            String subtitle = entry.timestamp;
+            if (entry.action != null && !entry.action.trim().isEmpty()) {
+                subtitle = subtitle.isEmpty()
+                        ? humanizeLogAction(entry.action)
+                        : subtitle + " | " + humanizeLogAction(entry.action);
+            }
+            rows.add(new SettingsSurfaceRow(
+                    "#" + (i + 1),
+                    title,
+                    subtitle,
+                    entry.detail,
+                    humanizeLogOutcome(entry.outcome),
+                    entry.packageName));
+        }
+        return rows;
+    }
+
+    private void bindOptionalText(TextView view, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            view.setVisibility(View.GONE);
+            view.setText("");
+            return;
+        }
+        view.setVisibility(View.VISIBLE);
+        view.setText(text);
+    }
+
+    private String humanizeLogAction(String action) {
+        if (action == null || action.trim().isEmpty()) {
+            return "Event";
+        }
+        String normalized = action.trim().replace('-', ' ').replace('_', ' ');
+        return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+    }
+
+    private String humanizeLogOutcome(String outcome) {
+        if (outcome == null || outcome.trim().isEmpty()) {
+            return "";
+        }
+        String normalized = outcome.trim().replace('-', ' ').replace('_', ' ');
+        return normalized.toUpperCase(Locale.US);
     }
 
     private void styleDialogButtons(AlertDialog dialog) {
