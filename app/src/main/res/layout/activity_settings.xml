@@ -762,7 +762,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:paddingVertical="24dp"
-                android:text="Appzuku v1.3.14"
+                android:text="Appzuku v1.3.15"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
