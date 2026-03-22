@@ -2,6 +2,8 @@
 	<string name="app_name" translatable="false">Appzuku</string>
 	<string name="tile_kill_app_label">Kill App</string>
 	<string name="tile_kill_app_subtitle">Kills foreground app</string>
+	<string name="tile_background_kill_label">Kill Background Apps</string>
+	<string name="tile_background_kill_subtitle">Runs configured auto-kill</string>
 	<string name="shortcut_kill_short_label">Kill App</string>
 	<string name="shortcut_kill_long_label">Kill Foreground App</string>
 </resources>

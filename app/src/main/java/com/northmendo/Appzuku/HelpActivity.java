@@ -55,7 +55,8 @@ public class HelpActivity extends BaseActivity {
                 "<p>These features work without the background service:</p>" +
                 "<ul>" +
                 "<li><b>Main Screen:</b> Select apps and tap the kill button</li>" +
-                "<li><b>Quick Tile:</b> Tap to kill the current foreground app</li>" +
+                "<li><b>Quick Tile - Kill App:</b> Tap to kill the current foreground app</li>" +
+                "<li><b>Quick Tile - Kill Background Apps:</b> Tap to run your configured whitelist/blacklist background kill</li>" +
                 "<li><b>Widget:</b> One-tap kill from your home screen</li>" +
                 "</ul>" +
 

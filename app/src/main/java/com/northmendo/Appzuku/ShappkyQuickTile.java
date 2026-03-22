@@ -57,13 +57,16 @@ public class ShappkyQuickTile extends TileService {
             shellManager = new ShellManager(this, handler, executor);
         }
 
-        // Check permission
-        if (!shellManager.hasAnyShellPermission()) {
-            Toast.makeText(this, "Shizuku or Root permission required", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         executor.execute(() -> {
+            if (!shellManager.resolveAnyShellPermission()) {
+                handler.post(() -> {
+                    shellManager.checkShellPermissions();
+                    Toast.makeText(this, "Shizuku or Root permission required", Toast.LENGTH_SHORT).show();
+                    updateTileState();
+                });
+                return;
+            }
+
             String packageName = null;
 
             // Primary: Use dumpsys to get resumed activity (works even when quick settings is open)

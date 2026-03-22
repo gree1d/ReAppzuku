@@ -173,6 +173,17 @@ public class ShellManager {
     }
 
     /**
+     * Resolve shell permission from a background thread.
+     * This performs a blocking root check if needed, while leaving Shizuku checks unchanged.
+     */
+    public boolean resolveAnyShellPermission() {
+        if (hasShizukuPermission()) {
+            return true;
+        }
+        return hasRootAccess();
+    }
+
+    /**
      * Run a shell command prioritizing Root, then Shizuku.
      * Executes on background thread and posts callback to main handler.
      */
