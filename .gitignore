@@ -8,10 +8,15 @@ local.properties
 # Android Studio
 .idea/
 *.iml
+.vscode/*
+!.vscode/settings.json
 .DS_Store
+Thumbs.db
 *.swp
 *.swo
 *~
+*.orig
+*.rej
 
 # Android outputs
 *.apk
@@ -33,7 +38,8 @@ out/
 release/
 
 # Lint
-lint-baseline.xml
+/lint-baseline.xml
+!app/lint-baseline.xml
 lint/generated/
 
 # Backups
@@ -44,9 +50,18 @@ GEMINI.backup
 claude.md,backup
 .claude/
 
-# Documentation
-*.md
-!README.md
+# Local documentation / agent notes
+brain.md
+code_index.md
+running-log.md
+bugs.md
+codex-plan.md
+codex-review.md
+fix-uninstall.md
+options_plan.md
+claude.md
+claude.md,backup
+GEMINI.backup
 
 # Captures files
 captures/
@@ -55,6 +70,4 @@ captures/
 
 # Log files
 *.log
-running-log.md
-brain.md
 .ralph-state/

@@ -7,15 +7,19 @@
 </p>
 
 ## What is Appzuku?
-Appzuku is an Android application that stops background applications using either Shizuku or Root permissions. It helps improve device performance, reduce memory usage, and lower device heat in a lightweight and safe way.
+Appzuku is an Android application that stops background apps using either Shizuku or Root permissions. It supports one-tap manual kills, scheduled cleanup, and persistent background restriction for selected apps. The goal is straightforward control over apps that waste RAM, relaunch too often, or keep waking up in the background.
 
 ## Features
 - **Flexible Permissions**: Works with either Shizuku or Root access.
+- **Manual Kill Tools**: Kill selected apps from the main screen, the current foreground app from Quick Settings, or run your configured background kill from a second Quick Settings tile.
+- **Automation**: Periodic auto-kill, kill on screen lock, and Smart RAM Threshold controls.
+- **Targeting Modes**: Use Whitelist mode to protect apps from kills or Blacklist mode to target only selected apps.
+- **Background Restriction (Android 11+)**: Keep selected apps asleep in the background with AppOps-based restriction.
+- **Restriction Repair & Log**: Re-apply saved restrictions and review recent restriction results/errors from Settings.
+- **Kill History & Top Offenders**: Review which apps were killed, which ones relaunch, and which apps recover the most RAM.
+- **Backup & Restore**: Save and restore your configured app lists.
 - **Search & Filter**: Quickly find apps in your running list by name or package ID.
-- **Autostart Prevention**: Prevent specific apps from running in the background automatically.
 - **Theme Customization**: Support for Light, Dark, and System Default themes.
-- **Background Service**: Automatically kills unused apps periodically when activated.
-- **Quick Settings Kill App Tile**: Instantly force-stop the current foreground application directly from your notification shade.
 - **Protected Apps**: System-critical apps and user-whitelisted apps are protected from being killed.
 - **RAM Monitoring**: Real-time display of system RAM usage.
 
@@ -29,10 +33,17 @@ Appzuku is an Android application that stops background applications using eithe
 ## Requirements
 - **Android Version**: 6.0 (SDK 23) or higher.
 - **Shizuku or Root**: Appzuku requires Root access or the Shizuku app to be running.
+- **Android 11+ for Background Restriction**: The app installs on Android 6+, but the Background Restriction feature requires Android 11 or newer.
 
 ## Installation
 You can download and install Appzuku via:
 **GitHub Releases**: Download the latest APK from the [Releases page](https://github.com/northmendo/Appzuku/releases).
+
+## How It Works
+- **Main Screen**: Kill selected running apps manually.
+- **Quick Settings Tiles**: One tile kills the current foreground app, and another runs your configured whitelist/blacklist background kill.
+- **Automation**: Run cleanup periodically or when the screen turns off.
+- **Background Restriction**: Keep chosen apps asleep more aggressively on Android 11+.
 
 ## License
 Appzuku is licensed under the [GNU General Public License v3.0](LICENSE).
