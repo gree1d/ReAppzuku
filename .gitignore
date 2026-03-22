@@ -39,7 +39,7 @@ release/
 
 # Lint
 /lint-baseline.xml
-!app/lint-baseline.xml
+app/lint-baseline.xml
 lint/generated/
 
 # Backups

@@ -154,9 +154,9 @@ public class SettingsActivity extends BaseActivity {
         // Set version text
         try {
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-            binding.textVersion.setText("Appzuku v" + versionName);
+            binding.textVersion.setText(getString(R.string.settings_version_label, versionName));
         } catch (Exception e) {
-            binding.textVersion.setText("Appzuku");
+            binding.textVersion.setText(R.string.app_name);
         }
     }
 
@@ -291,7 +291,8 @@ public class SettingsActivity extends BaseActivity {
 
     private void updateKillModeVisibility() {
         int mode = appManager.getKillMode();
-        binding.textKillMode.setText(mode == 0 ? "Whitelist (Default)" : "Blacklist");
+        binding.textKillMode
+                .setText(mode == 0 ? R.string.settings_mode_whitelist : R.string.settings_mode_blacklist);
         binding.layoutBlacklist.setVisibility(mode == 1 ? View.VISIBLE : View.GONE);
         binding.layoutWhitelist.setVisibility(mode == 0 ? View.VISIBLE : View.GONE);
     }
@@ -798,9 +799,10 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void updateThemeText(int themeValue) {
+        String[] themeLabels = getResources().getStringArray(R.array.settings_theme_labels);
         for (int i = 0; i < THEME_VALUES.length; i++) {
             if (THEME_VALUES[i] == themeValue) {
-                binding.textTheme.setText(THEME_LABELS[i]);
+                binding.textTheme.setText(themeLabels[i]);
                 return;
             }
         }
@@ -819,7 +821,8 @@ public class SettingsActivity extends BaseActivity {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Select App Theme");
-        builder.setSingleChoiceItems(THEME_LABELS, selectedIndex, (dialog, which) -> {
+        builder.setSingleChoiceItems(getResources().getStringArray(R.array.settings_theme_labels), selectedIndex,
+                (dialog, which) -> {
             int newTheme = THEME_VALUES[which];
             sharedPreferences.edit().putInt(KEY_THEME, newTheme).apply();
             updateThemeText(newTheme);
@@ -856,13 +859,14 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void updateKillIntervalText(int intervalMs) {
+        String[] killIntervalLabels = getResources().getStringArray(R.array.settings_kill_interval_labels);
         for (int i = 0; i < KILL_INTERVALS_MS.length; i++) {
             if (KILL_INTERVALS_MS[i] == intervalMs) {
-                binding.textKillInterval.setText(KILL_INTERVAL_LABELS[i]);
+                binding.textKillInterval.setText(killIntervalLabels[i]);
                 return;
             }
         }
-        binding.textKillInterval.setText("Every " + (intervalMs / 1000) + " seconds");
+        binding.textKillInterval.setText(getString(R.string.settings_interval_fallback, intervalMs / 1000));
     }
 
     private void showKillIntervalDialog() {
@@ -881,7 +885,8 @@ public class SettingsActivity extends BaseActivity {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Kill Interval");
-        builder.setSingleChoiceItems(KILL_INTERVAL_LABELS, selectedIndex, (dialog, which) -> {
+        builder.setSingleChoiceItems(getResources().getStringArray(R.array.settings_kill_interval_labels), selectedIndex,
+                (dialog, which) -> {
             int newInterval = KILL_INTERVALS_MS[which];
             sharedPreferences.edit().putInt(KEY_KILL_INTERVAL, newInterval).apply();
             updateKillIntervalText(newInterval);
@@ -1134,7 +1139,7 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void updateRamThresholdText(int threshold) {
-        binding.textRamThreshold.setText("Kill only when RAM usage > " + threshold + "%");
+        binding.textRamThreshold.setText(getString(R.string.settings_ram_threshold_summary, threshold));
     }
 
     private void showRamThresholdDialog() {
@@ -1149,7 +1154,8 @@ public class SettingsActivity extends BaseActivity {
 
         new AlertDialog.Builder(this)
                 .setTitle("Select RAM Threshold")
-                .setSingleChoiceItems(RAM_THRESHOLD_LABELS, selected, (dialog, which) -> {
+                .setSingleChoiceItems(getResources().getStringArray(R.array.settings_ram_threshold_labels), selected,
+                        (dialog, which) -> {
                     sharedPreferences.edit().putInt(KEY_RAM_THRESHOLD, RAM_THRESHOLD_VALUES[which]).apply();
                     updateRamThresholdText(RAM_THRESHOLD_VALUES[which]);
                     dialog.dismiss();
