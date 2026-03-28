@@ -19,7 +19,6 @@
 > 
 > Please consider switching to **[Process Warden](https://github.com/northmendo/ProcessWarden)** to support continued development and enjoy the latest improvements!
 
-## What is Appzuku?
 
 ## What is Appzuku?
 Appzuku is an Android application that stops background apps using either Shizuku or Root permissions. It supports one-tap manual kills, scheduled cleanup, and persistent background restriction for selected apps. The goal is straightforward control over apps that waste RAM, relaunch too often, or keep waking up in the background.
