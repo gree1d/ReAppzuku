@@ -6,6 +6,20 @@
   <img src="https://img.shields.io/badge/License-GPLv3-blue.svg"/>
 </p>
 
+
+> [!IMPORTANT]
+> **Appzuku has been officially succeeded by [Process Warden](https://github.com/northmendo/ProcessWarden).**
+> 
+> Process Warden is a modern rewrite designed to be the definitive solution for Android process management, resolving previous bugs and introducing a more refined user experience.
+> 
+> * **Premium Experience:** Process Warden is a paid application with a **3-day free trial** for all new users.
+> * **Legacy Support:** **Appzuku will remain free and available on GitHub, but all future development and feature updates will be exclusive to Process Warden.**
+> * **Secure Payments:** All transactions are handled securely via [Polar](https://polar.sh).
+> * **Privacy First:** Your email is only used for essential purchase support and is never shared or used for marketing.
+> 
+> Please consider switching to **[Process Warden](https://github.com/northmendo/ProcessWarden)** to support continued development and enjoy the latest improvements!
+
+
 ## What is Appzuku?
 Appzuku is an Android application that stops background apps using either Shizuku or Root permissions. It supports one-tap manual kills, scheduled cleanup, and persistent background restriction for selected apps. The goal is straightforward control over apps that waste RAM, relaunch too often, or keep waking up in the background.
 

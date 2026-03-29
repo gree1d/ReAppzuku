@@ -57,6 +57,7 @@ import static com.northmendo.Appzuku.AppConstants.*;
 public class SettingsActivity extends BaseActivity {
     private static final String TAG = "SettingsActivity";
     private static final int TOP_OFFENDERS_LIMIT = 50;
+    private static final String PROCESS_WARDEN_URL = "https://github.com/northmendo/ProcessWarden";
     private static final String[] TOP_OFFENDER_FILTER_LABELS = {
             "Last 12 hours",
             "Last 24 hours",
@@ -161,6 +162,8 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void setupListeners() {
+        binding.layoutReplacementNotice.setOnClickListener(v -> openUrl(PROCESS_WARDEN_URL));
+
         // Theme selector
         binding.layoutTheme.setOnClickListener(v -> showThemeDialog());
 
@@ -1168,6 +1171,7 @@ public class SettingsActivity extends BaseActivity {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (Exception e) {
             Log.e(TAG, "Failed to open URL: " + url, e);
+            Toast.makeText(this, R.string.url_open_failed, Toast.LENGTH_SHORT).show();
         }
     }
 

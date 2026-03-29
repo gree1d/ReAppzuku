@@ -42,6 +42,8 @@ import static com.northmendo.Appzuku.AppConstants.*;
 public class MainActivity extends BaseActivity {
     private static final String TAG = "MainActivity";
     private static final int NOTIFICATION_PERMISSION_CODE = 1;
+    private static final String PROCESS_WARDEN_URL = "https://github.com/northmendo/ProcessWarden";
+    private static final String REPLACEMENT_NOTICE_VERSION = "1.3.16";
 
     private ActivityMainBinding binding;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -105,6 +107,7 @@ public class MainActivity extends BaseActivity {
         shellManager.checkShellPermissions();
         loadBackgroundApps();
         ramMonitor.startMonitoring();
+        maybeShowReplacementNotice();
     }
 
     @Override
@@ -234,6 +237,34 @@ public class MainActivity extends BaseActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void maybeShowReplacementNotice() {
+        String shownVersion = sharedPreferences.getString(KEY_REPLACEMENT_NOTICE_SHOWN_VERSION, null);
+        if (REPLACEMENT_NOTICE_VERSION.equals(shownVersion)) {
+            return;
+        }
+
+        sharedPreferences.edit()
+                .putString(KEY_REPLACEMENT_NOTICE_SHOWN_VERSION, REPLACEMENT_NOTICE_VERSION)
+                .apply();
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.replacement_notice_title)
+                .setMessage(R.string.replacement_notice_message)
+                .setPositiveButton(R.string.replacement_notice_action_view, (dialog, which) -> {
+                    openUrl(PROCESS_WARDEN_URL);
+                })
+                .setNegativeButton(R.string.replacement_notice_action_dismiss, null)
+                .show();
+    }
+
+    private void openUrl(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.url_open_failed, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void toggleListMembership(AppModel app, String listType) {

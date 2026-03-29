@@ -7,6 +7,13 @@
     <string name="tile_background_kill_subtitle">Runs configured auto-kill</string>
     <string name="shortcut_kill_short_label">Kill App</string>
     <string name="shortcut_kill_long_label">Kill Foreground App</string>
+    <string name="replacement_notice_title">Thank You for Using Appzuku</string>
+    <string name="replacement_notice_message">Thank you for using Appzuku. This app will remain available, but future development is moving to Process Warden, a reimagined replacement. If Appzuku has been useful to you, I\'d appreciate your support there. You can always find this link again later in Settings.</string>
+    <string name="replacement_notice_action_view">View Process Warden</string>
+    <string name="replacement_notice_action_dismiss">Not now</string>
+    <string name="settings_replacement_notice_title">Future development has moved to Process Warden</string>
+    <string name="settings_replacement_notice_subtitle">Open the new project on GitHub</string>
+    <string name="url_open_failed">Unable to open link</string>
 
     <string name="settings_section_support">Support</string>
     <string name="settings_donate_title">Donate</string>

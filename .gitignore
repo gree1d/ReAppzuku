@@ -1,5 +1,6 @@
 # Gradle files
 .gradle/
+.gradle-local/
 build/
 */build/
 app/build/
@@ -62,6 +63,7 @@ options_plan.md
 claude.md
 claude.md,backup
 GEMINI.backup
+shortcut-kill.md
 
 # Captures files
 captures/
