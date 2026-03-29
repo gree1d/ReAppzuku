@@ -1,5 +1,6 @@
 # Gradle files
 .gradle/
+.gradle-local/
 build/
 */build/
 app/build/
@@ -39,7 +40,7 @@ release/
 
 # Lint
 /lint-baseline.xml
-!app/lint-baseline.xml
+app/lint-baseline.xml
 lint/generated/
 
 # Backups
@@ -62,6 +63,7 @@ options_plan.md
 claude.md
 claude.md,backup
 GEMINI.backup
+shortcut-kill.md
 
 # Captures files
 captures/

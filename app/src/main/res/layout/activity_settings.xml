@@ -37,11 +37,42 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <LinearLayout
+                android:id="@+id/layout_replacement_notice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingVertical="10dp"
+                android:background="?attr/selectableItemBackground">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_replacement_notice_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/settings_replacement_notice_subtitle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="16dp"
+                android:background="@color/divider_color" />
+
             <!-- 0. Support -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Support"
+                android:text="@string/settings_section_support"
                 android:textColor="@color/colorAccent"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -58,14 +89,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Donate"
+                    android:text="@string/settings_donate_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Support the developer"
+                    android:text="@string/settings_donate_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -80,7 +111,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Appearance"
+                android:text="@string/settings_section_appearance"
                 android:textColor="@color/colorAccent"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -97,7 +128,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="App Theme"
+                    android:text="@string/settings_theme_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
@@ -105,7 +136,7 @@
                     android:id="@+id/text_theme"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="System default"
+                    android:text="@string/settings_theme_system"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -120,7 +151,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Automation"
+                android:text="@string/settings_section_automation"
                 android:textColor="@color/colorAccent"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -143,14 +174,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Background Service"
+                        android:text="@string/settings_background_service_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Required for all automation features below"
+                        android:text="@string/settings_background_service_subtitle"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -180,14 +211,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Periodic Auto-Kill"
+                        android:text="@string/settings_periodic_kill_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Automatically kill apps on a timer"
+                        android:text="@string/settings_periodic_kill_subtitle"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -211,7 +242,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Check Frequency"
+                    android:text="@string/settings_check_frequency_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
@@ -219,7 +250,7 @@
                     android:id="@+id/text_kill_interval"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Every 18 seconds"
+                    android:text="@string/settings_check_frequency_default"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -243,14 +274,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Kill on Screen Lock"
+                        android:text="@string/settings_screen_lock_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Kill apps when you lock your device"
+                        android:text="@string/settings_screen_lock_subtitle"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -280,7 +311,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Smart RAM Threshold"
+                        android:text="@string/settings_ram_threshold_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
@@ -288,7 +319,7 @@
                         android:id="@+id/text_ram_threshold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Only kill if RAM usage is high"
+                        android:text="@string/settings_ram_threshold_default"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -309,7 +340,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Kill Strategy"
+                android:text="@string/settings_section_kill_rules"
                 android:textColor="@color/colorAccent"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -326,7 +357,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Targeting Mode"
+                    android:text="@string/settings_mode_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
@@ -334,7 +365,7 @@
                     android:id="@+id/text_kill_mode"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Whitelist (Default)"
+                    android:text="@string/settings_mode_whitelist"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -350,14 +381,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Manage Exceptions"
+                    android:text="@string/settings_whitelist_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Select apps to NEVER kill (Whitelist)"
+                    android:text="@string/settings_whitelist_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -374,14 +405,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Select Targets"
+                    android:text="@string/settings_blacklist_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Select specific apps to KILL (Blacklist)"
+                    android:text="@string/settings_blacklist_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -402,14 +433,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show System Apps"
+                        android:text="@string/settings_show_system_apps_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show system applications in list"
+                        android:text="@string/settings_show_system_apps_subtitle"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -436,14 +467,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show Critical Apps"
+                        android:text="@string/settings_show_persistent_apps_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show apps marked 'Persistent' by OS"
+                        android:text="@string/settings_show_persistent_apps_subtitle"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -464,7 +495,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Advanced Tools"
+                android:text="@string/settings_section_advanced_tools"
                 android:textColor="@color/colorAccent"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -481,14 +512,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Background Restriction"
+                    android:text="@string/settings_background_restriction_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Keep selected apps asleep in the background"
+                    android:text="@string/settings_background_restriction_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -504,14 +535,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Re-apply Saved Restrictions"
+                    android:text="@string/settings_reapply_restrictions_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Repair apps that drifted away from Appzuku's saved list"
+                    android:text="@string/settings_reapply_restrictions_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -527,14 +558,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Clear App Caches"
+                    android:text="@string/settings_clear_cache_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Free up storage space immediately"
+                    android:text="@string/settings_clear_cache_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -550,14 +581,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Hidden Apps"
+                    android:text="@string/settings_hidden_apps_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Hide specific apps from the main list"
+                    android:text="@string/settings_hidden_apps_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -573,14 +604,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Backup &amp; Restore"
+                    android:text="@string/settings_backup_restore_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Save or load your app lists"
+                    android:text="@string/settings_backup_restore_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -594,7 +625,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Stats &amp; History"
+                android:text="@string/settings_section_stats_history"
                 android:textColor="@color/colorAccent"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -611,14 +642,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Kill History"
+                    android:text="@string/settings_kill_history_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="View kill counts and relaunch stats"
+                    android:text="@string/settings_kill_history_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -634,14 +665,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Top Offenders"
+                    android:text="@string/settings_top_offenders_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Rank apps by kills, relaunches, and RAM recovered"
+                    android:text="@string/settings_top_offenders_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -657,14 +688,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Restriction Log"
+                    android:text="@string/settings_restriction_log_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="View recent restriction results and errors"
+                    android:text="@string/settings_restriction_log_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -679,7 +710,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Information"
+                android:text="@string/settings_section_information"
                 android:textColor="@color/colorAccent"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -696,14 +727,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Help &amp; Guide"
+                    android:text="@string/settings_help_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Learn how to use Appzuku"
+                    android:text="@string/settings_help_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -719,14 +750,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Source Code"
+                    android:text="@string/settings_source_code_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="View on GitHub"
+                    android:text="@string/settings_source_code_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -742,14 +773,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Check for Updates"
+                    android:text="@string/settings_check_updates_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="View latest releases on GitHub"
+                    android:text="@string/settings_check_updates_subtitle"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -762,7 +793,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:paddingVertical="24dp"
-                android:text="Appzuku v1.3.15"
+                android:text="@string/app_name"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
