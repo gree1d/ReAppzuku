@@ -1,23 +1,8 @@
 # Appzuku
 ![Logo](https://github.com/northmendo/Appzuku/blob/f58b2f820655d7ca59ee699159965b110e23f1d5/docs/images/logo.png)
 <p align="center">
-  <img src="https://img.shields.io/github/downloads/northmendo/Appzuku/total?label=Downloads"/>
-  <img src="https://img.shields.io/github/v/release/northmendo/Appzuku?include_prereleases&label=Release"/>
   <img src="https://img.shields.io/badge/License-GPLv3-blue.svg"/>
 </p>
-
-
-> [!IMPORTANT]
-> **Appzuku has been officially succeeded by [Process Warden](https://github.com/northmendo/ProcessWarden).**
-> 
-> Process Warden is a modern rewrite designed to be the definitive solution for Android process management, resolving previous bugs and introducing a more refined user experience.
-> 
-> * **Premium Experience:** Process Warden is a paid application with a **3-day free trial** for all new users.
-> * **Legacy Support:** **Appzuku will remain free and available on GitHub, but all future development and feature updates will be exclusive to Process Warden.**
-> * **Secure Payments:** All transactions are handled securely via [Polar](https://polar.sh).
-> * **Privacy First:** Your email is only used for essential purchase support and is never shared or used for marketing.
-> 
-> Please consider switching to **[Process Warden](https://github.com/northmendo/ProcessWarden)** to support continued development and enjoy the latest improvements!
 
 
 ## What is Appzuku?
@@ -49,10 +34,6 @@ Appzuku is an Android application that stops background apps using either Shizuk
 - **Shizuku or Root**: Appzuku requires Root access or the Shizuku app to be running.
 - **Android 11+ for Background Restriction**: The app installs on Android 6+, but the Background Restriction feature requires Android 11 or newer.
 
-## Installation
-You can download and install Appzuku via:
-**GitHub Releases**: Download the latest APK from the [Releases page](https://github.com/northmendo/Appzuku/releases).
-
 ## How It Works
 - **Main Screen**: Kill selected running apps manually.
 - **Quick Settings Tiles**: One tile kills the current foreground app, and another runs your configured whitelist/blacklist background kill.
@@ -62,10 +43,5 @@ You can download and install Appzuku via:
 ## License
 Appzuku is licensed under the [GNU General Public License v3.0](LICENSE).
 
-## Donate
-If you want to support me, I would be very grateful. 
-
-[**PayPal**](https://www.paypal.com/donate/?hosted_button_id=DDJRFUXHSHRVN)
-
 ## Credits
-This project was forked from [YasserNull/shappky](https://github.com/YasserNull/shappky)
+This project was forked from [northmendo/Appzuku](https://github.com/northmendo/Appzuku).
