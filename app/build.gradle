@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.gree1d.ReAppzuku'
+    namespace 'com.gree1d.reappzuku'
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.gree1d.ReAppzuku"
+        applicationId "com.gree1d.reappzuku"
         minSdk 23
         targetSdk 36
         versionCode 21
