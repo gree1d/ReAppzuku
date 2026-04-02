@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku.db;
+package com.gree1d.reappzuku.db;
 
 import android.content.Context;
 import androidx.room.Database;
