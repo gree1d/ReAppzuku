@@ -74,7 +74,7 @@
 
         <receiver android:name=".KillTriggerReceiver" android:exported="false">
             <intent-filter>
-                <action android:name="com.northmendo.Appzuku.IDLE_FREEZE" />
+                <action android:name="com.gree1d.reappzuku.IDLE_FREEZE" />
             </intent-filter>
         </receiver>
 
