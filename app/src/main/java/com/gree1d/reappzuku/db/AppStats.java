@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku.db;
+package com.gree1d.reappzuku.db;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
