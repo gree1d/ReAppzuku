@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku.db;
+package com.gree1d.reappzuku.db;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
