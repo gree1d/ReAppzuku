@@ -1,0 +1,97 @@
+<resources>
+    <string name="app_name" translatable="false">ReAppzuku</string>
+
+    <string name="tile_kill_app_label">Kill App</string>
+    <string name="tile_kill_app_subtitle">Kills foreground app</string>
+    <string name="tile_background_kill_label">Kill Background Apps</string>
+    <string name="tile_background_kill_subtitle">Runs configured auto-kill</string>
+    <string name="shortcut_kill_short_label">Kill App</string>
+    <string name="shortcut_kill_long_label">Kill Foreground App</string>
+    <string name="url_open_failed">Unable to open link</string>
+
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+
+    <string name="settings_section_automation">Automation</string>
+    <string name="settings_background_service_title">Background Service</string>
+    <string name="settings_background_service_subtitle">Required for timed and screen-off kills</string>
+    <string name="settings_periodic_kill_title">Periodic Auto-Kill</string>
+    <string name="settings_periodic_kill_subtitle">Run kills on a timer</string>
+    <string name="settings_check_frequency_title">Check Frequency</string>
+    <string name="settings_check_frequency_default">Every 18 seconds</string>
+    <string name="settings_screen_lock_title">Kill on Screen Lock</string>
+    <string name="settings_screen_lock_subtitle">Run kill when you lock the device</string>
+    <string name="settings_ram_threshold_title">Smart RAM Threshold</string>
+    <string name="settings_ram_threshold_default">Only kill when RAM is above 80%%</string>
+    <string name="settings_ram_threshold_summary">Only kill when RAM is above %1$d%%</string>
+
+    <string name="settings_section_kill_rules">Kill Rules</string>
+    <string name="settings_mode_title">Mode</string>
+    <string name="settings_mode_whitelist">Whitelist</string>
+    <string name="settings_mode_blacklist">Blacklist</string>
+    <string name="settings_whitelist_title">Whitelist</string>
+    <string name="settings_whitelist_subtitle">Apps never killed</string>
+    <string name="settings_blacklist_title">Blacklist</string>
+    <string name="settings_blacklist_subtitle">Apps killed in Blacklist mode</string>
+    <string name="settings_show_system_apps_title">Show System Apps</string>
+    <string name="settings_show_system_apps_subtitle">Include system apps in lists</string>
+    <string name="settings_show_persistent_apps_title">Show Persistent Apps</string>
+    <string name="settings_show_persistent_apps_subtitle">Include OS persistent apps</string>
+
+    <string name="settings_section_advanced_tools">Advanced Tools</string>
+    <string name="settings_background_restriction_title">Background Restriction</string>
+    <string name="settings_background_restriction_subtitle">Keep selected apps asleep</string>
+    <string name="settings_reapply_restrictions_title">Reapply Saved Restrictions</string>
+    <string name="settings_reapply_restrictions_subtitle">Restore saved restrictions</string>
+    <string name="settings_clear_cache_title">Clear App Caches</string>
+    <string name="settings_clear_cache_subtitle">Clear app caches now</string>
+    <string name="settings_hidden_apps_title">Hidden Apps</string>
+    <string name="settings_hidden_apps_subtitle">Hide apps from the main list</string>
+    <string name="settings_backup_restore_title">Backup &amp; Restore</string>
+    <string name="settings_backup_restore_subtitle">Save or restore app lists</string>
+
+    <string name="settings_section_stats_history">Stats &amp; History</string>
+    <string name="settings_kill_history_title">Kill History</string>
+    <string name="settings_kill_history_subtitle">Kills, relaunches, and recovered RAM</string>
+    <string name="settings_top_offenders_title">Top Offenders</string>
+    <string name="settings_top_offenders_subtitle">Apps with the most kills or relaunches</string>
+    <string name="settings_restriction_log_title">Restriction Log</string>
+    <string name="settings_restriction_log_subtitle">Recent restriction results and errors</string>
+
+    <string name="settings_section_information">Information</string>
+    <string name="settings_help_title">Help</string>
+    <string name="settings_help_subtitle">How Appzuku works</string>
+    <string name="settings_source_code_title">Source Code</string>
+    <string name="settings_source_code_subtitle">Open the GitHub repository</string>
+    <string name="settings_check_updates_title">Check for Updates</string>
+    <string name="settings_check_updates_subtitle">Open the latest GitHub releases</string>
+    <string name="settings_version_label">Appzuku v%1$s</string>
+
+    <string name="settings_interval_fallback">Every %1$d seconds</string>
+
+    <string-array name="settings_theme_labels">
+        <item>@string/settings_theme_system</item>
+        <item>@string/settings_theme_light</item>
+        <item>@string/settings_theme_dark</item>
+    </string-array>
+
+    <string-array name="settings_kill_interval_labels">
+        <item>Every 10 seconds</item>
+        <item>Every 18 seconds</item>
+        <item>Every 30 seconds</item>
+        <item>Every 1 minute</item>
+        <item>Every 5 minutes</item>
+    </string-array>
+
+    <string-array name="settings_ram_threshold_labels">
+        <item>75%</item>
+        <item>80%</item>
+        <item>85%</item>
+        <item>90%</item>
+        <item>95%</item>
+        <item>100%</item>
+    </string-array>
+</resources>
