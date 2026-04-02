@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
@@ -31,8 +31,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
-import static com.northmendo.Appzuku.AppConstants.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.AppConstants.*;
 
 public class BackgroundAppManager {
     private static final String TAG = "BackgroundAppManager";
@@ -188,7 +188,7 @@ public class BackgroundAppManager {
                     Thread.sleep(RELAUNCH_CHECK_DELAY_MS);
                 } catch (InterruptedException ignored) {
                 }
-                com.northmendo.Appzuku.db.AppDatabase db = com.northmendo.Appzuku.db.AppDatabase.getInstance(context);
+                com.gree1d.reappzuku.db.AppDatabase db = com.gree1d.reappzuku.db.AppDatabase.getInstance(context);
                 checkRelaunches(toKill, db);
             }
 
@@ -197,7 +197,7 @@ public class BackgroundAppManager {
         });
     }
 
-    private void checkRelaunches(List<String> recentlyKilled, com.northmendo.Appzuku.db.AppDatabase db) {
+    private void checkRelaunches(List<String> recentlyKilled, com.gree1d.reappzuku.db.AppDatabase db) {
         String psOutput = shellManager.runShellCommandAndGetFullOutput("ps -A -o name | grep '\\.'");
         if (psOutput == null)
             return;
@@ -937,8 +937,8 @@ public class BackgroundAppManager {
             return;
         }
 
-        com.northmendo.Appzuku.db.AppStatsDao appStatsDao =
-                com.northmendo.Appzuku.db.AppDatabase.getInstance(context).appStatsDao();
+        com.gree1d.reappzuku.db.AppStatsDao appStatsDao =
+                com.gree1d.reappzuku.db.AppDatabase.getInstance(context).appStatsDao();
         PackageManager packageManager = context.getPackageManager();
         long now = System.currentTimeMillis();
 
@@ -948,11 +948,11 @@ public class BackgroundAppManager {
                 continue;
             }
 
-            com.northmendo.Appzuku.db.AppStats stats = appStatsDao.getStats(packageName);
+            com.gree1d.reappzuku.db.AppStats stats = appStatsDao.getStats(packageName);
             String appName = resolveInstalledAppName(packageManager, packageName);
 
             if (stats == null) {
-                stats = new com.northmendo.Appzuku.db.AppStats(packageName);
+                stats = new com.gree1d.reappzuku.db.AppStats(packageName);
                 stats.appName = appName;
                 appStatsDao.insert(stats);
             } else if ((stats.appName == null || stats.appName.trim().isEmpty())

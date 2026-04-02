@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.content.Intent;
@@ -20,7 +20,7 @@ import androidx.appcompat.widget.SearchView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.northmendo.Appzuku.databinding.ActivityMainBinding;
+import com.gree1d.reappzuku.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +36,8 @@ import androidx.appcompat.app.AlertDialog;
 
 import rikka.shizuku.Shizuku;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
-import static com.northmendo.Appzuku.AppConstants.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.AppConstants.*;
 
 public class MainActivity extends BaseActivity {
     private static final String TAG = "MainActivity";

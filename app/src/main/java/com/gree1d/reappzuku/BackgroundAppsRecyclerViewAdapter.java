@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.northmendo.Appzuku.databinding.ItemBinding;
+import com.gree1d.reappzuku.databinding.ItemBinding;
 
 import java.util.List;
 

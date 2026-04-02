@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -7,7 +7,7 @@ import org.json.JSONObject;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
 
 public class BackupManager {
     private static final String KEY_BACKUP_VERSION = "backup_version";

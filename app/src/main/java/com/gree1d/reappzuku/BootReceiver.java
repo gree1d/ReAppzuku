@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,8 +8,8 @@ import android.util.Log;
 
 import androidx.core.content.ContextCompat;
 
-import static com.northmendo.Appzuku.PreferenceKeys.KEY_AUTO_KILL_ENABLED;
-import static com.northmendo.Appzuku.PreferenceKeys.PREFERENCES_NAME;
+import static com.gree1d.reappzuku.PreferenceKeys.KEY_AUTO_KILL_ENABLED;
+import static com.gree1d.reappzuku.PreferenceKeys.PREFERENCES_NAME;
 
 /**
  * Broadcast receiver for Boot Completed.

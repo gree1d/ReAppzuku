@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,7 +7,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
 
 public class KillTriggerReceiver extends BroadcastReceiver {
     private static final String TAG = "KillTriggerReceiver";

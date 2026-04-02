@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.content.Intent;
@@ -41,7 +41,7 @@ import android.os.Looper;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
-import com.northmendo.Appzuku.databinding.ActivitySettingsBinding;
+import com.gree1d.reappzuku.databinding.ActivitySettingsBinding;
 
 import java.util.Set;
 import java.util.List;
@@ -51,8 +51,8 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
-import static com.northmendo.Appzuku.AppConstants.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.AppConstants.*;
 
 public class SettingsActivity extends BaseActivity {
     private static final String TAG = "SettingsActivity";
@@ -369,9 +369,9 @@ public class SettingsActivity extends BaseActivity {
     private void showStatsDialog() {
         executor.execute(() -> {
             long twelveHoursAgo = System.currentTimeMillis() - STATS_HISTORY_DURATION_MS;
-            com.northmendo.Appzuku.db.AppStatsDao appStatsDao = com.northmendo.Appzuku.db.AppDatabase
+            com.gree1d.reappzuku.db.AppStatsDao appStatsDao = com.gree1d.reappzuku.db.AppDatabase
                     .getInstance(this).appStatsDao();
-            java.util.List<com.northmendo.Appzuku.db.AppStats> statsList = appStatsDao.getAllStatsSince(twelveHoursAgo);
+            java.util.List<com.gree1d.reappzuku.db.AppStats> statsList = appStatsDao.getAllStatsSince(twelveHoursAgo);
 
             final List<String> highRelaunchPackages = new ArrayList<>();
             List<KillHistoryEntry> historyEntries = new ArrayList<>();
@@ -381,7 +381,7 @@ public class SettingsActivity extends BaseActivity {
             java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("h:mm a",
                     java.util.Locale.getDefault());
 
-            for (com.northmendo.Appzuku.db.AppStats stats : statsList) {
+            for (com.gree1d.reappzuku.db.AppStats stats : statsList) {
                 if (stats == null || stats.packageName == null) {
                     continue;
                 }
@@ -523,9 +523,9 @@ public class SettingsActivity extends BaseActivity {
 
         executor.execute(() -> {
             long windowMs = TOP_OFFENDER_FILTER_WINDOWS_MS[selectedFilterIndex];
-            com.northmendo.Appzuku.db.AppStatsDao appStatsDao =
-                    com.northmendo.Appzuku.db.AppDatabase.getInstance(this).appStatsDao();
-            List<com.northmendo.Appzuku.db.AppStats> stats;
+            com.gree1d.reappzuku.db.AppStatsDao appStatsDao =
+                    com.gree1d.reappzuku.db.AppDatabase.getInstance(this).appStatsDao();
+            List<com.gree1d.reappzuku.db.AppStats> stats;
             if (windowMs > 0) {
                 long since = System.currentTimeMillis() - windowMs;
                 stats = appStatsDao.getAllStatsSince(since);
@@ -565,10 +565,10 @@ public class SettingsActivity extends BaseActivity {
         });
     }
 
-    private List<TopOffender> buildTopOffenders(List<com.northmendo.Appzuku.db.AppStats> statsList,
-                                                 com.northmendo.Appzuku.db.AppStatsDao appStatsDao) {
+    private List<TopOffender> buildTopOffenders(List<com.gree1d.reappzuku.db.AppStats> statsList,
+                                                 com.gree1d.reappzuku.db.AppStatsDao appStatsDao) {
         List<TopOffender> offenders = new ArrayList<>();
-        for (com.northmendo.Appzuku.db.AppStats stats : statsList) {
+        for (com.gree1d.reappzuku.db.AppStats stats : statsList) {
             if (stats == null || stats.packageName == null) {
                 continue;
             }
@@ -604,8 +604,8 @@ public class SettingsActivity extends BaseActivity {
         return offenders;
     }
 
-    private String resolveStatsAppName(com.northmendo.Appzuku.db.AppStats stats,
-                                       com.northmendo.Appzuku.db.AppStatsDao appStatsDao) {
+    private String resolveStatsAppName(com.gree1d.reappzuku.db.AppStats stats,
+                                       com.gree1d.reappzuku.db.AppStatsDao appStatsDao) {
         if (stats.appName != null && !stats.appName.trim().isEmpty()) {
             return stats.appName;
         }

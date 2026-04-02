@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -197,13 +197,13 @@ public class KillShortcutActivity extends Activity {
     private void logKilledPackage(String packageName) {
         executor.execute(() -> {
             try {
-                com.northmendo.Appzuku.db.AppStatsDao appStatsDao =
-                        com.northmendo.Appzuku.db.AppDatabase.getInstance(getApplicationContext()).appStatsDao();
-                com.northmendo.Appzuku.db.AppStats stats = appStatsDao.getStats(packageName);
+                com.gree1d.reappzuku.db.AppStatsDao appStatsDao =
+                        com.gree1d.reappzuku.db.AppDatabase.getInstance(getApplicationContext()).appStatsDao();
+                com.gree1d.reappzuku.db.AppStats stats = appStatsDao.getStats(packageName);
                 String appName = resolveInstalledAppName(packageName);
 
                 if (stats == null) {
-                    stats = new com.northmendo.Appzuku.db.AppStats(packageName);
+                    stats = new com.gree1d.reappzuku.db.AppStats(packageName);
                     stats.appName = appName;
                     appStatsDao.insert(stats);
                 } else if ((stats.appName == null || stats.appName.trim().isEmpty())

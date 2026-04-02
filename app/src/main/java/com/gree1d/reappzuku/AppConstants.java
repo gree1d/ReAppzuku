@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 /**
  * Centralized constants for timing, thresholds, and other magic numbers.

@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.content.Intent;
@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
 
 /**
  * Centralized list of protected apps that should never be killed.
@@ -29,7 +29,7 @@ public final class ProtectedApps {
      * These apps are critical for device operation.
      */
     private static final Set<String> PROTECTED_PACKAGES = new HashSet<>(Arrays.asList(
-            "com.northmendo.Appzuku", // Self
+            "com.gree1d.reappzuku", // Self
             "com.google.android.gms", // Google Play Services
             "com.android.systemui", // System UI
             "com.android.bluetooth", // Bluetooth

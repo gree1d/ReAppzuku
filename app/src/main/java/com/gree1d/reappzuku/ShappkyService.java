@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
 
 import android.content.IntentFilter;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
-import static com.northmendo.Appzuku.AppConstants.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.AppConstants.*;
 
 /**
  * A foreground service that periodically kills background applications
@@ -34,7 +34,7 @@ public class ShappkyService extends Service {
     private static final String TAG = "ShappkyService";
     // 1 hour of screen-off inactivity before freezing restricted apps
     private static final long IDLE_FREEZE_DELAY_MS = 60 * 1000L;
-    static final String ACTION_IDLE_FREEZE = "com.northmendo.Appzuku.IDLE_FREEZE";
+    static final String ACTION_IDLE_FREEZE = "com.gree1d.reappzuku.IDLE_FREEZE";
     private static final int FREEZE_ALARM_REQUEST_CODE = 1001;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();

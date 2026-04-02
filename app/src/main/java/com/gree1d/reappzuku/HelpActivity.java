@@ -1,10 +1,10 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.os.Bundle;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 
-import com.northmendo.Appzuku.databinding.ActivityHelpBinding;
+import com.gree1d.reappzuku.databinding.ActivityHelpBinding;
 
 public class HelpActivity extends BaseActivity {
 

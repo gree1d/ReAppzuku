@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;

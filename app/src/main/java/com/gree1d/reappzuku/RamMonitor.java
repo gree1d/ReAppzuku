@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.os.Handler;
 import android.util.Log;
@@ -10,7 +10,7 @@ import java.io.RandomAccessFile;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.northmendo.Appzuku.AppConstants.RAM_MONITOR_UPDATE_INTERVAL_MS;
+import static com.gree1d.reappzuku.AppConstants.RAM_MONITOR_UPDATE_INTERVAL_MS;
 
 /**
  * Monitors system RAM usage and updates UI elements periodically.

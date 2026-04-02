@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -19,8 +19,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.northmendo.Appzuku.PreferenceKeys.*;
-import static com.northmendo.Appzuku.AppConstants.*;
+import static com.gree1d.reappzuku.PreferenceKeys.*;
+import static com.gree1d.reappzuku.AppConstants.*;
 
 public class AutoKillWorker extends Worker {
     private static final String UNIQUE_WORK_NAME = "AutoKillWorker";
@@ -99,7 +99,7 @@ public class AutoKillWorker extends Worker {
 
             // Prune old stats periodically
             long pruneThreshold = System.currentTimeMillis() - STATS_PRUNE_THRESHOLD_MS;
-            com.northmendo.Appzuku.db.AppDatabase.getInstance(getApplicationContext())
+            com.gree1d.reappzuku.db.AppDatabase.getInstance(getApplicationContext())
                     .appStatsDao().deleteOldStats(pruneThreshold);
 
             return Result.success();

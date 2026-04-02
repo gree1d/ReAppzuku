@@ -1,4 +1,4 @@
-package com.northmendo.Appzuku;
+package com.gree1d.reappzuku;
 
 /**
  * Centralized preference keys to ensure consistency across the app.
