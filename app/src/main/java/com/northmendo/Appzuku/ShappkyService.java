@@ -31,7 +31,7 @@ public class ShappkyService extends Service {
 
     private static final String TAG = "ShappkyService";
     // 1 hour of screen-off inactivity before freezing restricted apps
-    private static final long IDLE_FREEZE_DELAY_MS = 60 * 60 * 1000L;
+    private static final long IDLE_FREEZE_DELAY_MS = 60 * 1000L;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler handler = new Handler(Looper.getMainLooper());
