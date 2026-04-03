@@ -27,8 +27,18 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            storeFile file("release.keystore")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
         }
@@ -67,4 +77,3 @@ dependencies {
     def work_version = "2.11.1"
     implementation "androidx.work:work-runtime:$work_version"
 }
-
