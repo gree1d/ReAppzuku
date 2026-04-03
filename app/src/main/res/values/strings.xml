@@ -17,10 +17,10 @@
 
     <string name="settings_section_automation">Автоматизация</string>
     <string name="settings_background_service_title">Фоновый сервис</string>
-    <string name="settings_background_service_subtitle">Required for timed and screen-off kills</string>
+    <string name="settings_background_service_subtitle">Необходим для работы Auto-Kill по интервалу и при выключении экрана</string>
     <string name="settings_periodic_kill_title">Периодический Auto-Kill</string>
-    <string name="settings_periodic_kill_subtitle">Выполнять Auto-Kill по таймеру</string>
-    <string name="settings_check_frequency_title">Частота проверок</string>
+    <string name="settings_periodic_kill_subtitle">Выполнять Auto-Kill по интервалу</string>
+    <string name="settings_check_frequency_title">Интервал Auto-Kill</string>
     <string name="settings_check_frequency_default">Каждые 18 секунд</string>
     <string name="settings_screen_lock_title">Auto-Kill при выключении экрана</string>
     <string name="settings_screen_lock_subtitle">Выполнить Auto-Kill при выключении экрана</string>
@@ -79,7 +79,7 @@
 
     <string name="settings_section_information">Информация</string>
     <string name="settings_help_title">Помощь</string>
-    <string name="settings_help_subtitle">Открыть документацию на GitHub</string>
+    <string name="settings_help_subtitle">Инструкция по настройке и использованию</string>
     <string name="settings_shell_mode_title">Режим работы</string>
     <string name="settings_source_code_title">Исходный код</string>
     <string name="settings_source_code_subtitle">Открыть репозиторий GitHub</string>
