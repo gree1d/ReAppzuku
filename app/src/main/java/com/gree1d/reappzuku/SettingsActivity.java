@@ -217,7 +217,7 @@ public class SettingsActivity extends BaseActivity {
                         .setTitle("âš ï¸ Предупреждение: системные приложения")
                         .setMessage(
                                 "Системные приложения имеют решающее значение для стабильности работы устройства. Блокировка или завершение работы системных приложений (например, «Безопасность» на устройствах Xiaomi) может привести к сбоям, циклической перезагрузке или неисправности устройства.\n\nВносите изменения в системные приложения только в том случае, если вы знаете, что делаете.")
-                        .setPositiveButton("I Understand", (dialog, which) -> {
+                        .setPositiveButton("Я понимаю", (dialog, which) -> {
                             sharedPreferences.edit()
                                     .putBoolean(KEY_SHOW_SYSTEM_APPS, true)
                                     .putBoolean("system_apps_warning_shown", true)
@@ -290,7 +290,7 @@ public class SettingsActivity extends BaseActivity {
         binding.layoutBlacklist.setOnClickListener(v -> showBlacklistDialog());
 
         // Help — opens GitHub
-        binding.layoutHelp.setOnClickListener(v -> openUrl("https://github.com/gree1d/ReAppzuku"));
+        binding.layoutHelp.setOnClickListener(v -> openUrl("https://github.com/gree1d/ReAppzuku/blob/main/docs/help.md"));
 
         // Shell mode display
         updateShellModeText();
@@ -332,11 +332,11 @@ public class SettingsActivity extends BaseActivity {
         ShellManager shellManager = new ShellManager(getApplicationContext(), new android.os.Handler(android.os.Looper.getMainLooper()), java.util.concurrent.Executors.newSingleThreadExecutor());
         // Check Shizuku first (non-blocking)
         if (shellManager.hasShizukuPermission()) {
-            binding.textShellMode.setText("✅ Shizuku access");
+            binding.textShellMode.setText("Shizuku access ✅");
         } else if (shellManager.hasRootAccess()) {
-            binding.textShellMode.setText("✅ Root access");
+            binding.textShellMode.setText("Root access ✅");
         } else {
-            binding.textShellMode.setText("❌ Нет доступа");
+            binding.textShellMode.setText("Нет доступа ❌");
         }
     }
 
@@ -444,7 +444,7 @@ public class SettingsActivity extends BaseActivity {
                 if (stats.killCount > 0) {
                     String killDetail = "Auto-Killed " + stats.killCount + "x";
                     if (stats.lastKillTime > 0) {
-                        killDetail += " (Последнее" + timeFormat.format(new java.util.Date(stats.lastKillTime)) + ")";
+                        killDetail += " (Последнее " + timeFormat.format(new java.util.Date(stats.lastKillTime)) + ")";
                     }
                     detailParts.add(killDetail);
                 }

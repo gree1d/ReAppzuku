@@ -561,7 +561,7 @@ public class BackgroundAppManager {
             final boolean finalSuccess = success;
             handler.post(() -> {
                 Toast.makeText(context,
-                        finalSuccess ? "Background restriction settings applied"
+                        finalSuccess ? "Настройки фоновых ограничений применены"
                                 : "Some background restriction changes failed",
                         Toast.LENGTH_SHORT).show();
                 if (onComplete != null) {
