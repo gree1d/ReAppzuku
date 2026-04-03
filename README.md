@@ -1,4 +1,4 @@
-# Appzuku
+# ReAppzuku
 ![Logo](https://github.com/northmendo/Appzuku/blob/f58b2f820655d7ca59ee699159965b110e23f1d5/docs/images/logo.png)
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPLv3-blue.svg"/>
