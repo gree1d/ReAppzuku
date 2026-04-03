@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_search"
+        android:title="Search"
+        android:icon="@android:drawable/ic_menu_search"
+        app:showAsAction="ifRoom|collapseActionView"
+        app:actionViewClass="androidx.appcompat.widget.SearchView" />
+    <item
+        android:id="@+id/action_sort"
+        android:title="Sort"
+        android:icon="@drawable/ic_sort"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_select_all"
+        android:title="Выбрать все"
+        app:showAsAction="ifRoom"
+        app:actionLayout="@layout/select_all_action" />
+    <item
+        android:id="@+id/action_unselect_all"
+        android:title="Отменить выбор"
+        app:showAsAction="ifRoom"
+        app:actionLayout="@layout/unselect_all_action" />
+    <item
+        android:id="@+id/action_settings"
+        android:title="Настройки"
+        android:icon="@drawable/ic_settings"
+        app:showAsAction="ifRoom" />
+</menu>
