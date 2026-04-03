@@ -44,11 +44,11 @@
     <string name="settings_section_advanced_tools">Дополнительные инструменты</string>
     <string name="settings_background_restriction_title">Фоновые ограничения</string>
     <string name="settings_background_restriction_subtitle">Оставляйте выбранные приложения в спящем режиме</string>
-    <string name="settings_reapply_restrictions_title">Заново применить настойки фоновых ограничений</string>
+    <string name="settings_reapply_restrictions_title">Повторно применить настройки фоновых ограничений</string>
     <string name="settings_reapply_restrictions_subtitle">Восстановить сохраненные ограничения</string>
     <string name="settings_sleep_mode_title">Режим сна</string>
     <string name="settings_sleep_mode_subtitle">Замораживать приложения в режиме сна</string>
-    <string name="settings_sleep_mode_apps_title">Приложение режима сна</string>
+    <string name="settings_sleep_mode_apps_title">Список приложений для режима сна</string>
     <string name="settings_sleep_mode_apps_subtitle">Выберите приложения для заморозки в режиме сна</string>
     <string name="settings_sleep_mode_delay_title">Таймер заморозки</string>
     <string name="settings_sleep_mode_delay_subtitle">Продолжительность периода бездействия до заморозки</string>
@@ -67,10 +67,10 @@
     <string name="settings_hidden_apps_title">Скрытые приложения</string>
     <string name="settings_hidden_apps_subtitle">Скрыть приложения из общего списка</string>
     <string name="settings_backup_restore_title">Бэкап &amp; Восстановление</string>
-    <string name="settings_backup_restore_subtitle">Сохранить и восстановить список приложений</string>
+    <string name="settings_backup_restore_subtitle">Сохранить и восстановить настройки ReAppzuku</string>
 
-    <string name="settings_section_stats_history">Статистика &amp; История</string>
-    <string name="settings_kill_history_title">История Auto-Kill</string>
+    <string name="settings_section_stats_history">Статистика &amp; Журналы</string>
+    <string name="settings_kill_history_title">Журнал Auto-Kill</string>
     <string name="settings_kill_history_subtitle">Auto-Kills, перезапуски и освобожденная ОЗУ</string>
     <string name="settings_top_offenders_title">Топ нарушителей</string>
     <string name="settings_top_offenders_subtitle">Приложения с наибольшим количеством Auto-Kill или перезапусков</string>
