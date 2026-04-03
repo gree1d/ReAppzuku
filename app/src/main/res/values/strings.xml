@@ -1,0 +1,114 @@
+<resources>
+    <string name="app_name" translatable="false">ReAppzuku</string>
+
+    <string name="tile_kill_app_label">Остановить приложение</string>
+    <string name="tile_kill_app_subtitle">Закрыть приложение, работающее в фоновом режиме</string>
+    <string name="tile_background_kill_label">Остановить фоновые приложения</string>
+    <string name="tile_background_kill_subtitle">Запускает настроенный Auto-Kill</string>
+    <string name="shortcut_kill_short_label">Остановить приложение</string>
+    <string name="shortcut_kill_long_label">Завершить работу приложения в фоновом режиме</string>
+    <string name="url_open_failed">Unable to open link</string>
+
+    <string name="settings_section_appearance">Внешний вид</string>
+    <string name="settings_theme_title">Тема</string>
+    <string name="settings_theme_system">Система</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Темная</string>
+
+    <string name="settings_section_automation">Автоматизация</string>
+    <string name="settings_background_service_title">Фоновый сервис</string>
+    <string name="settings_background_service_subtitle">Required for timed and screen-off kills</string>
+    <string name="settings_periodic_kill_title">Периодический Auto-Kill</string>
+    <string name="settings_periodic_kill_subtitle">Выполнять Auto-Kill по таймеру</string>
+    <string name="settings_check_frequency_title">Частота проверок</string>
+    <string name="settings_check_frequency_default">Каждые 18 секунд</string>
+    <string name="settings_screen_lock_title">Auto-Kill при выключении экрана</string>
+    <string name="settings_screen_lock_subtitle">Выполнить Auto-Kill при выключении экрана</string>
+    <string name="settings_ram_threshold_title">Лимит ОЗУ</string>
+    <string name="settings_ram_threshold_default">Auto-Kill только при загруженности ОЗУ 80%%</string>
+    <string name="settings_ram_threshold_summary">Auto-Kill только при загруженности ОЗУ %1$d%%</string>
+
+    <string name="settings_section_kill_rules">Настройки Auto-Kill</string>
+    <string name="settings_mode_title">Режим работы Auto-Kill</string>
+    <string name="settings_mode_whitelist">Белый список</string>
+    <string name="settings_mode_blacklist">Черный список</string>
+    <string name="settings_whitelist_title">Белый список</string>
+    <string name="settings_whitelist_subtitle">Выбранные приложения никогда принудительно не останавливаются</string>
+    <string name="settings_blacklist_title">Черный список</string>
+    <string name="settings_blacklist_subtitle">Выбранные приложения принудительно останавливаются</string>
+    <string name="settings_show_system_apps_title">Показывать системные приложения</string>
+    <string name="settings_show_system_apps_subtitle">Включить отображение системных приложений в общем списке</string>
+    <string name="settings_show_persistent_apps_title">Показывать критичные приложения</string>
+    <string name="settings_show_persistent_apps_subtitle">Включить отображение критично важных системных приложений в общем списке</string>
+
+    <string name="settings_section_advanced_tools">Дополнительные инструменты</string>
+    <string name="settings_background_restriction_title">Фоновые ограничения</string>
+    <string name="settings_background_restriction_subtitle">Оставляйте выбранные приложения в спящем режиме</string>
+    <string name="settings_reapply_restrictions_title">Заново применить настойки фоновых ограничений</string>
+    <string name="settings_reapply_restrictions_subtitle">Восстановить сохраненные ограничения</string>
+    <string name="settings_sleep_mode_title">Режим сна</string>
+    <string name="settings_sleep_mode_subtitle">Замораживать приложения в режиме сна</string>
+    <string name="settings_sleep_mode_apps_title">Приложение режима сна</string>
+    <string name="settings_sleep_mode_apps_subtitle">Выберите приложения для заморозки в режиме сна</string>
+    <string name="settings_sleep_mode_delay_title">Таймер заморозки</string>
+    <string name="settings_sleep_mode_delay_subtitle">Продолжительность периода бездействия до заморозки</string>
+    <string name="settings_sleep_mode_delay_fallback">После %1$d минут</string>
+
+    <string-array name="settings_sleep_mode_delay_labels">
+        <item>5 минут</item>
+        <item>10 минут</item>
+        <item>15 минут</item>
+        <item>20 минут</item>
+        <item>30 минут</item>
+        <item>60 минут</item>
+    </string-array>
+    <string name="settings_clear_cache_title">Очистить кэш приложений</string>
+    <string name="settings_clear_cache_subtitle">Очистить ОЗУ от кэша всех приложений</string>
+    <string name="settings_hidden_apps_title">Скрытые приложения</string>
+    <string name="settings_hidden_apps_subtitle">Скрыть приложения из общего списка</string>
+    <string name="settings_backup_restore_title">Бэкап &amp; Восстановление</string>
+    <string name="settings_backup_restore_subtitle">Сохранить и восстановить список приложений</string>
+
+    <string name="settings_section_stats_history">Статистика &amp; История</string>
+    <string name="settings_kill_history_title">История Auto-Kill</string>
+    <string name="settings_kill_history_subtitle">Auto-Kills, перезапуски и освобожденная ОЗУ</string>
+    <string name="settings_top_offenders_title">Топ нарушителей</string>
+    <string name="settings_top_offenders_subtitle">Приложения с наибольшим количеством Auto-Kill или перезапусков</string>
+    <string name="settings_restriction_log_title">Журнал ограничений</string>
+    <string name="settings_restriction_log_subtitle">Последние результаты ограничений и ошибки</string>
+
+    <string name="settings_section_information">Информация</string>
+    <string name="settings_help_title">Помощь</string>
+    <string name="settings_help_subtitle">Открыть документацию на GitHub</string>
+    <string name="settings_shell_mode_title">Режим работы</string>
+    <string name="settings_source_code_title">Исходный код</string>
+    <string name="settings_source_code_subtitle">Открыть репозиторий GitHub</string>
+    <string name="settings_check_updates_title">Проверить обновления</string>
+    <string name="settings_check_updates_subtitle">Открыть последний релиз на GitHub</string>
+    <string name="settings_version_label">ReAppzuku v%1$s</string>
+
+    <string name="settings_interval_fallback">Каждые %1$d секунд</string>
+
+    <string-array name="settings_theme_labels">
+        <item>@string/settings_theme_system</item>
+        <item>@string/settings_theme_light</item>
+        <item>@string/settings_theme_dark</item>
+    </string-array>
+
+    <string-array name="settings_kill_interval_labels">
+        <item>Каждые 10 секунд</item>
+        <item>Каждые 18 секунд</item>
+        <item>Каждые 30 секунд</item>
+        <item>Каждую 1 минуту</item>
+        <item>Каждые 5 минут</item>
+    </string-array>
+
+    <string-array name="settings_ram_threshold_labels">
+        <item>75%</item>
+        <item>80%</item>
+        <item>85%</item>
+        <item>90%</item>
+        <item>95%</item>
+        <item>100%</item>
+    </string-array>
+</resources>
