@@ -22,7 +22,7 @@
             android:elevation="4dp"
             app:navigationIcon="@drawable/ic_back"
             app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:title="Settings"
+            app:title="Настройки"
             app:titleTextColor="@android:color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
