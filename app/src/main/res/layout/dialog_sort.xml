@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Сортировка"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:paddingBottom="16dp" />
+
+    <RadioGroup
+        android:id="@+id/sort_radio_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/sort_default"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="По умолчанию (Пользовательские → Системные)"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/sort_ram_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Потребление ОЗУ. Больше → Меньше"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/sort_ram_asc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Потребление ОЗУ. Меньше → Больше"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/sort_name_asc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Имя A → Z"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/sort_name_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Имя Z → A"
+            android:padding="8dp" />
+
+    </RadioGroup>
+
+</LinearLayout>
