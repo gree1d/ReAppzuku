@@ -5,43 +5,45 @@
 </p>
 
 
-## What is Appzuku?
-Appzuku is an Android application that stops background apps using either Shizuku or Root permissions. It supports one-tap manual kills, scheduled cleanup, and persistent background restriction for selected apps. The goal is straightforward control over apps that waste RAM, relaunch too often, or keep waking up in the background.
+# Что такое ReAppzuku?
+ReAppzuku - это форк оригинального Appzuku, который **будет бесплатным всегда**.
+Appzuku это приложение для Android, которое останавливает фоновые приложения, используя Shizuku или Root-права доступа. Он поддерживает ручное отключение одним нажатием, очистку по расписанию и постоянное ограничение фонового режима для выбранных приложений. Позволяет контролировать приложения, которые тратят впустую оперативную память, слишком часто перезапускаются или продолжают работать в фоновом режиме.
 
-## Features
-- **Flexible Permissions**: Works with either Shizuku or Root access.
-- **Manual Kill Tools**: Kill selected apps from the main screen, the current foreground app from Quick Settings, or run your configured background kill from a second Quick Settings tile.
-- **Automation**: Periodic auto-kill, kill on screen lock, and Smart RAM Threshold controls.
-- **Targeting Modes**: Use Whitelist mode to protect apps from kills or Blacklist mode to target only selected apps.
-- **Background Restriction (Android 11+)**: Keep selected apps asleep in the background with AppOps-based restriction.
-- **Restriction Repair & Log**: Re-apply saved restrictions and review recent restriction results/errors from Settings.
-- **Kill History & Top Offenders**: Review which apps were killed, which ones relaunch, and which apps recover the most RAM.
-- **Backup & Restore**: Save and restore your configured app lists.
-- **Search & Filter**: Quickly find apps in your running list by name or package ID.
-- **Theme Customization**: Support for Light, Dark, and System Default themes.
-- **Protected Apps**: System-critical apps and user-whitelisted apps are protected from being killed.
-- **RAM Monitoring**: Real-time display of system RAM usage.
+## Особенности
+• **Гибкие разрешения**: Работает с Shizuku или Root-доступом.
+• **Инструменты отключения вручную**: Отключите выбранные приложения на главном экране, текущее приложение переднего плана - в "Быстрых настройках" или запустите настроенный фоновый режим отключения на второй панели "Быстрые настройки".
+• **Автоматизация**: Периодическое автоматическое force-stop по таймеру, при блокировке экрана или при превышении порога загруженности оперативной памяти.
+• **Режимы работы с приложениями**: Используйте режим белого списка для защиты приложений от ограничений или режим черного списка для ограничения только выбранных приложений.
+• **Ограничение фонового режима (Android 11+)**: Удерживайте выбранные приложения в режиме ожидания в фоновом режиме с помощью ограничений, основанных на приложениях.
+• **Восстановление фоновых ограничений**: Повторно примените сохраненные фоновые ограничения и просмотрите последние результаты/ошибки в настройках.
+• **Ведение статистики и журналов**: Просмотрите, какие приложения чаще всего попадали под ограничения, какие из них перезапускаются после этого и после каких приложений восстанавливается больше всего оперативной памяти.
+• **Резервное копирование и восстановление**: Сохраняйте и восстанавливайте настройки ReAppzuku.
+• **Поиск и фильтрация**: Быстрый поиск приложений в вашем списке запущенных по названию или идентификатору пакета.
+• **Настройка Темы**: Поддержка светлой и темной тем
+• **Защищенные приложения**: критически важные для системы приложения и приложения, внесенные пользователями в белый список, защищены от отграничений.
+• **Мониторинг оперативной памяти**: отображение использования оперативной памяти системой в режиме реального времени на главном экране приложения.
 
-## Screenshots
+## Скриншоты
 <p align="center">
   <img src="https://github.com/northmendo/Appzuku/blob/main/docs/images/screenshot0.jpg" width="30%">
   <img src="https://github.com/northmendo/Appzuku/blob/main/docs/images/screenshot1.jpg" width="30%">
   <img src="https://github.com/northmendo/Appzuku/blob/main/docs/images/screenshot2.jpg" width="30%">
 </p>
 
-## Requirements
-- **Android Version**: 6.0 (SDK 23) or higher.
-- **Shizuku or Root**: Appzuku requires Root access or the Shizuku app to be running.
-- **Android 11+ for Background Restriction**: The app installs on Android 6+, but the Background Restriction feature requires Android 11 or newer.
+## Требования
+• **Версия Android**: 6.0 (SDK 23) или выше.
+• **Shizuku или Root**: Для запуска ReAppzuku требуется доступ Root или приложение Shizuku.
+• **Android 11+ для ограничения фонового режима**: Приложение устанавливается на Android 6+, но для функции ограничения фонового режима требуется Android 11 или новее.
 
-## How It Works
-- **Main Screen**: Kill selected running apps manually.
-- **Quick Settings Tiles**: One tile kills the current foreground app, and another runs your configured whitelist/blacklist background kill.
-- **Automation**: Run cleanup periodically or when the screen turns off.
-- **Background Restriction**: Keep chosen apps asleep more aggressively on Android 11+.
+## Как это работает
+• **Главный экран**: Отключите выбранные запущенные приложения вручную.
+• **Плитки быстрой настройки**: Одна плитка отключает текущее приложение переднего плана, а другая запускает настроенное вами фоновое отключение белого / черного списков.
+• **Автоматизация**: Периодически запускайте force-stop приложений по таймеру или при выключении экрана.
+• **Ограничение фонового режима**: На Android 11+ режим ожидания выбранных приложений становится более агрессивным.
+• **Режим сна**: Для особо наглых приложений, которые продолжают пытаться работать фоне, не смотря на ограничения. Добавьте эти приложения в список и пока ваше устройство бездействует с выключенным экраном (а вы спите или занимаетесь своими делами) эти приложения будут заморожены с помощью pm disable. После разблокировки экрана они размораживается.
 
 ## License
-Appzuku is licensed under the [GNU General Public License v3.0](LICENSE).
+ReAppzuku is licensed under the [GNU General Public License v3.0](LICENSE).
 
 ## Credits
 This project was forked from [northmendo/Appzuku](https://github.com/northmendo/Appzuku).
