@@ -67,12 +67,12 @@
 
     <string name="settings_section_information">Information</string>
     <string name="settings_help_title">Help</string>
-    <string name="settings_help_subtitle">How Appzuku works</string>
+    <string name="settings_help_subtitle">How ReAppzuku works</string>
     <string name="settings_source_code_title">Source Code</string>
     <string name="settings_source_code_subtitle">Open the GitHub repository</string>
     <string name="settings_check_updates_title">Check for Updates</string>
     <string name="settings_check_updates_subtitle">Open the latest GitHub releases</string>
-    <string name="settings_version_label">Appzuku v%1$s</string>
+    <string name="settings_version_label">ReAppzuku v%1$s</string>
 
     <string name="settings_interval_fallback">Every %1$d seconds</string>
 
