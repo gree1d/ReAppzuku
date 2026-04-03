@@ -81,13 +81,13 @@ public class AppModel {
 
     public String getBackgroundRestrictionStatusText() {
         if (!backgroundRestrictionActualKnown) {
-            return backgroundRestrictionDesired ? "Saved in Appzuku" : "";
+            return backgroundRestrictionDesired ? "Сохранено в ReAppzuku" : "";
         }
         if (isBackgroundRestrictionExternal()) {
-            return "Restricted outside Appzuku";
+            return "Ограничено, но не с помощью ReAppzuku";
         }
         if (needsBackgroundRestrictionReapply()) {
-            return "Saved in Appzuku, not active";
+            return "Сохранено в ReAppzuku, но не применилось";
         }
         return "";
     }

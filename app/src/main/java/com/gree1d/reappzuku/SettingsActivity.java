@@ -332,11 +332,11 @@ public class SettingsActivity extends BaseActivity {
         ShellManager shellManager = new ShellManager(getApplicationContext(), new android.os.Handler(android.os.Looper.getMainLooper()), java.util.concurrent.Executors.newSingleThreadExecutor());
         // Check Shizuku first (non-blocking)
         if (shellManager.hasShizukuPermission()) {
-            binding.textShellMode.setText("Режим работы: Shizuku");
+            binding.textShellMode.setText("✅ Shizuku access");
         } else if (shellManager.hasRootAccess()) {
-            binding.textShellMode.setText("Режим работы: Root");
+            binding.textShellMode.setText("✅ Root access");
         } else {
-            binding.textShellMode.setText("Режим работы: Нет доступа");
+            binding.textShellMode.setText("❌ Нет доступа");
         }
     }
 

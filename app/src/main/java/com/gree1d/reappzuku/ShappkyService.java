@@ -46,11 +46,6 @@ public class ShappkyService extends Service {
     // True if background restricted apps are currently frozen
     private boolean isFrozen = false;
 
-    // Периодическое обновление уведомления каждые 3 секунды
-    private static final int NOTIFICATION_REFRESH_INTERVAL_MS = 3000;
-    private static final String NOTIFICATION_TEXT_DEFAULT = "Мониторинг фоновых приложений";
-    private Runnable notificationRefreshRunnable;
-
     public static boolean isRunning() {
         return isRunning;
     }
@@ -59,9 +54,9 @@ public class ShappkyService extends Service {
      * Updates the persistent foreground notification text.
      * Called after each auto-kill to show how many apps were stopped.
      */
-    public static void updateNotification(Context context, String text) {
+    public static void updateNotification(Context context, String title, String text) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID_SERVICE)
-                .setContentTitle("ReAppzuku")
+                .setContentTitle(title)
                 .setContentText(text)
                 .setSmallIcon(R.drawable.ic_shappky)
                 .setOngoing(true)
@@ -89,17 +84,6 @@ public class ShappkyService extends Service {
         startForeground(NOTIFICATION_ID_SERVICE, notification);
         isRunning = true;
 
-        // Периодически переиздаём уведомление, чтобы оно восстанавливалось после смахивания
-        notificationRefreshRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (!isRunning) return;
-                updateNotification(ShappkyService.this, NOTIFICATION_TEXT_DEFAULT);
-                handler.postDelayed(this, NOTIFICATION_REFRESH_INTERVAL_MS);
-            }
-        };
-        handler.postDelayed(notificationRefreshRunnable, NOTIFICATION_REFRESH_INTERVAL_MS);
-
         // Register screen off/on receiver
         screenOffReceiver = new KillTriggerReceiver();
         IntentFilter filter = new IntentFilter();
@@ -108,6 +92,9 @@ public class ShappkyService extends Service {
         registerReceiver(screenOffReceiver, filter);
 
         scheduleNextKill();
+
+        // Восстанавливаем фоновые ограничения после перезагрузки — appops сбрасывается на некоторых устройствах
+        appManager.reapplySavedBackgroundRestrictions(null);
     }
 
     @Override

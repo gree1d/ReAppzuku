@@ -215,8 +215,7 @@ public class BackgroundAppManager {
     }
 
     private void sendKillNotification(int count) {
-        String text = "Auto-Kill: остановлено " + count + " фоновых приложений";
-        ShappkyService.updateNotification(context, text);
+        ShappkyService.updateNotification(context, "Auto-Kill активен", "Остановлено " + count + " фоновых приложений");
     }
 
     private String formatMemorySize(long kb) {
