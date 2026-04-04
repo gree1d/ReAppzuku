@@ -3,6 +3,8 @@
     <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorSecondary">@color/colorAccent</item>
+        <item name="android:colorControlActivated">@color/colorAccent</item>
+        <item name="colorControlActivated">@color/colorAccent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
@@ -16,6 +18,8 @@
         <item name="colorSurface">@color/amoled_background</item>
         <item name="colorSurfaceVariant">@color/amoled_surface_variant</item>
         <item name="colorOnSurface">@android:color/white</item>
+        <item name="android:colorControlActivated">@color/colorAccent</item>
+        <item name="colorControlActivated">@color/colorAccent</item>
     </style>
 
     <!-- Акцент: Индиго (совпадает с базовым) -->
@@ -24,12 +28,14 @@
         <item name="colorSecondary">@color/accent_indigo_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_indigo_dark</item>
         <item name="android:colorControlActivated">@color/accent_indigo_primary</item>
+        <item name="colorControlActivated">@color/accent_indigo_primary</item>
     </style>
 
     <style name="AppTheme.AccentIndigo.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_indigo_primary</item>
         <item name="colorSecondary">@color/accent_indigo_secondary</item>
-        <item name="android:colorControlActivated">@color/accent_indigo_primary</item>
+        <item name="android:colorControlActivated">@color/accent_indigo_secondary</item>
+        <item name="colorControlActivated">@color/accent_indigo_secondary</item>
     </style>
 
     <!-- Акцент: Алый -->
@@ -38,12 +44,14 @@
         <item name="colorSecondary">@color/accent_crimson_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_crimson_dark</item>
         <item name="android:colorControlActivated">@color/accent_crimson_primary</item>
+        <item name="colorControlActivated">@color/accent_crimson_primary</item>
     </style>
 
     <style name="AppTheme.AccentCrimson.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_crimson_primary</item>
         <item name="colorSecondary">@color/accent_crimson_secondary</item>
-        <item name="android:colorControlActivated">@color/accent_crimson_primary</item>
+        <item name="android:colorControlActivated">@color/accent_crimson_secondary</item>
+        <item name="colorControlActivated">@color/accent_crimson_secondary</item>
     </style>
 
     <!-- Акцент: Лесной зелёный -->
@@ -52,12 +60,14 @@
         <item name="colorSecondary">@color/accent_forest_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_forest_dark</item>
         <item name="android:colorControlActivated">@color/accent_forest_primary</item>
+        <item name="colorControlActivated">@color/accent_forest_primary</item>
     </style>
 
     <style name="AppTheme.AccentForest.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_forest_primary</item>
         <item name="colorSecondary">@color/accent_forest_secondary</item>
-        <item name="android:colorControlActivated">@color/accent_forest_primary</item>
+        <item name="android:colorControlActivated">@color/accent_forest_secondary</item>
+        <item name="colorControlActivated">@color/accent_forest_secondary</item>
     </style>
 
     <!-- Акцент: Сланцево-синий -->
@@ -66,12 +76,14 @@
         <item name="colorSecondary">@color/accent_slate_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_slate_dark</item>
         <item name="android:colorControlActivated">@color/accent_slate_primary</item>
+        <item name="colorControlActivated">@color/accent_slate_primary</item>
     </style>
 
     <style name="AppTheme.AccentSlate.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_slate_primary</item>
         <item name="colorSecondary">@color/accent_slate_secondary</item>
-        <item name="android:colorControlActivated">@color/accent_slate_primary</item>
+        <item name="android:colorControlActivated">@color/accent_slate_secondary</item>
+        <item name="colorControlActivated">@color/accent_slate_secondary</item>
     </style>
 
     <!-- Акцент: Пыльная роза -->
@@ -80,12 +92,14 @@
         <item name="colorSecondary">@color/accent_rose_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_rose_dark</item>
         <item name="android:colorControlActivated">@color/accent_rose_primary</item>
+        <item name="colorControlActivated">@color/accent_rose_primary</item>
     </style>
 
     <style name="AppTheme.AccentRose.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_rose_primary</item>
         <item name="colorSecondary">@color/accent_rose_secondary</item>
-        <item name="android:colorControlActivated">@color/accent_rose_primary</item>
+        <item name="android:colorControlActivated">@color/accent_rose_secondary</item>
+        <item name="colorControlActivated">@color/accent_rose_secondary</item>
     </style>
 
     <!-- Акцент: Янтарный -->
@@ -94,12 +108,14 @@
         <item name="colorSecondary">@color/accent_amber_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_amber_dark</item>
         <item name="android:colorControlActivated">@color/accent_amber_primary</item>
+        <item name="colorControlActivated">@color/accent_amber_primary</item>
     </style>
 
     <style name="AppTheme.AccentAmber.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_amber_primary</item>
         <item name="colorSecondary">@color/accent_amber_secondary</item>
-        <item name="android:colorControlActivated">@color/accent_amber_primary</item>
+        <item name="android:colorControlActivated">@color/accent_amber_secondary</item>
+        <item name="colorControlActivated">@color/accent_amber_secondary</item>
     </style>
 
     <!-- Акцент: Морская волна -->
@@ -108,12 +124,14 @@
         <item name="colorSecondary">@color/accent_teal_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_teal_dark</item>
         <item name="android:colorControlActivated">@color/accent_teal_primary</item>
+        <item name="colorControlActivated">@color/accent_teal_primary</item>
     </style>
 
     <style name="AppTheme.AccentTeal.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_teal_primary</item>
         <item name="colorSecondary">@color/accent_teal_secondary</item>
-        <item name="android:colorControlActivated">@color/accent_teal_primary</item>
+        <item name="android:colorControlActivated">@color/accent_teal_secondary</item>
+        <item name="colorControlActivated">@color/accent_teal_secondary</item>
     </style>
 
     <style name="AppTheme.FullScreen" parent="AppTheme">
