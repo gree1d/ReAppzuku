@@ -20,7 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:minHeight="64dp"
-            android:background="@color/toolbar_navy"
+            android:background="?attr/colorPrimary"
             android:elevation="4dp"
             app:titleTextColor="@android:color/white"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
