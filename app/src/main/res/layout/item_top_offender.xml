@@ -16,7 +16,7 @@
             android:id="@+id/offender_rank"
             android:layout_width="32dp"
             android:layout_height="wrap_content"
-            android:textColor="@color/colorAccent"
+            android:textColor="?attr/colorSecondary"
             android:textStyle="bold"
             android:textSize="14sp" />
 
@@ -35,7 +35,7 @@
             android:id="@+id/offender_score"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/colorAccent"
+            android:textColor="?attr/colorSecondary"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
