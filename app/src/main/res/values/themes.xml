@@ -6,7 +6,7 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- AMOLED тема — чёрный фон -->
+    <!-- AMOLED — чёрный фон поверх любого акцента -->
     <style name="AppTheme.Amoled" parent="AppTheme">
         <item name="android:windowBackground">@color/amoled_background</item>
         <item name="android:colorBackground">@color/amoled_background</item>
@@ -14,7 +14,7 @@
         <item name="colorSurfaceVariant">@color/amoled_surface_variant</item>
     </style>
 
-    <!-- Акцент: Индиго (совпадает с базовой) -->
+    <!-- Акцент: Индиго (совпадает с базовым) -->
     <style name="AppTheme.AccentIndigo" parent="AppTheme">
         <item name="colorPrimary">@color/accent_indigo_primary</item>
         <item name="colorSecondary">@color/accent_indigo_secondary</item>

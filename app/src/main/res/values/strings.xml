@@ -19,17 +19,6 @@
     <string name="settings_accent_title">Цветовой акцент</string>
     <string name="settings_accent_subtitle">Основной цвет интерфейса</string>
 
-    <string-array name="settings_accent_labels">
-        <item>По умолчанию (системный)</item>
-        <item>🔵 Индиго</item>
-        <item>🔴 Алый</item>
-        <item>🟢 Лесной зелёный</item>
-        <item>🔷 Сланцево-синий</item>
-        <item>🌸 Пыльная роза</item>
-        <item>🟡 Янтарный</item>
-        <item>🩵 Морская волна</item>
-    </string-array>
-
     <string name="settings_section_automation">Автоматизация</string>
     <string name="settings_background_service_title">Фоновый сервис</string>
     <string name="settings_background_service_subtitle">Необходим для работы Auto-Kill по интервалу и при выключении экрана</string>
@@ -109,6 +98,17 @@
         <item>@string/settings_theme_light</item>
         <item>@string/settings_theme_dark</item>
         <item>@string/settings_theme_amoled</item>
+    </string-array>
+
+    <string-array name="settings_accent_labels">
+        <item>По умолчанию (системный)</item>
+        <item>Индиго</item>
+        <item>Алый</item>
+        <item>Лесной зелёный</item>
+        <item>Сланцево-синий</item>
+        <item>Пыльная роза</item>
+        <item>Янтарный</item>
+        <item>Морская волна</item>
     </string-array>
 
     <string-array name="settings_kill_interval_labels">
