@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:minHeight="64dp"
-            android:background="@color/toolbar_navy"
+            android:background="?attr/colorPrimary"
             android:elevation="4dp"
             app:navigationIcon="@drawable/ic_back"
             app:popupTheme="@style/AppTheme.PopupOverlay"
@@ -215,30 +215,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_theme_system"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <!-- Цветовой акцент -->
-            <LinearLayout
-                android:id="@+id/layout_accent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_accent_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/text_accent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
