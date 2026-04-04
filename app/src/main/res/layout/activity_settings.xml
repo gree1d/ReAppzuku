@@ -219,6 +219,31 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
+            <!-- Цветовой акцент -->
+            <LinearLayout
+                android:id="@+id/layout_accent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingVertical="12dp"
+                android:background="?attr/selectableItemBackground">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_accent_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/text_accent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_accent_subtitle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
             <!-- Show System Apps -->
             <LinearLayout
                 android:layout_width="match_parent"
