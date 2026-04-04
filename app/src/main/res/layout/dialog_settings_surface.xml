@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="@color/background_main">
+    android:background="?android:attr/colorBackground">
 
     <TextView
         android:id="@+id/dialog_surface_subtitle"
