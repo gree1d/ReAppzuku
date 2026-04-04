@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="@color/background_main">
+    android:background="?android:attr/colorBackground">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:minHeight="64dp"
-            android:background="@color/toolbar_navy"
+            android:background="?attr/colorPrimary"
             android:elevation="4dp"
             app:titleTextColor="@android:color/white"
             app:navigationIcon="@drawable/ic_back" />

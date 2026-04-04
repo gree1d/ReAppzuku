@@ -36,7 +36,7 @@
             android:id="@+id/running_apps"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/background_main"
+            android:background="?android:attr/colorBackground"
             android:padding="8dp"
             android:textColor="@color/text_primary"
             android:textSize="18sp" />
@@ -45,7 +45,7 @@
             android:id="@+id/linear1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/background_main"
+            android:background="?android:attr/colorBackground"
             android:orientation="horizontal">
 
             <TextView
@@ -70,7 +70,7 @@
             android:id="@+id/swiperefreshlayout1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/background_main">
+            android:background="?android:attr/colorBackground">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view"
