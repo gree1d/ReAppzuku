@@ -6,6 +6,7 @@
         <item name="android:colorControlActivated">@color/colorAccent</item>
         <item name="colorControlActivated">@color/colorAccent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="checkboxStyle">@style/Widget.App.CheckBox</item>
     </style>
 
     <!-- AMOLED — применяется через setTheme() ДО super.onCreate() -->
@@ -20,13 +21,15 @@
         <item name="colorOnSurface">@android:color/white</item>
         <item name="android:colorControlActivated">@color/colorAccent</item>
         <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="checkboxStyle">@style/Widget.App.CheckBox</item>
     </style>
 
-    <!-- Акцент: Индиго (совпадает с базовым) -->
+    <!-- Акцент: Индиго -->
     <style name="AppTheme.AccentIndigo" parent="AppTheme">
         <item name="colorPrimary">@color/accent_indigo_primary</item>
         <item name="colorSecondary">@color/accent_indigo_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_indigo_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_indigo_dark</item>
         <item name="android:colorControlActivated">@color/accent_indigo_primary</item>
         <item name="colorControlActivated">@color/accent_indigo_primary</item>
     </style>
@@ -34,6 +37,7 @@
     <style name="AppTheme.AccentIndigo.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_indigo_primary</item>
         <item name="colorSecondary">@color/accent_indigo_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_indigo_dark</item>
         <item name="android:colorControlActivated">@color/accent_indigo_secondary</item>
         <item name="colorControlActivated">@color/accent_indigo_secondary</item>
     </style>
@@ -43,6 +47,7 @@
         <item name="colorPrimary">@color/accent_crimson_primary</item>
         <item name="colorSecondary">@color/accent_crimson_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_crimson_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_crimson_dark</item>
         <item name="android:colorControlActivated">@color/accent_crimson_primary</item>
         <item name="colorControlActivated">@color/accent_crimson_primary</item>
     </style>
@@ -50,6 +55,7 @@
     <style name="AppTheme.AccentCrimson.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_crimson_primary</item>
         <item name="colorSecondary">@color/accent_crimson_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_crimson_dark</item>
         <item name="android:colorControlActivated">@color/accent_crimson_secondary</item>
         <item name="colorControlActivated">@color/accent_crimson_secondary</item>
     </style>
@@ -59,6 +65,7 @@
         <item name="colorPrimary">@color/accent_forest_primary</item>
         <item name="colorSecondary">@color/accent_forest_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_forest_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_forest_dark</item>
         <item name="android:colorControlActivated">@color/accent_forest_primary</item>
         <item name="colorControlActivated">@color/accent_forest_primary</item>
     </style>
@@ -66,6 +73,7 @@
     <style name="AppTheme.AccentForest.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_forest_primary</item>
         <item name="colorSecondary">@color/accent_forest_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_forest_dark</item>
         <item name="android:colorControlActivated">@color/accent_forest_secondary</item>
         <item name="colorControlActivated">@color/accent_forest_secondary</item>
     </style>
@@ -75,6 +83,7 @@
         <item name="colorPrimary">@color/accent_slate_primary</item>
         <item name="colorSecondary">@color/accent_slate_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_slate_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_slate_dark</item>
         <item name="android:colorControlActivated">@color/accent_slate_primary</item>
         <item name="colorControlActivated">@color/accent_slate_primary</item>
     </style>
@@ -82,6 +91,7 @@
     <style name="AppTheme.AccentSlate.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_slate_primary</item>
         <item name="colorSecondary">@color/accent_slate_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_slate_dark</item>
         <item name="android:colorControlActivated">@color/accent_slate_secondary</item>
         <item name="colorControlActivated">@color/accent_slate_secondary</item>
     </style>
@@ -91,6 +101,7 @@
         <item name="colorPrimary">@color/accent_rose_primary</item>
         <item name="colorSecondary">@color/accent_rose_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_rose_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_rose_dark</item>
         <item name="android:colorControlActivated">@color/accent_rose_primary</item>
         <item name="colorControlActivated">@color/accent_rose_primary</item>
     </style>
@@ -98,6 +109,7 @@
     <style name="AppTheme.AccentRose.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_rose_primary</item>
         <item name="colorSecondary">@color/accent_rose_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_rose_dark</item>
         <item name="android:colorControlActivated">@color/accent_rose_secondary</item>
         <item name="colorControlActivated">@color/accent_rose_secondary</item>
     </style>
@@ -107,6 +119,7 @@
         <item name="colorPrimary">@color/accent_amber_primary</item>
         <item name="colorSecondary">@color/accent_amber_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_amber_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_amber_dark</item>
         <item name="android:colorControlActivated">@color/accent_amber_primary</item>
         <item name="colorControlActivated">@color/accent_amber_primary</item>
     </style>
@@ -114,6 +127,7 @@
     <style name="AppTheme.AccentAmber.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_amber_primary</item>
         <item name="colorSecondary">@color/accent_amber_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_amber_dark</item>
         <item name="android:colorControlActivated">@color/accent_amber_secondary</item>
         <item name="colorControlActivated">@color/accent_amber_secondary</item>
     </style>
@@ -123,6 +137,7 @@
         <item name="colorPrimary">@color/accent_teal_primary</item>
         <item name="colorSecondary">@color/accent_teal_secondary</item>
         <item name="colorPrimaryVariant">@color/accent_teal_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_teal_dark</item>
         <item name="android:colorControlActivated">@color/accent_teal_primary</item>
         <item name="colorControlActivated">@color/accent_teal_primary</item>
     </style>
@@ -130,6 +145,7 @@
     <style name="AppTheme.AccentTeal.Amoled" parent="AppTheme.Amoled">
         <item name="colorPrimary">@color/accent_teal_primary</item>
         <item name="colorSecondary">@color/accent_teal_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_teal_dark</item>
         <item name="android:colorControlActivated">@color/accent_teal_secondary</item>
         <item name="colorControlActivated">@color/accent_teal_secondary</item>
     </style>
@@ -140,6 +156,12 @@
     </style>
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.Material3" />
+
+    <!-- CheckBox: галочка и рамка = colorControlActivated из темы -->
+    <style name="Widget.App.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">?attr/colorControlActivated</item>
+    </style>
+
     <style name="Theme.Transparent" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
