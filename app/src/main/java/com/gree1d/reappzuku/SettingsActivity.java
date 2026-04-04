@@ -864,7 +864,7 @@ public class SettingsActivity extends BaseActivity {
 
     private void updateThemeText(int themeValue, boolean isAmoled) {
         if (isAmoled) {
-            binding.textTheme.setText("AMOLED (чёрный)");
+            binding.textTheme.setText("AMOLED");
             return;
         }
         String[] themeLabels = getResources().getStringArray(R.array.settings_theme_labels);
