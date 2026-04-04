@@ -55,8 +55,19 @@ public final class AppConstants {
         public static final int[] THEME_VALUES = {
                         androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
                         androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO,
-                        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+                        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES,
+                        -1 // AMOLED (особый режим — только тёмная + чёрный фон)
         };
+
+        // Accent values
+        public static final int ACCENT_SYSTEM  = 0; // Системный (DynamicColors)
+        public static final int ACCENT_INDIGO  = 1; // Индиго (по умолчанию)
+        public static final int ACCENT_CRIMSON = 2; // Алый
+        public static final int ACCENT_FOREST  = 3; // Лесной зелёный
+        public static final int ACCENT_SLATE   = 4; // Сланцево-синий
+        public static final int ACCENT_ROSE    = 5; // Пыльная роза
+        public static final int ACCENT_AMBER   = 6; // Янтарный
+        public static final int ACCENT_TEAL    = 7; // Морская волна
 
         // Sleep Mode
         public static final long DEFAULT_SLEEP_MODE_DELAY_MS = 60 * 60 * 1000L; // 60 minutes

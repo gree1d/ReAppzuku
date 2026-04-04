@@ -119,6 +119,11 @@ public class SettingsActivity extends BaseActivity {
                 androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         updateThemeText(theme);
 
+        // Load accent
+        int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
+        updateAccentText(accent);
+        updateAccentLayoutEnabled(theme);
+
         // Load background service state
         boolean serviceEnabled = sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false);
         binding.switchAutoKill.setChecked(serviceEnabled);
@@ -168,6 +173,16 @@ public class SettingsActivity extends BaseActivity {
     private void setupListeners() {
         // Theme selector
         binding.layoutTheme.setOnClickListener(v -> showThemeDialog());
+
+        // Accent selector
+        binding.layoutAccent.setOnClickListener(v -> {
+            int theme = sharedPreferences.getInt(KEY_THEME,
+                    androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+            if (theme == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
+                return; // Системная тема — акцент недоступен
+            }
+            showAccentDialog();
+        });
 
         // Background Service toggle
         binding.switchAutoKill.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -851,6 +866,19 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
+    private void updateAccentText(int accentValue) {
+        String[] accentLabels = getResources().getStringArray(R.array.settings_accent_labels);
+        if (accentValue >= 0 && accentValue < accentLabels.length) {
+            binding.textAccent.setText(accentLabels[accentValue]);
+        }
+    }
+
+    private void updateAccentLayoutEnabled(int themeValue) {
+        boolean isSystemTheme = (themeValue == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        binding.layoutAccent.setAlpha(isSystemTheme ? 0.4f : 1.0f);
+        binding.layoutAccent.setClickable(!isSystemTheme);
+    }
+
     private void showThemeDialog() {
         int currentTheme = sharedPreferences.getInt(KEY_THEME,
                 androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
@@ -869,9 +897,39 @@ public class SettingsActivity extends BaseActivity {
             int newTheme = THEME_VALUES[which];
             sharedPreferences.edit().putInt(KEY_THEME, newTheme).apply();
             updateThemeText(newTheme);
-            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(newTheme);
+            updateAccentLayoutEnabled(newTheme);
+            // Если выбрана системная тема — сбрасываем акцент на системный
+            if (newTheme == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
+                sharedPreferences.edit().putInt(KEY_ACCENT, ACCENT_SYSTEM).apply();
+                updateAccentText(ACCENT_SYSTEM);
+            }
+            // AMOLED не меняет AppCompatDelegate — это обрабатывается в BaseActivity
+            if (newTheme != -1) {
+                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(newTheme);
+            }
             dialog.dismiss();
-            recreate(); // Recreate activity to apply theme
+            recreate();
+        });
+        builder.setNegativeButton("Отмена", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawable(
+                new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
+        dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+    }
+
+    private void showAccentDialog() {
+        int currentAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_INDIGO);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Цветовой акцент");
+        builder.setSingleChoiceItems(getResources().getStringArray(R.array.settings_accent_labels), currentAccent,
+                (dialog, which) -> {
+            sharedPreferences.edit().putInt(KEY_ACCENT, which).apply();
+            updateAccentText(which);
+            dialog.dismiss();
+            recreate();
         });
         builder.setNegativeButton("Отмена", null);
 
