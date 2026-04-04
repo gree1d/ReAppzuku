@@ -117,7 +117,8 @@ public class SettingsActivity extends BaseActivity {
         // Load theme
         int theme = sharedPreferences.getInt(KEY_THEME,
                 androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-        updateThemeText(theme);
+        boolean isAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
+        updateThemeText(theme, isAmoled);
 
         // Load accent
         int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
@@ -179,7 +180,7 @@ public class SettingsActivity extends BaseActivity {
             int theme = sharedPreferences.getInt(KEY_THEME,
                     androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
             if (theme == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
-                return; // Системная тема — акцент недоступен
+                return;
             }
             showAccentDialog();
         });
@@ -856,7 +857,11 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
-    private void updateThemeText(int themeValue) {
+    private void updateThemeText(int themeValue, boolean isAmoled) {
+        if (isAmoled) {
+            binding.textTheme.setText("AMOLED (чёрный)");
+            return;
+        }
         String[] themeLabels = getResources().getStringArray(R.array.settings_theme_labels);
         for (int i = 0; i < THEME_VALUES.length; i++) {
             if (THEME_VALUES[i] == themeValue) {
@@ -882,29 +887,48 @@ public class SettingsActivity extends BaseActivity {
     private void showThemeDialog() {
         int currentTheme = sharedPreferences.getInt(KEY_THEME,
                 androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        boolean isAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
+
+        // Определяем текущий выбранный индекс (AMOLED = индекс 3)
         int selectedIndex = 0;
-        for (int i = 0; i < THEME_VALUES.length; i++) {
-            if (THEME_VALUES[i] == currentTheme) {
-                selectedIndex = i;
-                break;
+        if (isAmoled) {
+            selectedIndex = 3;
+        } else {
+            for (int i = 0; i < THEME_VALUES.length; i++) {
+                if (THEME_VALUES[i] == currentTheme) {
+                    selectedIndex = i;
+                    break;
+                }
             }
         }
 
+        // 4 варианта: Системная / Светлая / Тёмная / AMOLED
+        String[] labels = getResources().getStringArray(R.array.settings_theme_labels);
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Выберите тему приложения");
-        builder.setSingleChoiceItems(getResources().getStringArray(R.array.settings_theme_labels), selectedIndex,
-                (dialog, which) -> {
-            int newTheme = THEME_VALUES[which];
-            sharedPreferences.edit().putInt(KEY_THEME, newTheme).apply();
-            updateThemeText(newTheme);
-            updateAccentLayoutEnabled(newTheme);
-            // Если выбрана системная тема — сбрасываем акцент на системный
-            if (newTheme == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
-                sharedPreferences.edit().putInt(KEY_ACCENT, ACCENT_SYSTEM).apply();
-                updateAccentText(ACCENT_SYSTEM);
-            }
-            // AMOLED не меняет AppCompatDelegate — это обрабатывается в BaseActivity
-            if (newTheme != -1) {
+        builder.setSingleChoiceItems(labels, selectedIndex, (dialog, which) -> {
+            if (which == 3) {
+                // AMOLED
+                sharedPreferences.edit()
+                        .putBoolean(KEY_AMOLED, true)
+                        .putInt(KEY_THEME, androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
+                        .apply();
+                updateThemeText(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES, true);
+                updateAccentLayoutEnabled(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
+            } else {
+                int newTheme = THEME_VALUES[which];
+                sharedPreferences.edit()
+                        .putInt(KEY_THEME, newTheme)
+                        .putBoolean(KEY_AMOLED, false)
+                        .apply();
+                updateThemeText(newTheme, false);
+                updateAccentLayoutEnabled(newTheme);
+                // Если системная тема — сбрасываем акцент
+                if (newTheme == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
+                    sharedPreferences.edit().putInt(KEY_ACCENT, ACCENT_SYSTEM).apply();
+                    updateAccentText(ACCENT_SYSTEM);
+                }
                 androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(newTheme);
             }
             dialog.dismiss();

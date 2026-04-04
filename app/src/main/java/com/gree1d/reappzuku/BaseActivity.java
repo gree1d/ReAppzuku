@@ -13,24 +13,24 @@ import static com.gree1d.reappzuku.PreferenceKeys.*;
 
 public abstract class BaseActivity extends AppCompatActivity {
     protected static final String PREFERENCES_NAME = "AppPreferences";
-    protected static final String KEY_THEME = "appTheme";
+    protected static final String KEY_THEME_COMPAT = "appTheme";
     protected SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         sharedPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        applyAccent();
-        applyTheme();
-        super.onCreate(savedInstanceState);
-    }
 
-    protected void applyAccent() {
         int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
-        if (accent == ACCENT_SYSTEM) {
-            // Системный акцент — используем DynamicColors
+        boolean isAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
+        int theme = sharedPreferences.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        boolean isSystemTheme = (theme == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+
+        // Шаг 1: применить акцент через setTheme() ДО super.onCreate()
+        if (isSystemTheme || accent == ACCENT_SYSTEM) {
+            // Системная тема — DynamicColors
             DynamicColors.applyToActivityIfAvailable(this);
         } else {
-            // Пользовательский акцент — DynamicColors не применяем
+            // Пользовательский акцент — без DynamicColors
             switch (accent) {
                 case ACCENT_INDIGO:  setTheme(R.style.AppTheme_AccentIndigo);  break;
                 case ACCENT_CRIMSON: setTheme(R.style.AppTheme_AccentCrimson); break;
@@ -42,16 +42,23 @@ public abstract class BaseActivity extends AppCompatActivity {
                 default:             setTheme(R.style.AppTheme_AccentIndigo);  break;
             }
         }
-    }
 
-    protected void applyTheme() {
-        int theme = sharedPreferences.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-        if (theme == -1) {
-            // AMOLED — принудительно тёмная тема + чёрный фон
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        // Шаг 2: AMOLED — применяем поверх акцента
+        if (isAmoled) {
             getTheme().applyStyle(R.style.AppTheme_Amoled, true);
+        }
+
+        // Шаг 3: ночной режим
+        if (isAmoled) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         } else {
             AppCompatDelegate.setDefaultNightMode(theme);
         }
+
+        super.onCreate(savedInstanceState);
+    }
+
+    protected void applyTheme() {
+        // Оставляем для обратной совместимости
     }
 }

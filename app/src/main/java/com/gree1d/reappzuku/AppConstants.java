@@ -51,12 +51,11 @@ public final class AppConstants {
                         "Имя Z → A"
         };
 
-        // Theme values
+        // Theme values (только стандартные режимы AppCompatDelegate)
         public static final int[] THEME_VALUES = {
                         androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
                         androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO,
-                        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES,
-                        -1 // AMOLED (особый режим — только тёмная + чёрный фон)
+                        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
         };
 
         // Accent values

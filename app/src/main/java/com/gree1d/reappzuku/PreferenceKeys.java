@@ -34,6 +34,7 @@ public final class PreferenceKeys {
     public static final String KEY_SHOW_PERSISTENT_APPS = "showPersistentApps";
     public static final String KEY_THEME = "appTheme";
     public static final String KEY_ACCENT = "appAccent";
+    public static final String KEY_AMOLED = "appAmoled";
     public static final String KEY_SORT_MODE = "sort_mode";
     public static final String KEY_REPLACEMENT_NOTICE_SHOWN_VERSION = "replacement_notice_shown_version";
 
