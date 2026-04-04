@@ -26,13 +26,10 @@ public abstract class BaseActivity extends AppCompatActivity {
         boolean isSystemTheme = (theme == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
 
         // Шаг 1: применить тему через setTheme() ДО super.onCreate()
-        if (isSystemTheme || accent == ACCENT_SYSTEM) {
-            // Системная тема — DynamicColors
-            DynamicColors.applyToActivityIfAvailable(this);
-        } else if (isAmoled) {
-            // AMOLED + пользовательский акцент — используем Amoled-вариант темы
+        // AMOLED проверяем первым — иначе accent==ACCENT_SYSTEM съедает AMOLED
+        if (isAmoled) {
+            // AMOLED — всегда применяем AMOLED тему; акцент по умолчанию = Индиго
             switch (accent) {
-                case ACCENT_INDIGO:  setTheme(R.style.AppTheme_AccentIndigo_Amoled);  break;
                 case ACCENT_CRIMSON: setTheme(R.style.AppTheme_AccentCrimson_Amoled); break;
                 case ACCENT_FOREST:  setTheme(R.style.AppTheme_AccentForest_Amoled);  break;
                 case ACCENT_SLATE:   setTheme(R.style.AppTheme_AccentSlate_Amoled);   break;
@@ -41,6 +38,9 @@ public abstract class BaseActivity extends AppCompatActivity {
                 case ACCENT_TEAL:    setTheme(R.style.AppTheme_AccentTeal_Amoled);    break;
                 default:             setTheme(R.style.AppTheme_AccentIndigo_Amoled);  break;
             }
+        } else if (isSystemTheme || accent == ACCENT_SYSTEM) {
+            // Системная тема — DynamicColors
+            DynamicColors.applyToActivityIfAvailable(this);
         } else {
             // Обычный пользовательский акцент
             switch (accent) {

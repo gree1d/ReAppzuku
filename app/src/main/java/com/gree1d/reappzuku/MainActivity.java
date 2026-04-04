@@ -56,6 +56,9 @@ public class MainActivity extends BaseActivity {
     private int currentSortMode = AppConstants.SORT_MODE_DEFAULT;
     private MenuItem selectAllItem;
     private MenuItem unselectAllItem;
+    // Отслеживаем тему/акцент для автоматического recreate при возврате из Settings
+    private int appliedAccent;
+    private boolean appliedIsAmoled;
 
     // Handle Shizuku permission results
     private final Shizuku.OnRequestPermissionResultListener shizukuPermissionListener = (requestCode, grantResult) -> {
@@ -86,9 +89,13 @@ public class MainActivity extends BaseActivity {
         binding.toolbar.setTitleTextColor(Color.WHITE);
         // При системном акценте восстанавливаем захардкоженый синий цвет тулбара
         int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
-        if (accent == ACCENT_SYSTEM) {
+        boolean isAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
+        if (!isAmoled && accent == ACCENT_SYSTEM) {
             binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
         }
+        // Запоминаем тему/акцент для обнаружения смены при возврате из Settings
+        appliedAccent = accent;
+        appliedIsAmoled = isAmoled;
 
         // Initialize components
         shellManager = new ShellManager(this, handler, executor);
@@ -115,6 +122,13 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Если акцент или AMOLED изменились в SettingsActivity — пересоздаём Activity
+        int newAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
+        boolean newIsAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
+        if (newAccent != appliedAccent || newIsAmoled != appliedIsAmoled) {
+            recreate();
+            return;
+        }
         // Reload settings in case they changed in SettingsActivity
         loadSettingsAndApplyToManager();
         loadBackgroundApps();
