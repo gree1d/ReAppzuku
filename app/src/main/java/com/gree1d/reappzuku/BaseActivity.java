@@ -25,12 +25,24 @@ public abstract class BaseActivity extends AppCompatActivity {
         int theme = sharedPreferences.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         boolean isSystemTheme = (theme == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
 
-        // Шаг 1: применить акцент через setTheme() ДО super.onCreate()
+        // Шаг 1: применить тему через setTheme() ДО super.onCreate()
         if (isSystemTheme || accent == ACCENT_SYSTEM) {
             // Системная тема — DynamicColors
             DynamicColors.applyToActivityIfAvailable(this);
+        } else if (isAmoled) {
+            // AMOLED + пользовательский акцент — используем Amoled-вариант темы
+            switch (accent) {
+                case ACCENT_INDIGO:  setTheme(R.style.AppTheme_AccentIndigo_Amoled);  break;
+                case ACCENT_CRIMSON: setTheme(R.style.AppTheme_AccentCrimson_Amoled); break;
+                case ACCENT_FOREST:  setTheme(R.style.AppTheme_AccentForest_Amoled);  break;
+                case ACCENT_SLATE:   setTheme(R.style.AppTheme_AccentSlate_Amoled);   break;
+                case ACCENT_ROSE:    setTheme(R.style.AppTheme_AccentRose_Amoled);    break;
+                case ACCENT_AMBER:   setTheme(R.style.AppTheme_AccentAmber_Amoled);   break;
+                case ACCENT_TEAL:    setTheme(R.style.AppTheme_AccentTeal_Amoled);    break;
+                default:             setTheme(R.style.AppTheme_AccentIndigo_Amoled);  break;
+            }
         } else {
-            // Пользовательский акцент — без DynamicColors
+            // Обычный пользовательский акцент
             switch (accent) {
                 case ACCENT_INDIGO:  setTheme(R.style.AppTheme_AccentIndigo);  break;
                 case ACCENT_CRIMSON: setTheme(R.style.AppTheme_AccentCrimson); break;
@@ -43,12 +55,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         }
 
-        // Шаг 2: AMOLED — применяем поверх акцента
-        if (isAmoled) {
-            getTheme().applyStyle(R.style.AppTheme_Amoled, true);
-        }
-
-        // Шаг 3: ночной режим
+        // Шаг 2: ночной режим
         if (isAmoled) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         } else {

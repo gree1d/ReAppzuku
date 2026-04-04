@@ -84,6 +84,11 @@ public class MainActivity extends BaseActivity {
         // Setup toolbar with colors from resources
         setSupportActionBar(binding.toolbar);
         binding.toolbar.setTitleTextColor(Color.WHITE);
+        // При системном акценте восстанавливаем захардкоженый синий цвет тулбара
+        int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
+        if (accent == ACCENT_SYSTEM) {
+            binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
+        }
 
         // Initialize components
         shellManager = new ShellManager(this, handler, executor);

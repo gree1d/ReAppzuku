@@ -111,6 +111,11 @@ public class SettingsActivity extends BaseActivity {
     private void setupToolbar() {
         setSupportActionBar(binding.toolbar);
         binding.toolbar.setNavigationOnClickListener(v -> finish());
+        // При системном акценте восстанавливаем захардкоженый синий цвет тулбара
+        int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
+        if (accent == ACCENT_SYSTEM) {
+            binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
+        }
     }
 
     private void loadSettings() {
