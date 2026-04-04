@@ -1,9 +1,68 @@
 <resources>
+    <!-- Базовая тема -->
     <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorSecondary">@color/colorAccent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- AMOLED тема — чёрный фон -->
+    <style name="AppTheme.Amoled" parent="AppTheme">
+        <item name="android:windowBackground">@color/amoled_background</item>
+        <item name="android:colorBackground">@color/amoled_background</item>
+        <item name="colorSurface">@color/amoled_background</item>
+        <item name="colorSurfaceVariant">@color/amoled_surface_variant</item>
+    </style>
+
+    <!-- Акцент: Индиго (совпадает с базовой) -->
+    <style name="AppTheme.AccentIndigo" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_indigo_primary</item>
+        <item name="colorSecondary">@color/accent_indigo_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_indigo_dark</item>
+    </style>
+
+    <!-- Акцент: Алый -->
+    <style name="AppTheme.AccentCrimson" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_crimson_primary</item>
+        <item name="colorSecondary">@color/accent_crimson_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_crimson_dark</item>
+    </style>
+
+    <!-- Акцент: Лесной зелёный -->
+    <style name="AppTheme.AccentForest" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_forest_primary</item>
+        <item name="colorSecondary">@color/accent_forest_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_forest_dark</item>
+    </style>
+
+    <!-- Акцент: Сланцево-синий -->
+    <style name="AppTheme.AccentSlate" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_slate_primary</item>
+        <item name="colorSecondary">@color/accent_slate_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_slate_dark</item>
+    </style>
+
+    <!-- Акцент: Пыльная роза -->
+    <style name="AppTheme.AccentRose" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_rose_primary</item>
+        <item name="colorSecondary">@color/accent_rose_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_rose_dark</item>
+    </style>
+
+    <!-- Акцент: Янтарный -->
+    <style name="AppTheme.AccentAmber" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_amber_primary</item>
+        <item name="colorSecondary">@color/accent_amber_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_amber_dark</item>
+    </style>
+
+    <!-- Акцент: Морская волна -->
+    <style name="AppTheme.AccentTeal" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_teal_primary</item>
+        <item name="colorSecondary">@color/accent_teal_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_teal_dark</item>
+    </style>
+
     <style name="AppTheme.FullScreen" parent="AppTheme">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>

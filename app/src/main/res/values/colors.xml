@@ -15,4 +15,43 @@
     <color name="divider_color">#DDDDDD</color>
     <color name="toolbar_navy">#001F5C</color>
     <color name="dialog_button_text">#1A237E</color>
+
+    <!-- AMOLED -->
+    <color name="amoled_background">#000000</color>
+    <color name="amoled_surface_variant">#0D0D0D</color>
+
+    <!-- Акцент: Индиго (по умолчанию) -->
+    <color name="accent_indigo_primary">#1A237E</color>
+    <color name="accent_indigo_secondary">#534BAE</color>
+    <color name="accent_indigo_dark">#000051</color>
+
+    <!-- Акцент: Алый -->
+    <color name="accent_crimson_primary">#8B1A1A</color>
+    <color name="accent_crimson_secondary">#A94040</color>
+    <color name="accent_crimson_dark">#5C0000</color>
+
+    <!-- Акцент: Лесной зелёный -->
+    <color name="accent_forest_primary">#1B4332</color>
+    <color name="accent_forest_secondary">#2D6A4F</color>
+    <color name="accent_forest_dark">#081C15</color>
+
+    <!-- Акцент: Сланцево-синий -->
+    <color name="accent_slate_primary">#2C3E6B</color>
+    <color name="accent_slate_secondary">#4A5F8A</color>
+    <color name="accent_slate_dark">#1A253F</color>
+
+    <!-- Акцент: Пыльная роза -->
+    <color name="accent_rose_primary">#7B4F5E</color>
+    <color name="accent_rose_secondary">#9E6E7C</color>
+    <color name="accent_rose_dark">#4E2F3A</color>
+
+    <!-- Акцент: Янтарный -->
+    <color name="accent_amber_primary">#7B5A00</color>
+    <color name="accent_amber_secondary">#A07820</color>
+    <color name="accent_amber_dark">#4E3800</color>
+
+    <!-- Акцент: Морская волна -->
+    <color name="accent_teal_primary">#1A4F52</color>
+    <color name="accent_teal_secondary">#2E7175</color>
+    <color name="accent_teal_dark">#0A2E30</color>
 </resources>
