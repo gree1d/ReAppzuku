@@ -2,7 +2,7 @@
 ![Logo](https://github.com/gree1d/ReAppzuku/blob/main/docs/images/logo.png)
 <p align="center">
 <img src="https://img.shields.io/badge/License-GPLv3-blue.svg"/>
-<img src="https://img.shields.io/badge/Android-8.0%2B-green.svg"/>
+<img src="https://img.shields.io/badge/Android-6.0%2B-green.svg"/>
 <img src="https://img.shields.io/badge/Shizuku-Supported-brightgreen.svg"/>
 </p>
 
@@ -47,6 +47,13 @@ ReAppzuku автоматически защищает критические с�
 ## 🎨 Кастомизация
  * Поддержка системных, светлых, темных и AMOLED тем.
  * Настраиваемые цветовые акценты (Индиго, Алый, Янтарный и др.).
+
+## Скриншоты
+<p align="center">
+  <img src="https://github.com/gree1d/ReAppzuku/blob/116363e97c91028a1a7a156f4ca0a17d0a73f166/docs/images/screenshot1.jpg" width="30%">
+  <img src="https://github.com/gree1d/ReAppzuku/blob/116363e97c91028a1a7a156f4ca0a17d0a73f166/docs/images/screenshot2.jpg" width="30%">
+  <img src="https://github.com/gree1d/ReAppzuku/blob/116363e97c91028a1a7a156f4ca0a17d0a73f166/docs/images/screenshot3.jpg" width="30%">
+</p>
 
 
 ## License
