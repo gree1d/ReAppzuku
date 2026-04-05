@@ -3,7 +3,6 @@
 <p align="center">
 <img src="https://img.shields.io/badge/License-GPLv3-blue.svg"/>
 <img src="https://img.shields.io/badge/Android-8.0%2B-green.svg"/>
-<img src="https://img.shields.io/badge/Root-Supported-orange.svg"/>
 <img src="https://img.shields.io/badge/Shizuku-Supported-brightgreen.svg"/>
 </p>
 
@@ -29,11 +28,11 @@ ReAppzuku — это форк оригинального Appzuku (Shappky), пр
 ## 🛠 Требования
 | Компонент | Требование |
 |---|---|
-| ОС Android | 8.0+ (Фоновые ограничения требуют 11+) |
-| Доступ | Root (приоритетно) или Shizuku |
+| ОС Android | 6.0+ (Фоновые ограничения требуют 11+) |
+| Доступ |  Shizuku |
 
 ## 🚀 Быстрый старт
- * Настройте среду: Установите Root-права или активируйте Shizuku.
+ * Настройте среду: Установите и активируйте [Shizuku](https://github.com/thedjchi/Shizuku).
  * Фоновая работа: Крайне важно отключить оптимизацию батареи для ReAppzuku и закрепить его в меню «Недавние», чтобы система не убивала сам сервис управления.
  * Выберите стратегию:
    * Максимальная экономия: Белый список + периодический Kill + Фоновые ограничения.
