@@ -1521,8 +1521,8 @@ public class SettingsActivity extends BaseActivity {
         content.summaryText.setText("Загрузка...");
 
         AlertDialog dialog = createSettingsSurfaceDialog(
-                "Журнал  фоновых ограничений",
-                "Последние результаты ограничений фоновой работы. Кэш ограничен до 200 записей",
+                "Журнал ограничений",
+                "Последние результаты ограничений фоновой работы. Сохраняются в кэше и автоматически ограничиваются.",
                 content.rootView);
         dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Закрыть", (d, w) -> d.dismiss());
         dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Очистить", (d, w) -> {
@@ -1532,7 +1532,7 @@ public class SettingsActivity extends BaseActivity {
 
         Runnable reloadLog = () -> executor.execute(() -> {
             List<SettingsSurfaceRow> rows = buildRestrictionLogRows(BackgroundRestrictionLog.readEntries(this));
-            String summary = String.format(Locale.US, "Последние события: %d записей.",
+            String summary = String.format(Locale.US, "Последние события: %d записей | Кэшировано, кэш ограничен до 200 записей.",
                     rows.size());
             handler.post(() -> {
                 adapter.setItems(rows);
@@ -1547,7 +1547,7 @@ public class SettingsActivity extends BaseActivity {
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             appManager.clearBackgroundRestrictionLog();
             reloadLog.run();
-            Toast.makeText(this, "Журнал фоновых ограничений очищен", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Журнал ограничений очищен", Toast.LENGTH_SHORT).show();
         });
     }
 
