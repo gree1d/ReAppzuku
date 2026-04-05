@@ -1521,8 +1521,8 @@ public class SettingsActivity extends BaseActivity {
         content.summaryText.setText("Загрузка...");
 
         AlertDialog dialog = createSettingsSurfaceDialog(
-                "Журнал фоновых ограничений",
-                "Последние результаты ограничений фоновой работы. Кэш журнала ограничен до 200 записей.",
+                "Журнал  фоновых ограничений",
+                "Последние результаты ограничений фоновой работы. Кэш ограничен до 200 записей",
                 content.rootView);
         dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Закрыть", (d, w) -> d.dismiss());
         dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Очистить", (d, w) -> {
