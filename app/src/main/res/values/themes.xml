@@ -6,6 +6,7 @@
         <item name="android:colorControlActivated">@color/colorAccent</item>
         <item name="colorControlActivated">@color/colorAccent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="checkboxStyle">@style/Widget.App.CheckBox</item>
     </style>
 
@@ -21,6 +22,7 @@
         <item name="colorOnSurface">@android:color/white</item>
         <item name="android:colorControlActivated">@color/colorAccent</item>
         <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="android:windowLightStatusBar">false</item>
         <item name="checkboxStyle">@style/Widget.App.CheckBox</item>
     </style>
 
