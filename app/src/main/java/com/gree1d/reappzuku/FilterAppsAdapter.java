@@ -218,7 +218,7 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
             if (app.isSelected()) {
                 boolean isHard = Boolean.TRUE.equals(restrictionTypeMap.get(app.getPackageName()));
                 holder.restrictionType.setVisibility(View.VISIBLE);
-                holder.restrictionType.setText(isHard ? "Жесткое" : "Мягкое");
+                holder.restrictionType.setText(isHard ? "Жёсткое" : "Мягкое");
                 holder.restrictionType.setOnClickListener(v -> showRestrictionTypeDialog(app, holder.restrictionType));
             } else {
                 holder.restrictionType.setVisibility(View.GONE);
@@ -264,8 +264,8 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         int currentIndex = currentlyHard ? 1 : 0;
 
         String[] options = {
-                "Мягкое (по умолчанию) - запрет фоновой работы (RUN_ANY_IN_BACKGROUND)",
-                "Жесткое - запрет запуска переднего плана (START_FOREGROUND)"
+                "Мягкое (по умолчанию) — запрет фоновой работы (RUN_ANY_IN_BACKGROUND)",
+                "Жёсткое — запрет запуска переднего плана (START_FOREGROUND)"
         };
 
         new AlertDialog.Builder(context)
@@ -277,7 +277,7 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
                     } else {
                         restrictionTypeMap.remove(app.getPackageName());
                     }
-                    chipView.setText(selectHard ? "Жесткое" : "Мягкое");
+                    chipView.setText(selectHard ? "Жёсткое" : "Мягкое");
                     dialog.dismiss();
                     notifySelectionChanged();
                 })
