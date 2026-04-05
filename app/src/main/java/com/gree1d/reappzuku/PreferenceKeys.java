@@ -16,6 +16,10 @@ public final class PreferenceKeys {
     public static final String KEY_BLACKLISTED_APPS = "blacklisted_apps";
     public static final String KEY_AUTOSTART_DISABLED_APPS = "autostart_disabled_apps";
 
+    // Background Restriction type: packages in this set use HARD restriction (START_FOREGROUND deny)
+    // Packages NOT in this set but in KEY_AUTOSTART_DISABLED_APPS use SOFT restriction (RUN_ANY_IN_BACKGROUND ignore)
+    public static final String KEY_HARD_RESTRICTION_APPS = "hard_restriction_apps";
+
     // Kill Mode
     public static final String KEY_KILL_MODE = "kill_mode"; // 0 = Whitelist (default), 1 = Blacklist
 

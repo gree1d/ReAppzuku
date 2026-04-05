@@ -36,6 +36,7 @@ import static com.gree1d.reappzuku.AppConstants.*;
 public class BackgroundAppManager {
     private static final String TAG = "BackgroundAppManager";
     private static final String BACKGROUND_RESTRICTION_OP = "RUN_ANY_IN_BACKGROUND";
+    private static final String FOREGROUND_RESTRICTION_OP = "START_FOREGROUND";
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+");
     private static final String FORCE_STOP_COMMAND_PREFIX = "am force-stop ";
     private final Context context;
@@ -470,6 +471,39 @@ public class BackgroundAppManager {
         sharedpreferences.edit().putStringSet(KEY_AUTOSTART_DISABLED_APPS, new HashSet<>(packageNames)).apply();
     }
 
+    /**
+     * Returns the set of packages that have HARD restriction (START_FOREGROUND ignore).
+     * All other restricted packages use SOFT restriction (RUN_ANY_IN_BACKGROUND ignore).
+     */
+    public Set<String> getHardRestrictedApps() {
+        return new HashSet<>(sharedpreferences.getStringSet(KEY_HARD_RESTRICTION_APPS, new HashSet<>()));
+    }
+
+    public void saveHardRestrictedApps(Set<String> packageNames) {
+        sharedpreferences.edit().putStringSet(KEY_HARD_RESTRICTION_APPS, new HashSet<>(packageNames)).apply();
+    }
+
+    /**
+     * Returns true if the given package has HARD restriction type.
+     */
+    public boolean isHardRestricted(String packageName) {
+        return getHardRestrictedApps().contains(packageName);
+    }
+
+    /**
+     * Sets the restriction type for a package (hard or soft).
+     * The package must already be in the restricted list.
+     */
+    public void setRestrictionType(String packageName, boolean hard) {
+        Set<String> hardSet = getHardRestrictedApps();
+        if (hard) {
+            hardSet.add(packageName);
+        } else {
+            hardSet.remove(packageName);
+        }
+        saveHardRestrictedApps(hardSet);
+    }
+
     public Set<String> getBlacklistedApps() {
         return new HashSet<>(sharedpreferences.getStringSet(KEY_BLACKLISTED_APPS, new HashSet<>()));
     }
@@ -497,8 +531,32 @@ public class BackgroundAppManager {
     }
 
     public void applyBackgroundRestriction(Set<String> targetPackages, Runnable onComplete) {
+        applyBackgroundRestriction(targetPackages, null, onComplete);
+    }
+
+    /**
+     * Applies background restrictions.
+     * @param targetPackages  full set of packages that should be restricted
+     * @param hardPackages    subset of targetPackages that should use HARD restriction (START_FOREGROUND ignore).
+     *                        Pass null to preserve existing hard/soft assignments from preferences.
+     * @param onComplete      called on main thread when done
+     */
+    public void applyBackgroundRestriction(Set<String> targetPackages, Set<String> hardPackages, Runnable onComplete) {
         Set<String> desiredPackages = sanitizeBackgroundRestrictionTargets(targetPackages);
         saveBackgroundRestrictedApps(desiredPackages);
+
+        // If caller explicitly passes hardPackages, save them; otherwise keep existing
+        if (hardPackages != null) {
+            // Only keep hard assignments for packages that are still restricted
+            Set<String> sanitizedHard = new HashSet<>(hardPackages);
+            sanitizedHard.retainAll(desiredPackages);
+            saveHardRestrictedApps(sanitizedHard);
+        } else {
+            // Clean up any hard assignments for packages no longer restricted
+            Set<String> existingHard = getHardRestrictedApps();
+            existingHard.retainAll(desiredPackages);
+            saveHardRestrictedApps(existingHard);
+        }
 
         if (!supportsBackgroundRestriction()) {
             BackgroundRestrictionLog.log(context, null, "apply", "skipped", "Android 11+ required");
@@ -519,35 +577,60 @@ public class BackgroundAppManager {
 
         executor.execute(() -> {
             Set<String> currentPackages = getActualBackgroundRestrictedApps();
+            Set<String> hardSet = getHardRestrictedApps();
+
+            // Packages to allow (were restricted, now should not be)
             Set<String> packagesToAllow = new HashSet<>(currentPackages);
             packagesToAllow.removeAll(desiredPackages);
 
+            // Packages to restrict (newly added)
             Set<String> packagesToRestrict = new HashSet<>(desiredPackages);
             packagesToRestrict.removeAll(currentPackages);
 
+            // Packages already restricted but whose TYPE may have changed
+            Set<String> packagesToUpdate = new HashSet<>(desiredPackages);
+            packagesToUpdate.retainAll(currentPackages);
+
             boolean success = true;
+
+            // Allow (remove restriction) — clear both ops
             for (String packageName : packagesToAllow) {
-                ShellManager.ShellResult allowResult = shellManager
+                ShellManager.ShellResult r1 = shellManager
                         .runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "allow"));
-                if (!allowResult.succeeded()) {
-                    success = false;
-                }
-                logRestrictionResult(packageName, "allow", allowResult, null);
+                ShellManager.ShellResult r2 = shellManager
+                        .runShellCommandForResult(buildHardRestrictionCommand(packageName, "allow"));
+                if (!r1.succeeded()) success = false;
+                logRestrictionResult(packageName, "allow", r1, null);
             }
 
+            // Restrict (newly added) — apply correct type
             for (String packageName : packagesToRestrict) {
-                ShellManager.ShellResult restrictResult = shellManager
-                        .runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "ignore"));
+                boolean isHard = hardSet.contains(packageName);
+                ShellManager.ShellResult restrictResult = isHard
+                        ? shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "ignore"))
+                        : shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "ignore"));
                 if (!restrictResult.succeeded()) {
                     success = false;
-                    logRestrictionResult(packageName, "restrict", restrictResult, null);
+                    logRestrictionResult(packageName, isHard ? "restrict-hard" : "restrict-soft", restrictResult, null);
                     continue;
                 }
                 ShellManager.ShellResult forceStopResult = shellManager.runShellCommandForResult(FORCE_STOP_COMMAND_PREFIX + packageName);
-                if (!forceStopResult.succeeded()) {
-                    success = false;
+                if (!forceStopResult.succeeded()) success = false;
+                logRestrictionResult(packageName, isHard ? "restrict-hard" : "restrict-soft", restrictResult, forceStopResult);
+            }
+
+            // Update type for already-restricted packages (re-apply to ensure correct op is set)
+            for (String packageName : packagesToUpdate) {
+                boolean isHard = hardSet.contains(packageName);
+                if (isHard) {
+                    // Ensure soft is cleared, hard is set
+                    shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "allow"));
+                    shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "ignore"));
+                } else {
+                    // Ensure hard is cleared, soft is set
+                    shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "allow"));
+                    shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "ignore"));
                 }
-                logRestrictionResult(packageName, "restrict", restrictResult, forceStopResult);
             }
 
             BackgroundRestrictionState actualState = getBackgroundRestrictionState();
@@ -575,8 +658,12 @@ public class BackgroundAppManager {
         return "cmd appops set --user current " + packageName + " " + BACKGROUND_RESTRICTION_OP + " " + mode;
     }
 
+    private String buildHardRestrictionCommand(String packageName, String mode) {
+        return "cmd appops set --user current " + packageName + " " + FOREGROUND_RESTRICTION_OP + " " + mode;
+    }
+
     public void reapplySavedBackgroundRestrictions(Runnable onComplete) {
-        applyBackgroundRestriction(getBackgroundRestrictedApps(), onComplete);
+        applyBackgroundRestriction(getBackgroundRestrictedApps(), null, onComplete);
     }
 
     // --- Sleep Mode ---

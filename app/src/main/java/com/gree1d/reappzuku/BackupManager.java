@@ -29,6 +29,7 @@ public class BackupManager {
             putStringSet(root, KEY_WHITELISTED_APPS);
             putStringSet(root, KEY_BLACKLISTED_APPS);
             putStringSet(root, KEY_AUTOSTART_DISABLED_APPS);
+            putStringSet(root, KEY_HARD_RESTRICTION_APPS);
             putStringSet(root, KEY_SLEEP_MODE_APPS);
 
             root.put(KEY_KILL_MODE, prefs.getInt(KEY_KILL_MODE, 0));
@@ -64,6 +65,7 @@ public class BackupManager {
             restoreSet(editor, root, KEY_WHITELISTED_APPS);
             restoreSet(editor, root, KEY_BLACKLISTED_APPS);
             restoreSet(editor, root, KEY_AUTOSTART_DISABLED_APPS);
+            restoreSet(editor, root, KEY_HARD_RESTRICTION_APPS);
             restoreSet(editor, root, KEY_SLEEP_MODE_APPS);
             restoreInt(editor, root, KEY_KILL_MODE);
             restoreBoolean(editor, root, KEY_AUTO_KILL_ENABLED);
