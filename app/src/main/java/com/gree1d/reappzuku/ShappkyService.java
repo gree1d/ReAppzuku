@@ -113,10 +113,13 @@ public class ShappkyService extends Service {
                     if (ramThresholdEnabled) {
                         int threshold = prefs.getInt(KEY_RAM_THRESHOLD, DEFAULT_RAM_THRESHOLD_PERCENT);
                         if (getCurrentRamUsagePercent() >= threshold) {
-                            appManager.performAutoKill(null);
+                            appManager.performAutoKill(() -> KillTriggerReceiver.releaseAutoKillWakeLock());
+                        } else {
+                            // RAM ниже порога — kill не выполняется, сразу освобождаем WakeLock
+                            KillTriggerReceiver.releaseAutoKillWakeLock();
                         }
                     } else {
-                        appManager.performAutoKill(null);
+                        appManager.performAutoKill(() -> KillTriggerReceiver.releaseAutoKillWakeLock());
                     }
                 });
                 break;
