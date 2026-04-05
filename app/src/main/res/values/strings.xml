@@ -78,7 +78,7 @@
     <string name="settings_kill_history_subtitle">Auto-Kills, перезапуски и освобожденная ОЗУ</string>
     <string name="settings_top_offenders_title">Топ нарушителей</string>
     <string name="settings_top_offenders_subtitle">Приложения с наибольшим количеством Auto-Kill или перезапусков</string>
-    <string name="settings_restriction_log_title">Журнал ограничений</string>
+    <string name="settings_restriction_log_title">Журнал фоновых ограничений</string>
     <string name="settings_restriction_log_subtitle">Последние результаты ограничений и ошибки</string>
 
     <string name="settings_section_information">Информация</string>
