@@ -2,7 +2,10 @@ package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -71,6 +74,35 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
 
         super.onCreate(savedInstanceState);
+
+        // Шаг 3: статус-бар — светлые иконки только если тема тёмная
+        applyStatusBarAppearance(isAmoled, theme);
+    }
+
+    private void applyStatusBarAppearance(boolean isAmoled, int theme) {
+        if (getWindow() == null) return;
+
+        // Определяем светлая ли сейчас тема фактически
+        boolean isCurrentlyLight;
+        if (isAmoled) {
+            isCurrentlyLight = false;
+        } else if (theme == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
+            int nightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+            isCurrentlyLight = (nightMode != Configuration.UI_MODE_NIGHT_YES);
+        } else {
+            isCurrentlyLight = (theme == AppCompatDelegate.MODE_NIGHT_NO);
+        }
+
+        View decorView = getWindow().getDecorView();
+        int flags = decorView.getSystemUiVisibility();
+        if (isCurrentlyLight) {
+            // Светлая тема — тёмные иконки статус-бара
+            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        } else {
+            // Тёмная тема — светлые иконки статус-бара
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        }
+        decorView.setSystemUiVisibility(flags);
     }
 
     protected void applyTheme() {
