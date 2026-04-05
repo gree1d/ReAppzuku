@@ -31,6 +31,7 @@ public final class AppConstants {
         // Notification IDs
         public static final int NOTIFICATION_ID_SERVICE = 1;
         public static final int NOTIFICATION_ID_KILL = 2;
+        public static final int NOTIFICATION_ID_SHIZUKU_LOST = 3;
 
         // Notification Channels
         public static final String CHANNEL_ID_SERVICE = "AppzukuChannel";
@@ -82,4 +83,7 @@ public final class AppConstants {
                 30 * 60 * 1000L,
                 60 * 60 * 1000L
         };
+
+        // Shizuku monitoring
+        public static final long SHIZUKU_POLL_INTERVAL_MS = 15_000; // 15 seconds
 }

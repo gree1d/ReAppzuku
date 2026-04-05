@@ -46,6 +46,9 @@ public class ShappkyService extends Service {
     // True if background restricted apps are currently frozen
     private boolean isFrozen = false;
 
+    // True if Shizuku lost notification is currently shown
+    private boolean shizukuLostNotificationShown = false;
+
     public static boolean isRunning() {
         return isRunning;
     }
@@ -92,6 +95,7 @@ public class ShappkyService extends Service {
         registerReceiver(screenOffReceiver, filter);
 
         scheduleNextKill();
+        scheduleShizukuCheck();
 
         // Восстанавливаем фоновые ограничения после перезагрузки — appops сбрасывается на некоторых устройствах
         appManager.reapplySavedBackgroundRestrictions(null);
@@ -171,6 +175,68 @@ public class ShappkyService extends Service {
         }
 
         return START_STICKY;
+    }
+
+    /**
+     * Periodically checks Shizuku availability.
+     * If Shizuku permission is lost, shows a persistent notification.
+     * Cancels the notification once access is restored.
+     * Root users are not affected — check is skipped if root is available.
+     */
+    private void scheduleShizukuCheck() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!isRunning) return;
+
+                // Root users don't rely on Shizuku — skip check
+                if (shellManager.hasRootAccess()) {
+                    handler.postDelayed(this, SHIZUKU_POLL_INTERVAL_MS);
+                    return;
+                }
+
+                boolean shizukuOk = shellManager.hasShizukuPermission();
+
+                if (!shizukuOk && !shizukuLostNotificationShown) {
+                    Log.w(TAG, "Shizuku permission lost, sending notification");
+                    sendShizukuLostNotification();
+                    shizukuLostNotificationShown = true;
+                } else if (shizukuOk && shizukuLostNotificationShown) {
+                    Log.d(TAG, "Shizuku permission restored, cancelling notification");
+                    cancelShizukuLostNotification();
+                    shizukuLostNotificationShown = false;
+                }
+
+                handler.postDelayed(this, SHIZUKU_POLL_INTERVAL_MS);
+            }
+        }, SHIZUKU_POLL_INTERVAL_MS);
+    }
+
+    /**
+     * Sends a persistent notification informing the user that Shizuku access is lost.
+     */
+    private void sendShizukuLostNotification() {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_ACTIONS)
+                .setContentTitle("ReAppzuku сервисы")
+                .setContentText("Нет доступа к Shizuku. Приложение не может продолжить работу.")
+                .setSmallIcon(R.drawable.ic_shappky)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(false);
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) {
+            nm.notify(NOTIFICATION_ID_SHIZUKU_LOST, builder.build());
+        }
+    }
+
+    /**
+     * Cancels the Shizuku lost notification.
+     */
+    private void cancelShizukuLostNotification() {
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) {
+            nm.cancel(NOTIFICATION_ID_SHIZUKU_LOST);
+        }
     }
 
     /**
@@ -265,6 +331,7 @@ public class ShappkyService extends Service {
     public void onDestroy() {
         isRunning = false;
         cancelIdleFreezeAlarm();
+        cancelShizukuLostNotification();
         if (screenOffReceiver != null) {
             unregisterReceiver(screenOffReceiver);
         }
@@ -280,9 +347,19 @@ public class ShappkyService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID_SERVICE, "ReAppzuku Foreground Service",
+            NotificationManager nm = getSystemService(NotificationManager.class);
+
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID_SERVICE,
+                    "ReAppzuku Foreground Service",
                     NotificationManager.IMPORTANCE_LOW);
-            getSystemService(NotificationManager.class).createNotificationChannel(channel);
+            nm.createNotificationChannel(serviceChannel);
+
+            NotificationChannel actionsChannel = new NotificationChannel(
+                    CHANNEL_ID_ACTIONS,
+                    "ReAppzuku Уведомления",
+                    NotificationManager.IMPORTANCE_HIGH);
+            nm.createNotificationChannel(actionsChannel);
         }
     }
 }

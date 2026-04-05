@@ -13,7 +13,7 @@ import static com.gree1d.reappzuku.PreferenceKeys.*;
 public class KillTriggerReceiver extends BroadcastReceiver {
     private static final String TAG = "KillTriggerReceiver";
     private static final String WAKELOCK_TAG = "reappzuku:AutoKillWakeLock";
-    private static final long WAKELOCK_TIMEOUT_MS = 15_000L;
+    private static final long WAKELOCK_TIMEOUT_MS = 10_000L;
 
     // Static — чтобы ShappkyService мог освободить его после завершения kill
     static volatile PowerManager.WakeLock autoKillWakeLock;
