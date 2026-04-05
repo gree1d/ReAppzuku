@@ -150,6 +150,78 @@
         <item name="colorControlActivated">@color/accent_teal_secondary</item>
     </style>
 
+    <!-- Акцент: Терракота -->
+    <style name="AppTheme.AccentTerracota" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_terracota_primary</item>
+        <item name="colorSecondary">@color/accent_terracota_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_terracota_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_terracota_dark</item>
+        <item name="android:colorControlActivated">@color/accent_terracota_primary</item>
+        <item name="colorControlActivated">@color/accent_terracota_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentTerracota.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_terracota_primary</item>
+        <item name="colorSecondary">@color/accent_terracota_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_terracota_dark</item>
+        <item name="android:colorControlActivated">@color/accent_terracota_secondary</item>
+        <item name="colorControlActivated">@color/accent_terracota_secondary</item>
+    </style>
+
+    <!-- Акцент: Мокко -->
+    <style name="AppTheme.AccentMocha" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_mocha_primary</item>
+        <item name="colorSecondary">@color/accent_mocha_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_mocha_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_mocha_dark</item>
+        <item name="android:colorControlActivated">@color/accent_mocha_primary</item>
+        <item name="colorControlActivated">@color/accent_mocha_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentMocha.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_mocha_primary</item>
+        <item name="colorSecondary">@color/accent_mocha_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_mocha_dark</item>
+        <item name="android:colorControlActivated">@color/accent_mocha_secondary</item>
+        <item name="colorControlActivated">@color/accent_mocha_secondary</item>
+    </style>
+
+    <!-- Акцент: Оливковый -->
+    <style name="AppTheme.AccentOlive" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_olive_primary</item>
+        <item name="colorSecondary">@color/accent_olive_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_olive_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_olive_dark</item>
+        <item name="android:colorControlActivated">@color/accent_olive_primary</item>
+        <item name="colorControlActivated">@color/accent_olive_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentOlive.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_olive_primary</item>
+        <item name="colorSecondary">@color/accent_olive_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_olive_dark</item>
+        <item name="android:colorControlActivated">@color/accent_olive_secondary</item>
+        <item name="colorControlActivated">@color/accent_olive_secondary</item>
+    </style>
+
+    <!-- Акцент: Стальной -->
+    <style name="AppTheme.AccentSteel" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_steel_primary</item>
+        <item name="colorSecondary">@color/accent_steel_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_steel_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_steel_dark</item>
+        <item name="android:colorControlActivated">@color/accent_steel_primary</item>
+        <item name="colorControlActivated">@color/accent_steel_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentSteel.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_steel_primary</item>
+        <item name="colorSecondary">@color/accent_steel_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_steel_dark</item>
+        <item name="android:colorControlActivated">@color/accent_steel_secondary</item>
+        <item name="colorControlActivated">@color/accent_steel_secondary</item>
+    </style>
+
     <style name="AppTheme.FullScreen" parent="AppTheme">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>

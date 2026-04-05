@@ -14,7 +14,7 @@
     <string name="settings_theme_system">Система</string>
     <string name="settings_theme_light">Светлая</string>
     <string name="settings_theme_dark">Темная</string>
-    <string name="settings_theme_amoled">AMOLED</string>
+    <string name="settings_theme_amoled">AMOLED (чёрный)</string>
 
     <string name="settings_accent_title">Цветовой акцент</string>
     <string name="settings_accent_subtitle">Основной цвет интерфейса</string>
@@ -109,6 +109,10 @@
         <item>Пыльная роза</item>
         <item>Янтарный</item>
         <item>Морская волна</item>
+        <item>Терракота</item>
+        <item>Мокко</item>
+        <item>Оливковый</item>
+        <item>Стальной</item>
     </string-array>
 
     <string-array name="settings_kill_interval_labels">

@@ -54,4 +54,24 @@
     <color name="accent_teal_primary">#1A4F52</color>
     <color name="accent_teal_secondary">#2E7175</color>
     <color name="accent_teal_dark">#0A2E30</color>
+
+    <!-- Акцент: Терракота -->
+    <color name="accent_terracota_primary">#7A3D2A</color>
+    <color name="accent_terracota_secondary">#9E5A43</color>
+    <color name="accent_terracota_dark">#4E2015</color>
+
+    <!-- Акцент: Мокко -->
+    <color name="accent_mocha_primary">#6B4F3A</color>
+    <color name="accent_mocha_secondary">#8C6B54</color>
+    <color name="accent_mocha_dark">#3E2C1E</color>
+
+    <!-- Акцент: Оливковый -->
+    <color name="accent_olive_primary">#4A5240</color>
+    <color name="accent_olive_secondary">#687560</color>
+    <color name="accent_olive_dark">#252B21</color>
+
+    <!-- Акцент: Стальной -->
+    <color name="accent_steel_primary">#3D5068</color>
+    <color name="accent_steel_secondary">#5A7088</color>
+    <color name="accent_steel_dark">#1E2F3E</color>
 </resources>
