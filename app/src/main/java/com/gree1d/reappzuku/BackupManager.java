@@ -42,6 +42,8 @@ public class BackupManager {
             root.put(KEY_SHOW_PERSISTENT_APPS, prefs.getBoolean(KEY_SHOW_PERSISTENT_APPS, false));
             root.put(KEY_THEME, prefs.getInt(KEY_THEME,
                     androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM));
+            root.put(KEY_ACCENT, prefs.getInt(KEY_ACCENT, AppConstants.ACCENT_SYSTEM));
+            root.put(KEY_AMOLED, prefs.getBoolean(KEY_AMOLED, false));
             root.put(KEY_SORT_MODE, prefs.getInt(KEY_SORT_MODE, AppConstants.SORT_MODE_DEFAULT));
             root.put(KEY_SYSTEM_APPS_WARNING_SHOWN, prefs.getBoolean(KEY_SYSTEM_APPS_WARNING_SHOWN, false));
             root.put(KEY_SLEEP_MODE_ENABLED, prefs.getBoolean(KEY_SLEEP_MODE_ENABLED, false));
@@ -73,6 +75,8 @@ public class BackupManager {
             restoreBoolean(editor, root, KEY_SHOW_SYSTEM_APPS);
             restoreBoolean(editor, root, KEY_SHOW_PERSISTENT_APPS);
             restoreInt(editor, root, KEY_THEME);
+            restoreInt(editor, root, KEY_ACCENT);
+            restoreBoolean(editor, root, KEY_AMOLED);
             restoreInt(editor, root, KEY_SORT_MODE);
             restoreBoolean(editor, root, KEY_SYSTEM_APPS_WARNING_SHOWN);
             restoreBoolean(editor, root, KEY_SLEEP_MODE_ENABLED);

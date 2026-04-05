@@ -59,14 +59,18 @@ public final class AppConstants {
         };
 
         // Accent values
-        public static final int ACCENT_SYSTEM  = 0; // Системный (DynamicColors)
-        public static final int ACCENT_INDIGO  = 1; // Индиго (по умолчанию)
-        public static final int ACCENT_CRIMSON = 2; // Алый
-        public static final int ACCENT_FOREST  = 3; // Лесной зелёный
-        public static final int ACCENT_SLATE   = 4; // Сланцево-синий
-        public static final int ACCENT_ROSE    = 5; // Пыльная роза
-        public static final int ACCENT_AMBER   = 6; // Янтарный
-        public static final int ACCENT_TEAL    = 7; // Морская волна
+        public static final int ACCENT_SYSTEM    = 0;  // Системный (DynamicColors)
+        public static final int ACCENT_INDIGO    = 1;  // Индиго (по умолчанию)
+        public static final int ACCENT_CRIMSON   = 2;  // Алый
+        public static final int ACCENT_FOREST    = 3;  // Лесной зелёный
+        public static final int ACCENT_SLATE     = 4;  // Сланцево-синий
+        public static final int ACCENT_ROSE      = 5;  // Пыльная роза
+        public static final int ACCENT_AMBER     = 6;  // Янтарный
+        public static final int ACCENT_TEAL      = 7;  // Морская волна
+        public static final int ACCENT_TERRACOTA = 8;  // Терракота
+        public static final int ACCENT_MOCHA     = 9;  // Мокко
+        public static final int ACCENT_OLIVE     = 10; // Оливковый
+        public static final int ACCENT_STEEL     = 11; // Стальной
 
         // Sleep Mode
         public static final long DEFAULT_SLEEP_MODE_DELAY_MS = 60 * 60 * 1000L; // 60 minutes

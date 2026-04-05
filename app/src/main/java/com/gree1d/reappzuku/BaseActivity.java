@@ -30,13 +30,17 @@ public abstract class BaseActivity extends AppCompatActivity {
         if (isAmoled) {
             // AMOLED — всегда применяем AMOLED тему; акцент по умолчанию = Индиго
             switch (accent) {
-                case ACCENT_CRIMSON: setTheme(R.style.AppTheme_AccentCrimson_Amoled); break;
-                case ACCENT_FOREST:  setTheme(R.style.AppTheme_AccentForest_Amoled);  break;
-                case ACCENT_SLATE:   setTheme(R.style.AppTheme_AccentSlate_Amoled);   break;
-                case ACCENT_ROSE:    setTheme(R.style.AppTheme_AccentRose_Amoled);    break;
-                case ACCENT_AMBER:   setTheme(R.style.AppTheme_AccentAmber_Amoled);   break;
-                case ACCENT_TEAL:    setTheme(R.style.AppTheme_AccentTeal_Amoled);    break;
-                default:             setTheme(R.style.AppTheme_AccentIndigo_Amoled);  break;
+                case ACCENT_CRIMSON:   setTheme(R.style.AppTheme_AccentCrimson_Amoled);   break;
+                case ACCENT_FOREST:    setTheme(R.style.AppTheme_AccentForest_Amoled);    break;
+                case ACCENT_SLATE:     setTheme(R.style.AppTheme_AccentSlate_Amoled);     break;
+                case ACCENT_ROSE:      setTheme(R.style.AppTheme_AccentRose_Amoled);      break;
+                case ACCENT_AMBER:     setTheme(R.style.AppTheme_AccentAmber_Amoled);     break;
+                case ACCENT_TEAL:      setTheme(R.style.AppTheme_AccentTeal_Amoled);      break;
+                case ACCENT_TERRACOTA: setTheme(R.style.AppTheme_AccentTerracota_Amoled); break;
+                case ACCENT_MOCHA:     setTheme(R.style.AppTheme_AccentMocha_Amoled);     break;
+                case ACCENT_OLIVE:     setTheme(R.style.AppTheme_AccentOlive_Amoled);     break;
+                case ACCENT_STEEL:     setTheme(R.style.AppTheme_AccentSteel_Amoled);     break;
+                default:               setTheme(R.style.AppTheme_AccentIndigo_Amoled);    break;
             }
         } else if (isSystemTheme || accent == ACCENT_SYSTEM) {
             // Системная тема — DynamicColors
@@ -44,14 +48,18 @@ public abstract class BaseActivity extends AppCompatActivity {
         } else {
             // Обычный пользовательский акцент
             switch (accent) {
-                case ACCENT_INDIGO:  setTheme(R.style.AppTheme_AccentIndigo);  break;
-                case ACCENT_CRIMSON: setTheme(R.style.AppTheme_AccentCrimson); break;
-                case ACCENT_FOREST:  setTheme(R.style.AppTheme_AccentForest);  break;
-                case ACCENT_SLATE:   setTheme(R.style.AppTheme_AccentSlate);   break;
-                case ACCENT_ROSE:    setTheme(R.style.AppTheme_AccentRose);    break;
-                case ACCENT_AMBER:   setTheme(R.style.AppTheme_AccentAmber);   break;
-                case ACCENT_TEAL:    setTheme(R.style.AppTheme_AccentTeal);    break;
-                default:             setTheme(R.style.AppTheme_AccentIndigo);  break;
+                case ACCENT_INDIGO:    setTheme(R.style.AppTheme_AccentIndigo);    break;
+                case ACCENT_CRIMSON:   setTheme(R.style.AppTheme_AccentCrimson);   break;
+                case ACCENT_FOREST:    setTheme(R.style.AppTheme_AccentForest);    break;
+                case ACCENT_SLATE:     setTheme(R.style.AppTheme_AccentSlate);     break;
+                case ACCENT_ROSE:      setTheme(R.style.AppTheme_AccentRose);      break;
+                case ACCENT_AMBER:     setTheme(R.style.AppTheme_AccentAmber);     break;
+                case ACCENT_TEAL:      setTheme(R.style.AppTheme_AccentTeal);      break;
+                case ACCENT_TERRACOTA: setTheme(R.style.AppTheme_AccentTerracota); break;
+                case ACCENT_MOCHA:     setTheme(R.style.AppTheme_AccentMocha);     break;
+                case ACCENT_OLIVE:     setTheme(R.style.AppTheme_AccentOlive);     break;
+                case ACCENT_STEEL:     setTheme(R.style.AppTheme_AccentSteel);     break;
+                default:               setTheme(R.style.AppTheme_AccentIndigo);    break;
             }
         }
 
