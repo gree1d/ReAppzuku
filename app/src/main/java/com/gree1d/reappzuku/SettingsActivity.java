@@ -1707,10 +1707,14 @@ public class SettingsActivity extends BaseActivity {
             return "";
         }
         switch (outcome.trim().toLowerCase()) {
-            case "ok":          return "Отправлено";
-            case "verified":    return "Выполнено";
-            case "failed":      return "ОШИБКА";
-            case "skipped":     return "Пропущено";
+            case "ok":                          return "Отправлено";
+            case "verified":                    return "Выполнено";
+            case "failed":                      return "ОШИБКА";
+            case "skipped":                     return "Пропущено";
+            case "verify-failed":               return "НЕ ПРИМЕНИЛОСЬ";
+            case "verify-unavailable":          return "Проверка недоступна";
+            case "battery-whitelist-removed":   return "Удалено из whitelist";
+            case "battery-whitelist-restored":  return "Возвращено в whitelist";
             default:
                 String normalized = outcome.trim().replace('-', ' ').replace('_', ' ');
                 return normalized.toUpperCase(Locale.US);
