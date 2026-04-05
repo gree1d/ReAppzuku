@@ -1199,7 +1199,11 @@ public class SettingsActivity extends BaseActivity {
 
         appManager.loadBackgroundRestrictionApps(allApps -> {
             Set<String> desiredRestrictedApps = appManager.getBackgroundRestrictedApps();
-            FilterAppsAdapter filterAdapter = new FilterAppsAdapter(this, allApps, desiredRestrictedApps);
+            Set<String> hardRestrictedApps = appManager.getHardRestrictedApps();
+
+            // Restriction-mode constructor — включает чип Мягкое/Жёсткое
+            FilterAppsAdapter filterAdapter = new FilterAppsAdapter(
+                    this, allApps, desiredRestrictedApps, hardRestrictedApps);
             listView.setAdapter(filterAdapter);
             listView.setOnItemClickListener(null);
 
@@ -1207,36 +1211,37 @@ public class SettingsActivity extends BaseActivity {
             listView.setVisibility(View.VISIBLE);
             searchBox.setVisibility(View.VISIBLE);
             filterOptions.setVisibility(View.VISIBLE);
-            
+
             setupFilterListeners(dialogView, filterAdapter);
-            
+
             appManager.updateRunningState(allApps, () -> {
                 if (!restrictionDialog.isShowing()) return;
                 filterAdapter.notifyDataSetChanged();
             });
 
             searchBox.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                }
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                     filterAdapter.getFilter().filter(s);
                 }
-
-                @Override
-                public void afterTextChanged(Editable s) {
-                }
+                @Override public void afterTextChanged(Editable s) {}
             });
 
-            restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> {
+            // При любом изменении — кнопка становится "Применить"
+            filterAdapter.setOnSelectionChangedListener(() -> {
+                restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setText("Применить");
+                restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
+                        ContextCompat.getColor(this, R.color.dialog_button_text));
+            });
+
+            Runnable doApply = () -> {
                 Set<String> targetPackages = filterAdapter.getSelectedPackages();
+                Set<String> hardPackages = filterAdapter.getHardRestrictedPackages();
+
                 Set<String> currentDesired = new java.util.HashSet<>(desiredRestrictedApps);
                 Set<String> packagesToRestrict = new java.util.HashSet<>(targetPackages);
                 packagesToRestrict.removeAll(currentDesired);
 
-                // Count system apps in selection
                 int systemAppCount = 0;
                 for (AppModel app : allApps) {
                     if (packagesToRestrict.contains(app.getPackageName()) && app.isSystemApp()) {
@@ -1244,27 +1249,31 @@ public class SettingsActivity extends BaseActivity {
                     }
                 }
 
-                // Show warning if system apps are selected
                 if (systemAppCount > 0) {
                     new AlertDialog.Builder(SettingsActivity.this)
                             .setTitle("Выбраны системные приложения")
                             .setMessage("Вы выбрали " + systemAppCount
                                     + " системных приложений(я) для фонового ограничения.\n\nЭто может сломать уведомления, виджеты, VPN, клавиатуры, вспомогательные сервисы, сопряжение с устройствами или нарушить стабильность работы устройства.\n\nВы хотите продолжить?")
-                            .setPositiveButton("Да, примерить", (d2, w2) -> appManager.applyBackgroundRestriction(targetPackages, null))
+                            .setPositiveButton("Да, применить", (d2, w2) ->
+                                    appManager.applyBackgroundRestriction(targetPackages, hardPackages, null))
                             .setNegativeButton("Отмена", null)
                             .show();
                 } else if (!packagesToRestrict.isEmpty()) {
                     new AlertDialog.Builder(SettingsActivity.this)
                             .setTitle("Предупреждение о фоновых ограничениях")
                             .setMessage("Приложения с фоновыми ограничениями могут перестать синхронизироваться, пропускать уведомления, перестать обновлять виджеты или не выполнять фоновые задачи, пока вы не откроете их снова.\n\nВы хотите продолжить?")
-                            .setPositiveButton("Применить", (d2, w2) -> appManager.applyBackgroundRestriction(targetPackages, null))
+                            .setPositiveButton("Применить", (d2, w2) ->
+                                    appManager.applyBackgroundRestriction(targetPackages, hardPackages, null))
                             .setNegativeButton("Отмена", null)
                             .show();
                 } else {
-                    appManager.applyBackgroundRestriction(targetPackages, null);
+                    appManager.applyBackgroundRestriction(targetPackages, hardPackages, null);
                 }
-            });
-            restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
+            };
+
+            restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> doApply.run());
+            restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
+                    ContextCompat.getColor(this, R.color.dialog_button_text));
         });
     }
 
@@ -1521,8 +1530,8 @@ public class SettingsActivity extends BaseActivity {
         content.summaryText.setText("Загрузка...");
 
         AlertDialog dialog = createSettingsSurfaceDialog(
-                "Журнал ограничений",
-                "Последние результаты ограничений фоновой работы. Сохраняются в кэше и автоматически ограничиваются.",
+                "Журнал фоновых ограничений",
+                "Последние результаты ограничений фоновой работы. Сохраняются в кэш, колличество записей ограничено до 200",
                 content.rootView);
         dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Закрыть", (d, w) -> d.dismiss());
         dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Очистить", (d, w) -> {
@@ -1532,7 +1541,7 @@ public class SettingsActivity extends BaseActivity {
 
         Runnable reloadLog = () -> executor.execute(() -> {
             List<SettingsSurfaceRow> rows = buildRestrictionLogRows(BackgroundRestrictionLog.readEntries(this));
-            String summary = String.format(Locale.US, "Последние события: %d записей | Кэшировано, кэш ограничен до 200 записей.",
+            String summary = String.format(Locale.US, "Последние события: %d записей.",
                     rows.size());
             handler.post(() -> {
                 adapter.setItems(rows);
@@ -1547,7 +1556,7 @@ public class SettingsActivity extends BaseActivity {
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             appManager.clearBackgroundRestrictionLog();
             reloadLog.run();
-            Toast.makeText(this, "Журнал ограничений очищен", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Журнал фоновых ограничений очищен", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -1634,8 +1643,8 @@ public class SettingsActivity extends BaseActivity {
                 String action = entry.action.trim().toLowerCase();
                 if (action.equals("restrict-hard")) {
                     detail = (detail == null || detail.isEmpty())
-                            ? "Тип: Жёсткое (START_FOREGROUND)"
-                            : detail + "  |  Тип: Жёсткое (START_FOREGROUND)";
+                            ? "Тип: Жесткое (START_FOREGROUND)"
+                            : detail + "  |  Тип: Жесткое (START_FOREGROUND)";
                 } else if (action.equals("restrict-soft") || action.equals("restrict")) {
                     detail = (detail == null || detail.isEmpty())
                             ? "Тип: Мягкое (RUN_ANY_IN_BACKGROUND)"
