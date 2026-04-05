@@ -6,7 +6,6 @@
         <item name="android:colorControlActivated">@color/colorAccent</item>
         <item name="colorControlActivated">@color/colorAccent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
         <item name="checkboxStyle">@style/Widget.App.CheckBox</item>
     </style>
 
@@ -22,7 +21,6 @@
         <item name="colorOnSurface">@android:color/white</item>
         <item name="android:colorControlActivated">@color/colorAccent</item>
         <item name="colorControlActivated">@color/colorAccent</item>
-        <item name="android:windowLightStatusBar">false</item>
         <item name="checkboxStyle">@style/Widget.App.CheckBox</item>
     </style>
 
@@ -229,7 +227,7 @@
         <item name="android:windowContentOverlay">@null</item>
     </style>
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.Material3" />
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
 
     <!-- CheckBox: галочка и рамка = colorControlActivated из темы -->
     <style name="Widget.App.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
