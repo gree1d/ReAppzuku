@@ -897,6 +897,7 @@ public class BackgroundAppManager {
         Set<String> restrictedPackages = new HashSet<>();
         boolean querySucceeded = false;
 
+        // Soft restriction: RUN_ANY_IN_BACKGROUND ignore/deny
         String ignoreOutput = shellManager.runShellCommandAndGetFullOutput(
                 "cmd appops query-op --user current " + BACKGROUND_RESTRICTION_OP + " ignore");
         if (ignoreOutput != null) {
@@ -909,6 +910,21 @@ public class BackgroundAppManager {
         if (denyOutput != null) {
             querySucceeded = true;
             mergeBackgroundRestrictedPackages(restrictedPackages, denyOutput);
+        }
+
+        // Hard restriction: START_FOREGROUND ignore/deny — тоже считаем как restricted
+        String hardIgnoreOutput = shellManager.runShellCommandAndGetFullOutput(
+                "cmd appops query-op --user current " + FOREGROUND_RESTRICTION_OP + " ignore");
+        if (hardIgnoreOutput != null) {
+            querySucceeded = true;
+            mergeBackgroundRestrictedPackages(restrictedPackages, hardIgnoreOutput);
+        }
+
+        String hardDenyOutput = shellManager.runShellCommandAndGetFullOutput(
+                "cmd appops query-op --user current " + FOREGROUND_RESTRICTION_OP + " deny");
+        if (hardDenyOutput != null) {
+            querySucceeded = true;
+            mergeBackgroundRestrictedPackages(restrictedPackages, hardDenyOutput);
         }
 
         return new BackgroundRestrictionState(querySucceeded ? restrictedPackages : fallbackPackages, querySucceeded);
