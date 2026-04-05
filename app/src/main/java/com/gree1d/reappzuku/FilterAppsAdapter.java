@@ -261,27 +261,58 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
 
     private void showRestrictionTypeDialog(AppModel app, TextView chipView) {
         boolean currentlyHard = Boolean.TRUE.equals(restrictionTypeMap.get(app.getPackageName()));
-        int currentIndex = currentlyHard ? 1 : 0;
 
-        String[] options = {
-                "Мягкое (по умолчанию) - запрет автозапуска (RUN_ANY_IN_BACKGROUND)",
-                "Жесткое - запрет любой работы в фоне (Мягкое+START_FOREGROUND+RECEIVE_BOOT_COMPLETED+Delete from battery optimization whitelist)"
-        };
+        // Строим кастомный layout с разделителем между вариантами
+        android.widget.LinearLayout container = new android.widget.LinearLayout(context);
+        container.setOrientation(android.widget.LinearLayout.VERTICAL);
+        container.setPadding(0, 16, 0, 8);
+
+        android.widget.RadioGroup radioGroup = new android.widget.RadioGroup(context);
+        radioGroup.setOrientation(android.widget.RadioGroup.VERTICAL);
+        int paddingH = (int) (context.getResources().getDisplayMetrics().density * 24);
+
+        // Вариант 1 — Мягкое
+        android.widget.RadioButton softBtn = new android.widget.RadioButton(context);
+        softBtn.setId(android.view.View.generateViewId());
+        softBtn.setText("Мягкое (по умолчанию) - запрет автозапуска (RUN_ANY_IN_BACKGROUND)");
+        softBtn.setPadding(paddingH, 24, paddingH, 24);
+        softBtn.setChecked(!currentlyHard);
+        radioGroup.addView(softBtn);
+
+        // Разделитель
+        android.view.View divider = new android.view.View(context);
+        android.widget.LinearLayout.LayoutParams dividerParams =
+                new android.widget.LinearLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        dividerParams.setMargins(paddingH, 4, paddingH, 4);
+        divider.setLayoutParams(dividerParams);
+        divider.setBackgroundColor(0x22888888);
+        radioGroup.addView(divider);
+
+        // Вариант 2 — Жёсткое
+        android.widget.RadioButton hardBtn = new android.widget.RadioButton(context);
+        hardBtn.setId(android.view.View.generateViewId());
+        hardBtn.setText("Жесткое - запрет любой работы в фоне (Мягкое+START_FOREGROUND+RECEIVE_BOOT_COMPLETED+Delete from battery optimization whitelist)");
+        hardBtn.setPadding(paddingH, 24, paddingH, 24);
+        hardBtn.setChecked(currentlyHard);
+        radioGroup.addView(hardBtn);
+
+        container.addView(radioGroup);
 
         new AlertDialog.Builder(context)
                 .setTitle("Тип ограничения")
-                .setSingleChoiceItems(options, currentIndex, (dialog, which) -> {
-                    boolean selectHard = (which == 1);
+                .setView(container)
+                .setNegativeButton("Отмена", null)
+                .setPositiveButton("Применить", (dialog, which) -> {
+                    boolean selectHard = hardBtn.isChecked();
                     if (selectHard) {
                         restrictionTypeMap.put(app.getPackageName(), true);
                     } else {
                         restrictionTypeMap.remove(app.getPackageName());
                     }
                     chipView.setText(selectHard ? "Жесткое" : "Мягкое");
-                    dialog.dismiss();
                     notifySelectionChanged();
                 })
-                .setNegativeButton("Отмена", null)
                 .show();
     }
 

@@ -1627,9 +1627,13 @@ public class SettingsActivity extends BaseActivity {
         List<SettingsSurfaceRow> rows = new ArrayList<>();
         for (int i = 0; i < logEntries.size(); i++) {
             BackgroundRestrictionLog.LogEntry entry = logEntries.get(i);
+
+            // Title — package name или action если пакета нет
             String title = entry.packageName == null || entry.packageName.equals("-")
                     ? humanizeLogAction(entry.action)
                     : entry.packageName;
+
+            // Subtitle — timestamp | action
             String subtitle = entry.timestamp;
             if (entry.action != null && !entry.action.trim().isEmpty()) {
                 subtitle = subtitle.isEmpty()
@@ -1637,30 +1641,47 @@ public class SettingsActivity extends BaseActivity {
                         : subtitle + " | " + humanizeLogAction(entry.action);
             }
 
-            // Добавляем тип ограничения в detail на основе action
-            String detail = entry.detail;
-            if (entry.action != null) {
-                String action = entry.action.trim().toLowerCase();
-                if (action.equals("restrict-hard")) {
-                    detail = (detail == null || detail.isEmpty())
-                            ? "Тип: Жесткое (START_FOREGROUND)"
-                            : detail + "  |  Тип: Жесткое (START_FOREGROUND)";
-                } else if (action.equals("restrict-soft") || action.equals("restrict")) {
-                    detail = (detail == null || detail.isEmpty())
-                            ? "Тип: Мягкое (RUN_ANY_IN_BACKGROUND)"
-                            : detail + "  |  Тип: Мягкое (RUN_ANY_IN_BACKGROUND)";
-                }
+            // Detail — outcome + raw detail из лога
+            String detail = humanizeLogOutcome(entry.outcome);
+            if (entry.detail != null && !entry.detail.trim().isEmpty()) {
+                detail = detail.isEmpty() ? entry.detail : detail + "  |  " + entry.detail;
             }
+
+            // Badge — тип ограничения, отображается справа под outcome
+            String badge = resolveRestrictionTypeBadge(entry.action);
 
             rows.add(new SettingsSurfaceRow(
                     "#" + (i + 1),
                     title,
                     subtitle,
                     detail,
-                    humanizeLogOutcome(entry.outcome),
+                    badge,
                     entry.packageName));
         }
         return rows;
+    }
+
+    /**
+     * Возвращает читаемое название типа ограничения на основе action из лога.
+     * Отображается в badge справа под статусом OK/VERIFIED.
+     */
+    private String resolveRestrictionTypeBadge(String action) {
+        if (action == null) return "";
+        switch (action.trim().toLowerCase()) {
+            case "restrict-hard":
+            case "reapply-hard":
+                return "Жёсткое";
+            case "restrict-soft":
+            case "reapply-soft":
+            case "restrict":
+                return "Мягкое";
+            case "allow":
+                return "Снято";
+            case "reapply":
+                return "Повтор";
+            default:
+                return "";
+        }
     }
 
     private void bindOptionalText(TextView view, String text) {
@@ -1685,8 +1706,15 @@ public class SettingsActivity extends BaseActivity {
         if (outcome == null || outcome.trim().isEmpty()) {
             return "";
         }
-        String normalized = outcome.trim().replace('-', ' ').replace('_', ' ');
-        return normalized.toUpperCase(Locale.US);
+        switch (outcome.trim().toLowerCase()) {
+            case "ok":          return "Отправлено";
+            case "verified":    return "Выполнено";
+            case "failed":      return "ОШИБКА";
+            case "skipped":     return "Пропущено";
+            default:
+                String normalized = outcome.trim().replace('-', ' ').replace('_', ' ');
+                return normalized.toUpperCase(Locale.US);
+        }
     }
 
     private void styleDialogButtons(AlertDialog dialog) {
