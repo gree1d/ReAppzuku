@@ -6,6 +6,7 @@
     android:background="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal">
+
     <ImageView
         android:id="@+id/filter_app_icon"
         android:layout_width="48dp"
@@ -17,7 +18,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="8dp"
         android:orientation="vertical">
 
         <TextView
@@ -38,8 +39,25 @@
 
     </LinearLayout>
 
+    <!-- Метка типа ограничения: видна только в диалоге фоновых ограничений для выбранных приложений -->
+    <TextView
+        android:id="@+id/filter_restriction_type"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="4dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorPrimary"
+        android:background="@drawable/bg_restriction_type_chip"
+        android:visibility="gone" />
+
     <CheckBox
         android:id="@+id/filter_app_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
+
 </LinearLayout>
