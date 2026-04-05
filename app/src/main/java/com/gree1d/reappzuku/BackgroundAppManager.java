@@ -37,6 +37,7 @@ public class BackgroundAppManager {
     private static final String TAG = "BackgroundAppManager";
     private static final String BACKGROUND_RESTRICTION_OP = "RUN_ANY_IN_BACKGROUND";
     private static final String FOREGROUND_RESTRICTION_OP = "START_FOREGROUND";
+    private static final String BOOT_RESTRICTION_OP = "RECEIVE_BOOT_COMPLETED";
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+");
     private static final String FORCE_STOP_COMMAND_PREFIX = "am force-stop ";
     private final Context context;
@@ -593,12 +594,16 @@ public class BackgroundAppManager {
 
             boolean success = true;
 
-            // Allow (remove restriction) — clear both ops
+            // Allow (remove restriction) — clear all ops, restore whitelist
             for (String packageName : packagesToAllow) {
                 ShellManager.ShellResult r1 = shellManager
                         .runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "allow"));
                 ShellManager.ShellResult r2 = shellManager
                         .runShellCommandForResult(buildHardRestrictionCommand(packageName, "allow"));
+                // Restore boot op to default
+                shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "allow"));
+                // Restore battery whitelist if we removed it
+                restoreBatteryWhitelist(packageName);
                 if (!r1.succeeded()) success = false;
                 logRestrictionResult(packageName, "allow", r1, null);
             }
@@ -614,6 +619,11 @@ public class BackgroundAppManager {
                     logRestrictionResult(packageName, isHard ? "restrict-hard" : "restrict-soft", restrictResult, null);
                     continue;
                 }
+                if (isHard) {
+                    // Hard: additionally block boot broadcast and remove from battery whitelist
+                    shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
+                    applyBatteryWhitelistRemoval(packageName);
+                }
                 ShellManager.ShellResult forceStopResult = shellManager.runShellCommandForResult(FORCE_STOP_COMMAND_PREFIX + packageName);
                 if (!forceStopResult.succeeded()) success = false;
                 logRestrictionResult(packageName, isHard ? "restrict-hard" : "restrict-soft", restrictResult, forceStopResult);
@@ -623,12 +633,16 @@ public class BackgroundAppManager {
             for (String packageName : packagesToUpdate) {
                 boolean isHard = hardSet.contains(packageName);
                 if (isHard) {
-                    // Ensure soft is cleared, hard is set
+                    // Ensure soft is cleared, hard is set + extra ops
                     shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "allow"));
                     shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "ignore"));
+                    shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
+                    applyBatteryWhitelistRemoval(packageName);
                 } else {
-                    // Ensure hard is cleared, soft is set
+                    // Ensure hard + extra ops are cleared, soft is set
                     shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "allow"));
+                    shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "allow"));
+                    restoreBatteryWhitelist(packageName);
                     shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "ignore"));
                 }
             }
@@ -662,8 +676,124 @@ public class BackgroundAppManager {
         return "cmd appops set --user current " + packageName + " " + FOREGROUND_RESTRICTION_OP + " " + mode;
     }
 
+    private String buildBootRestrictionCommand(String packageName, String mode) {
+        return "cmd appops set --user current " + packageName + " " + BOOT_RESTRICTION_OP + " " + mode;
+    }
+
+    /**
+     * Checks if the package is currently in the user battery optimization whitelist.
+     * Only user-added entries can be removed — system/temp entries are skipped.
+     */
+    private boolean isInBatteryWhitelist(String packageName) {
+        String output = shellManager.runShellCommandAndGetFullOutput("dumpsys deviceidle whitelist");
+        if (output == null) return false;
+        for (String line : output.split("\n")) {
+            String trimmed = line.trim();
+            // Only match user-added entries: "user,com.example.app,uid"
+            if (trimmed.startsWith("user,") && trimmed.contains("," + packageName + ",")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Removes package from battery optimization whitelist and records the removal
+     * so it can be restored when hard restriction is lifted.
+     */
+    private void applyBatteryWhitelistRemoval(String packageName) {
+        if (!isInBatteryWhitelist(packageName)) return;
+        ShellManager.ShellResult result = shellManager.runShellCommandForResult(
+                "cmd deviceidle whitelist -" + packageName);
+        if (result.succeeded()) {
+            Set<String> removed = getBatteryWhitelistRemoved();
+            removed.add(packageName);
+            saveBatteryWhitelistRemoved(removed);
+            BackgroundRestrictionLog.log(context, packageName, "restrict-hard",
+                    "battery-whitelist-removed", "removed from deviceidle whitelist");
+        }
+    }
+
+    /**
+     * Restores package to battery optimization whitelist if ReAppzuku was the one who removed it.
+     */
+    private void restoreBatteryWhitelist(String packageName) {
+        Set<String> removed = getBatteryWhitelistRemoved();
+        if (!removed.contains(packageName)) return;
+        shellManager.runShellCommandForResult("cmd deviceidle whitelist +" + packageName);
+        removed.remove(packageName);
+        saveBatteryWhitelistRemoved(removed);
+        BackgroundRestrictionLog.log(context, packageName, "allow",
+                "battery-whitelist-restored", "restored to deviceidle whitelist");
+    }
+
+    public Set<String> getBatteryWhitelistRemoved() {
+        return new HashSet<>(sharedpreferences.getStringSet(KEY_BATTERY_WHITELIST_REMOVED, new HashSet<>()));
+    }
+
+    public void saveBatteryWhitelistRemoved(Set<String> packages) {
+        sharedpreferences.edit().putStringSet(KEY_BATTERY_WHITELIST_REMOVED, new HashSet<>(packages)).apply();
+    }
+
+    /**
+     * Forcefully re-applies all saved background restrictions without comparing
+     * against current actual state. This ensures firmware resets are corrected.
+     * Unlike applyBackgroundRestriction(), this always executes shell commands
+     * for every saved package and always writes to the restriction log.
+     */
     public void reapplySavedBackgroundRestrictions(Runnable onComplete) {
-        applyBackgroundRestriction(getBackgroundRestrictedApps(), null, onComplete);
+        Set<String> desired = sanitizeBackgroundRestrictionTargets(getBackgroundRestrictedApps());
+        Set<String> hard = getHardRestrictedApps();
+
+        if (desired.isEmpty()) {
+            BackgroundRestrictionLog.log(context, null, "reapply", "skipped", "No saved restrictions");
+            if (onComplete != null) handler.post(onComplete);
+            return;
+        }
+        if (!supportsBackgroundRestriction()) {
+            BackgroundRestrictionLog.log(context, null, "reapply", "skipped", "Android 11+ required");
+            if (onComplete != null) handler.post(onComplete);
+            return;
+        }
+        if (!shellManager.hasAnyShellPermission()) {
+            BackgroundRestrictionLog.log(context, null, "reapply", "failed", "No shell permission");
+            if (onComplete != null) handler.post(onComplete);
+            return;
+        }
+
+        executor.execute(() -> {
+            boolean success = true;
+            for (String packageName : desired) {
+                boolean isHard = hard.contains(packageName);
+
+                // Основная AppOps операция — применяем принудительно без проверки actual
+                ShellManager.ShellResult result = isHard
+                        ? shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "ignore"))
+                        : shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "ignore"));
+                if (!result.succeeded()) success = false;
+                logRestrictionResult(packageName, isHard ? "reapply-hard" : "reapply-soft", result, null);
+
+                if (isHard) {
+                    // Дополнительные операции для жёсткого — прошивка могла их сбросить
+                    shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
+                    applyBatteryWhitelistRemoval(packageName);
+                }
+
+                // Верификация после применения
+                BackgroundRestrictionState actualState = getBackgroundRestrictionState();
+                logRestrictionVerification(packageName, isHard ? "reapply-hard" : "reapply-soft",
+                        actualState, true);
+            }
+
+            final boolean finalSuccess = success;
+            handler.post(() -> {
+                Toast.makeText(context,
+                        finalSuccess ? "Ограничения повторно применены"
+                                : "Некоторые ограничения не удалось применить",
+                        Toast.LENGTH_SHORT).show();
+                if (onComplete != null) onComplete.run();
+            });
+        });
     }
 
     // --- Sleep Mode ---
@@ -767,7 +897,6 @@ public class BackgroundAppManager {
         Set<String> restrictedPackages = new HashSet<>();
         boolean querySucceeded = false;
 
-        // Soft restriction: RUN_ANY_IN_BACKGROUND ignore/deny
         String ignoreOutput = shellManager.runShellCommandAndGetFullOutput(
                 "cmd appops query-op --user current " + BACKGROUND_RESTRICTION_OP + " ignore");
         if (ignoreOutput != null) {
@@ -780,21 +909,6 @@ public class BackgroundAppManager {
         if (denyOutput != null) {
             querySucceeded = true;
             mergeBackgroundRestrictedPackages(restrictedPackages, denyOutput);
-        }
-
-        // Hard restriction: START_FOREGROUND ignore/deny — must also be counted as restricted
-        String hardIgnoreOutput = shellManager.runShellCommandAndGetFullOutput(
-                "cmd appops query-op --user current " + FOREGROUND_RESTRICTION_OP + " ignore");
-        if (hardIgnoreOutput != null) {
-            querySucceeded = true;
-            mergeBackgroundRestrictedPackages(restrictedPackages, hardIgnoreOutput);
-        }
-
-        String hardDenyOutput = shellManager.runShellCommandAndGetFullOutput(
-                "cmd appops query-op --user current " + FOREGROUND_RESTRICTION_OP + " deny");
-        if (hardDenyOutput != null) {
-            querySucceeded = true;
-            mergeBackgroundRestrictedPackages(restrictedPackages, hardDenyOutput);
         }
 
         return new BackgroundRestrictionState(querySucceeded ? restrictedPackages : fallbackPackages, querySucceeded);

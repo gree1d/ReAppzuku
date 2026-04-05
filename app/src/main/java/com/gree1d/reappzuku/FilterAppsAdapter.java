@@ -265,7 +265,7 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
 
         String[] options = {
                 "Мягкое (по умолчанию) - запрет автозапуска (RUN_ANY_IN_BACKGROUND)",
-                "Жесткое - запрет любой работы в фоне (START_FOREGROUND)"
+                "Жесткое - запрет любой работы в фоне (Мягкое+START_FOREGROUND+RECEIVE_BOOT_COMPLETED+Delete from battery optimization whitelist)"
         };
 
         new AlertDialog.Builder(context)

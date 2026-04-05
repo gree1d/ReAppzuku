@@ -20,6 +20,10 @@ public final class PreferenceKeys {
     // Packages NOT in this set but in KEY_AUTOSTART_DISABLED_APPS use SOFT restriction (RUN_ANY_IN_BACKGROUND ignore)
     public static final String KEY_HARD_RESTRICTION_APPS = "hard_restriction_apps";
 
+    // Packages that were removed from battery optimization whitelist by ReAppzuku during hard restriction.
+    // Restored automatically when hard restriction is lifted.
+    public static final String KEY_BATTERY_WHITELIST_REMOVED = "battery_whitelist_removed";
+
     // Kill Mode
     public static final String KEY_KILL_MODE = "kill_mode"; // 0 = Whitelist (default), 1 = Blacklist
 
