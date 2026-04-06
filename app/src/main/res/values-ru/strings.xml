@@ -281,7 +281,6 @@
     <!-- ShappkyService — notification channel names -->
     <string name="service_channel_foreground_name" translatable="false">ReAppzuku Foreground Service</string>
     <string name="service_channel_actions_name">ReAppzuku Уведомления</string>
-</resources>
 
     <string name="settings_title">Настройки</string>
     <string name="settings_about_section">О приложении</string>
@@ -303,4 +302,4 @@
 
     <string name="ram_usage">ОЗУ: %1$dMB / %2$dMB</string>
     <string name="ram_usage_unavailable">ОЗУ: --</string>
-
+</resources> 
