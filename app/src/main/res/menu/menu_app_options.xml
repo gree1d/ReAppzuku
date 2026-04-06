@@ -2,29 +2,29 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/action_app_info"
-        android:title="Информация о приложении" />
+        android:title="@string/menu_app_info" />
     <item
         android:id="@+id/action_uninstall"
-        android:title="Удалить" />
+        android:title="@string/menu_uninstall" />
     <item
         android:id="@+id/action_add_to_list"
-        android:title="Добавить в...">
+        android:title="@string/menu_add_to">
         <menu>
             <item
                 android:id="@+id/action_whitelist"
-                android:title="Белый список"
+                android:title="@string/settings_mode_whitelist"
                 android:checkable="true" />
             <item
                 android:id="@+id/action_blacklist"
-                android:title="Черный список"
+                android:title="@string/settings_mode_blacklist"
                 android:checkable="true" />
             <item
                 android:id="@+id/action_hidden"
-                android:title="Скрытые"
+                android:title="@string/menu_hidden"
                 android:checkable="true" />
             <item
                 android:id="@+id/action_background_restriction"
-                android:title="Фоновое ограничение"
+                android:title="@string/main_restriction_menu_default"
                 android:checkable="true" />
         </menu>
     </item>

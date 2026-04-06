@@ -14,17 +14,17 @@
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_select_all"
-        android:title="Выбрать все"
+        android:title="@string/menu_select_all"
         app:showAsAction="ifRoom"
         app:actionLayout="@layout/select_all_action" />
     <item
         android:id="@+id/action_unselect_all"
-        android:title="Отменить выбор"
+        android:title="@string/menu_deselect_all"
         app:showAsAction="ifRoom"
         app:actionLayout="@layout/unselect_all_action" />
     <item
         android:id="@+id/action_settings"
-        android:title="Настройки"
+        android:title="@string/settings_title"
         android:icon="@drawable/ic_settings"
         app:showAsAction="ifRoom" />
 </menu>
