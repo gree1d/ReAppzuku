@@ -1,5 +1,6 @@
 package com.gree1d.reappzuku;
 
+import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.ProgressBar;
@@ -19,6 +20,7 @@ import static com.gree1d.reappzuku.AppConstants.RAM_MONITOR_UPDATE_INTERVAL_MS;
 public class RamMonitor {
     private static final String TAG = "RamMonitor";
 
+    private final Context context;
     private final Handler handler;
     private final ProgressBar ramUsageBar;
     private final TextView ramUsageText;
@@ -26,7 +28,8 @@ public class RamMonitor {
     private volatile boolean isMonitoring = false;
     private Runnable monitorRunnable;
 
-    public RamMonitor(Handler handler, ProgressBar ramUsageBar, TextView ramUsageText) {
+    public RamMonitor(Context context, Handler handler, ProgressBar ramUsageBar, TextView ramUsageText) {
+        this.context = context;
         this.handler = handler;
         this.ramUsageBar = ramUsageBar;
         this.ramUsageText = ramUsageText;
@@ -61,10 +64,10 @@ public class RamMonitor {
                         if (ramInfo != null && ramInfo.totalMb > 0) {
                             ramUsageBar.setMax((int) ramInfo.totalMb);
                             ramUsageBar.setProgress((int) ramInfo.usedMb);
-                            ramUsageText.setText(String.format("ОЗУ: %dMB / %dMB",
+                            ramUsageText.setText(context.getString(R.string.ram_usage,
                                     ramInfo.usedMb, ramInfo.totalMb));
                         } else {
-                            ramUsageText.setText("ОЗУ: --");
+                            ramUsageText.setText(context.getString(R.string.ram_usage_unavailable));
                         }
                     });
                 });
