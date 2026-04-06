@@ -307,4 +307,17 @@
     <!-- RamMonitor -->
     <string name="ram_usage">RAM: %1$dMB / %2$dMB</string>
     <string name="ram_usage_unavailable">RAM: --</string>
+    
+    <!-- Filter dialog (dialog_filter.xml) -->
+    <string name="filter_system">System</string>
+    <string name="filter_user">User</string>
+    <string name="filter_running">Active</string>
+    <string name="filter_clear">Clear</string>
+
+    <!-- Help URL -->
+    <string name="url_help">https://github.com/gree1d/ReAppzuku/blob/main/docs/HELP.md</string>
+    
+    <!-- Developer Tg -->
+    <string name="settings_telegram_title">Telegram</string>
+    <string name="settings_telegram_subtitle">Contact the developer</string>
 </resources>
