@@ -1,3 +1,7 @@
+**English** | [Русский](https://github.com/gree1d/ReAppzuku/blob/main/docs/README_RU.md)
+
+---
+
 # ReAppzuku
 ![Logo](https://github.com/gree1d/ReAppzuku/blob/main/docs/images/logo.png)
 <p align="center">
