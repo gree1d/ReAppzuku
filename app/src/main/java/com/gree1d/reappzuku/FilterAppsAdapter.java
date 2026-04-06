@@ -218,7 +218,9 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
             if (app.isSelected()) {
                 boolean isHard = Boolean.TRUE.equals(restrictionTypeMap.get(app.getPackageName()));
                 holder.restrictionType.setVisibility(View.VISIBLE);
-                holder.restrictionType.setText(isHard ? "Жесткое" : "Мягкое");
+                holder.restrictionType.setText(isHard
+                        ? context.getString(R.string.restriction_badge_hard)
+                        : context.getString(R.string.restriction_badge_soft));
                 holder.restrictionType.setOnClickListener(v -> showRestrictionTypeDialog(app, holder.restrictionType));
             } else {
                 holder.restrictionType.setVisibility(View.GONE);
@@ -274,7 +276,7 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         // Вариант 1 — Мягкое
         android.widget.RadioButton softBtn = new android.widget.RadioButton(context);
         softBtn.setId(android.view.View.generateViewId());
-        softBtn.setText("Мягкое (по умолчанию) - запрет автозапуска (RUN_ANY_IN_BACKGROUND)");
+        softBtn.setText(context.getString(R.string.filter_restriction_soft_option));
         softBtn.setPadding(paddingH, 24, paddingH, 24);
         softBtn.setChecked(!currentlyHard);
         radioGroup.addView(softBtn);
@@ -292,7 +294,7 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         // Вариант 2 — Жёсткое
         android.widget.RadioButton hardBtn = new android.widget.RadioButton(context);
         hardBtn.setId(android.view.View.generateViewId());
-        hardBtn.setText("Жесткое - запрет любой работы в фоне (Мягкое+START_FOREGROUND+RECEIVE_BOOT_COMPLETED+Delete from battery optimization whitelist)");
+        hardBtn.setText(context.getString(R.string.filter_restriction_hard_option));
         hardBtn.setPadding(paddingH, 24, paddingH, 24);
         hardBtn.setChecked(currentlyHard);
         radioGroup.addView(hardBtn);
@@ -300,17 +302,19 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         container.addView(radioGroup);
 
         new AlertDialog.Builder(context)
-                .setTitle("Тип ограничения")
+                .setTitle(context.getString(R.string.filter_restriction_type_dialog_title))
                 .setView(container)
-                .setNegativeButton("Отмена", null)
-                .setPositiveButton("Применить", (dialog, which) -> {
+                .setNegativeButton(context.getString(R.string.dialog_cancel), null)
+                .setPositiveButton(context.getString(R.string.dialog_apply), (dialog, which) -> {
                     boolean selectHard = hardBtn.isChecked();
                     if (selectHard) {
                         restrictionTypeMap.put(app.getPackageName(), true);
                     } else {
                         restrictionTypeMap.remove(app.getPackageName());
                     }
-                    chipView.setText(selectHard ? "Жесткое" : "Мягкое");
+                    chipView.setText(selectHard
+                            ? context.getString(R.string.restriction_badge_hard)
+                            : context.getString(R.string.restriction_badge_soft));
                     notifySelectionChanged();
                 })
                 .show();

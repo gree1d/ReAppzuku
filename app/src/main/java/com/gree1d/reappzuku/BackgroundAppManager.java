@@ -146,7 +146,7 @@ public class BackgroundAppManager {
                         try {
                             // Common checks: foreground, hidden, protected
                             if (hiddenApps.contains(pkg) || ProtectedApps.isProtected(context, pkg)
-                                    || dumpOutput.contains(pkg)) {
+                                    || containsPackage(dumpOutput, pkg)) {
                                 return false;
                             }
 
@@ -217,7 +217,9 @@ public class BackgroundAppManager {
     }
 
     private void sendKillNotification(int count) {
-        ShappkyService.updateNotification(context, "Auto-Kill активен", "Остановлено " + count + " фоновых приложений");
+        ShappkyService.updateNotification(context,
+                context.getString(R.string.bg_manager_auto_kill_active),
+                context.getString(R.string.bg_manager_stopped_apps, count));
     }
 
     private String formatMemorySize(long kb) {
@@ -658,7 +660,7 @@ public class BackgroundAppManager {
             final boolean finalSuccess = success;
             handler.post(() -> {
                 Toast.makeText(context,
-                        finalSuccess ? "Настройки фоновых ограничений применены"
+                        finalSuccess ? context.getString(R.string.bg_manager_restriction_applied)
                                 : "Some background restriction changes failed",
                         Toast.LENGTH_SHORT).show();
                 if (onComplete != null) {
@@ -788,8 +790,8 @@ public class BackgroundAppManager {
             final boolean finalSuccess = success;
             handler.post(() -> {
                 Toast.makeText(context,
-                        finalSuccess ? "Ограничения повторно применены"
-                                : "Некоторые ограничения не удалось применить",
+                        finalSuccess ? context.getString(R.string.bg_manager_restrictions_reapplied)
+                                : context.getString(R.string.bg_manager_restrictions_reapply_partial),
                         Toast.LENGTH_SHORT).show();
                 if (onComplete != null) onComplete.run();
             });
@@ -1248,6 +1250,28 @@ public class BackgroundAppManager {
         } catch (PackageManager.NameNotFoundException ignored) {
         }
         return null;
+    }
+
+    /**
+     * Точная проверка присутствия packageName в выводе dumpsys.
+     * Избегает ложных срабатываний когда один пакет является подстрокой другого
+     * (например "com.vk" в "com.vkontakte.android").
+     */
+    private static boolean containsPackage(String output, String packageName) {
+        if (output == null || packageName == null) return false;
+        int idx = output.indexOf(packageName);
+        while (idx != -1) {
+            // Проверяем символ после совпадения — должен быть не буква/цифра/точка
+            int end = idx + packageName.length();
+            boolean endOk = end >= output.length()
+                    || !Character.isLetterOrDigit(output.charAt(end)) && output.charAt(end) != '.';
+            // Проверяем символ перед совпадением — должен быть не буква/цифра/точка
+            boolean startOk = idx == 0
+                    || !Character.isLetterOrDigit(output.charAt(idx - 1)) && output.charAt(idx - 1) != '.';
+            if (startOk && endOk) return true;
+            idx = output.indexOf(packageName, idx + 1);
+        }
+        return false;
     }
 
     /**

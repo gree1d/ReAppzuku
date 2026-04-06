@@ -57,12 +57,6 @@ import static com.gree1d.reappzuku.AppConstants.*;
 public class SettingsActivity extends BaseActivity {
     private static final String TAG = "SettingsActivity";
     private static final int TOP_OFFENDERS_LIMIT = 50;
-    private static final String[] TOP_OFFENDER_FILTER_LABELS = {
-            "Последние 12 часов",
-            "Последние 24 часов",
-            "Последние 7 дней",
-            "Всё время"
-    };
     private static final long[] TOP_OFFENDER_FILTER_WINDOWS_MS = {
             STATS_HISTORY_DURATION_MS,
             24 * 60 * 60 * 1000L,
@@ -70,7 +64,11 @@ public class SettingsActivity extends BaseActivity {
             -1L
     };
 
+    // Загружается из ресурсов в onCreate
+    private String[] topOffenderFilterLabels;
+
     private ActivitySettingsBinding binding;
+    private ShellManager shellManager;
     private BackgroundAppManager appManager;
     private BackupManager backupManager;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -98,8 +96,10 @@ public class SettingsActivity extends BaseActivity {
         binding = ActivitySettingsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        topOffenderFilterLabels = getResources().getStringArray(R.array.settings_top_offender_filter_labels);
+
         // Initialize app manager for dialogs
-        ShellManager shellManager = new ShellManager(this.getApplicationContext(), handler, executor);
+        shellManager = new ShellManager(this.getApplicationContext(), handler, executor);
         appManager = new BackgroundAppManager(this.getApplicationContext(), handler, executor, shellManager);
         backupManager = new BackupManager(this);
 
@@ -235,16 +235,15 @@ public class SettingsActivity extends BaseActivity {
             if (isChecked && !sharedPreferences.getBoolean("system_apps_warning_shown", false)) {
                 // Show warning on first enable
                 new AlertDialog.Builder(this)
-                        .setTitle("âš ï¸ Предупреждение: системные приложения")
-                        .setMessage(
-                                "Системные приложения имеют решающее значение для стабильности работы устройства. Блокировка или завершение работы системных приложений (например, «Безопасность» на устройствах Xiaomi) может привести к сбоям, циклической перезагрузке или неисправности устройства.\n\nВносите изменения в системные приложения только в том случае, если вы знаете, что делаете.")
-                        .setPositiveButton("Я понимаю", (dialog, which) -> {
+                        .setTitle(getString(R.string.settings_system_apps_warning_title))
+                        .setMessage(getString(R.string.settings_system_apps_warning_message))
+                        .setPositiveButton(getString(R.string.settings_system_apps_i_understand), (dialog, which) -> {
                             sharedPreferences.edit()
                                     .putBoolean(KEY_SHOW_SYSTEM_APPS, true)
                                     .putBoolean("system_apps_warning_shown", true)
                                     .apply();
                         })
-                        .setNegativeButton("Отмена", (dialog, which) -> {
+                        .setNegativeButton(getString(R.string.dialog_cancel), (dialog, which) -> {
                             buttonView.setChecked(false);
                         })
                         .show();
@@ -273,7 +272,7 @@ public class SettingsActivity extends BaseActivity {
         binding.layoutReapplyRestrictions.setOnClickListener(v -> {
             Set<String> savedRestrictions = appManager.getBackgroundRestrictedApps();
             if (savedRestrictions.isEmpty()) {
-                Toast.makeText(this, "Нет сохраненных ограничений фонового режима, которые нужно было бы применять повторно.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.settings_no_saved_restrictions), Toast.LENGTH_SHORT).show();
                 return;
             }
             appManager.reapplySavedBackgroundRestrictions(null);
@@ -284,9 +283,9 @@ public class SettingsActivity extends BaseActivity {
         binding.switchSleepMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 new AlertDialog.Builder(this)
-                        .setTitle("Режим сна")
-                        .setMessage("Для корректной работы данной функции, ReAppzuku необходимо перезапустить. Сейчас приложение будет принудительно закрыто.")
-                        .setPositiveButton("Ок", (dialog, which) -> {
+                        .setTitle(getString(R.string.settings_sleep_mode_title))
+                        .setMessage(getString(R.string.settings_sleep_mode_restart_message))
+                        .setPositiveButton(getString(R.string.dialog_ok), (dialog, which) -> {
                             appManager.setSleepModeEnabled(true);
                             // Небольшая задержка, чтобы SharedPreferences успели сохраниться
                             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
@@ -294,7 +293,7 @@ public class SettingsActivity extends BaseActivity {
                                     300
                             );
                         })
-                        .setNegativeButton("Отмена", (dialog, which) -> {
+                        .setNegativeButton(getString(R.string.dialog_cancel), (dialog, which) -> {
                             buttonView.setChecked(false);
                         })
                         .setCancelable(false)
@@ -350,21 +349,26 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void updateShellModeText() {
-        ShellManager shellManager = new ShellManager(getApplicationContext(), new android.os.Handler(android.os.Looper.getMainLooper()), java.util.concurrent.Executors.newSingleThreadExecutor());
-        // Check Shizuku first (non-blocking)
-        if (shellManager.hasShizukuPermission()) {
-            binding.textShellMode.setText("Shizuku access ✅");
-        } else if (shellManager.hasRootAccess()) {
-            binding.textShellMode.setText("Root access ✅");
-        } else {
-            binding.textShellMode.setText("Нет доступа ❌");
-        }
+        executor.execute(() -> {
+            final String text;
+            if (shellManager.hasShizukuPermission()) {
+                text = getString(R.string.settings_shell_shizuku_ok);
+            } else if (shellManager.resolveAnyShellPermission()) {
+                text = getString(R.string.settings_shell_root_ok);
+            } else {
+                text = getString(R.string.settings_shell_no_access);
+            }
+            handler.post(() -> binding.textShellMode.setText(text));
+        });
     }
 
     private void showKillModeDialog() {
-        String[] modes = { "Белый список", "Черный список" };
+        String[] modes = {
+                getString(R.string.settings_mode_whitelist),
+                getString(R.string.settings_mode_blacklist)
+        };
         new AlertDialog.Builder(this)
-                .setTitle("Выберите режим работы Auto-Kill")
+                .setTitle(getString(R.string.settings_kill_mode_dialog_title))
                 .setSingleChoiceItems(modes, appManager.getKillMode(), (dialog, which) -> {
                     appManager.setKillMode(which);
                     updateKillModeVisibility();
@@ -382,15 +386,15 @@ public class SettingsActivity extends BaseActivity {
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Чёрный список приложений (цель для Auto-Kill)")
+                .setTitle(getString(R.string.settings_blacklist_dialog_title))
                 .setView(dialogView);
 
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawable(
                 new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
-        dialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (d, w) -> {
+        dialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (d, w) -> {
         });
-        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Отмена", (d, w) -> d.dismiss());
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_cancel), (d, w) -> d.dismiss());
         searchBox.setVisibility(View.GONE);
         dialog.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
@@ -404,9 +408,9 @@ public class SettingsActivity extends BaseActivity {
             listView.setVisibility(View.VISIBLE);
             searchBox.setVisibility(View.VISIBLE);
             filterOptions.setVisibility(View.VISIBLE);
-            
+
             setupFilterListeners(dialogView, filterAdapter);
-            
+
             appManager.updateRunningState(allApps, () -> {
                 if (!dialog.isShowing()) return;
                 filterAdapter.notifyDataSetChanged();
@@ -427,7 +431,7 @@ public class SettingsActivity extends BaseActivity {
                 }
             });
 
-            dialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (d, w) -> {
+            dialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (d, w) -> {
                 appManager.saveBlacklistedApps(filterAdapter.getSelectedPackages());
             });
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
@@ -463,21 +467,23 @@ public class SettingsActivity extends BaseActivity {
 
                 List<String> detailParts = new ArrayList<>();
                 if (stats.killCount > 0) {
-                    String killDetail = "Auto-Killed " + stats.killCount + "x";
+                    String killDetail = getString(R.string.stats_kill_detail, stats.killCount);
                     if (stats.lastKillTime > 0) {
-                        killDetail += " (Последнее " + timeFormat.format(new java.util.Date(stats.lastKillTime)) + ")";
+                        killDetail += getString(R.string.stats_last_kill_time,
+                                timeFormat.format(new java.util.Date(stats.lastKillTime)));
                     }
                     detailParts.add(killDetail);
                 }
                 if (stats.relaunchCount > 0) {
-                    String relaunchDetail = "Перезапусков " + stats.relaunchCount + "x";
+                    String relaunchDetail = getString(R.string.stats_relaunch_detail, stats.relaunchCount);
                     if (stats.lastRelaunchTime > 0) {
-                        relaunchDetail += " (Последний " + timeFormat.format(new java.util.Date(stats.lastRelaunchTime)) + ")";
+                        relaunchDetail += getString(R.string.stats_last_relaunch_time,
+                                timeFormat.format(new java.util.Date(stats.lastRelaunchTime)));
                     }
                     detailParts.add(relaunchDetail);
                 }
                 if (stats.totalRecoveredKb > 0) {
-                    detailParts.add("Освобождено ОЗУ " + formatRecoveredSize(stats.totalRecoveredKb));
+                    detailParts.add(getString(R.string.stats_recovered_ram, formatRecoveredSize(stats.totalRecoveredKb)));
                 }
 
                 long lastEventTime = Math.max(stats.lastKillTime, stats.lastRelaunchTime);
@@ -495,15 +501,12 @@ public class SettingsActivity extends BaseActivity {
 
             Collections.sort(historyEntries, (a, b) -> Long.compare(b.lastEventTime, a.lastEventTime));
             List<SettingsSurfaceRow> rows = buildKillHistoryRows(historyEntries);
-            String summary = String.format(Locale.US,
-                    "Последние 12 часов: %d приложений | Auto-Kills %d | Перезапусков %d | Освобождено ОЗУ %s",
-                    rows.size(),
-                    totalKills,
-                    totalRelaunches,
-                    formatRecoveredSize(totalRecoveredKb));
+            String summary = getString(R.string.stats_summary_12h,
+                    rows.size(), totalKills, totalRelaunches, formatRecoveredSize(totalRecoveredKb));
 
             handler.post(() -> {
-                SettingsListContent content = createSettingsListContent("Нет активности за последние 12 часов.", false);
+                SettingsListContent content = createSettingsListContent(
+                        getString(R.string.stats_no_activity_12h), false);
                 SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
                 adapter.setItems(rows);
                 content.listView.setAdapter(adapter);
@@ -519,10 +522,13 @@ public class SettingsActivity extends BaseActivity {
                 content.listView.setVisibility(View.VISIBLE);
                 content.emptyView.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
 
-                AlertDialog dialog = createSettingsSurfaceDialog("Журнал Auto-Kill", "Последние 12 часов", content.rootView);
-                dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Закрыть", (d, w) -> d.dismiss());
+                AlertDialog dialog = createSettingsSurfaceDialog(
+                        getString(R.string.settings_kill_history_title),
+                        getString(R.string.stats_dialog_subtitle),
+                        content.rootView);
+                dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_close), (d, w) -> d.dismiss());
                 if (appManager.supportsBackgroundRestriction() && !highRelaunchPackages.isEmpty()) {
-                    dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Ограничить работу ресурсоемких приложений в фоновом режиме.", (d, w) -> {
+                    dialog.setButton(AlertDialog.BUTTON_NEUTRAL, getString(R.string.stats_restrict_high_relaunch), (d, w) -> {
                         Set<String> currentRestricted = appManager.getBackgroundRestrictedApps();
                         currentRestricted.addAll(highRelaunchPackages);
                         appManager.applyBackgroundRestriction(currentRestricted, null);
@@ -535,7 +541,8 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void showTopOffendersDialog() {
-        SettingsListContent content = createSettingsListContent("За этот период нарушителей не обнаружено.", true);
+        SettingsListContent content = createSettingsListContent(
+                getString(R.string.stats_top_offenders_empty), true);
         Spinner filterSpinner = content.filterSpinner;
         TextView summaryText = content.summaryText;
         ProgressBar loading = content.loading;
@@ -553,15 +560,15 @@ public class SettingsActivity extends BaseActivity {
         });
 
         ArrayAdapter<String> filterAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, TOP_OFFENDER_FILTER_LABELS);
+                this, android.R.layout.simple_spinner_item, topOffenderFilterLabels);
         filterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         filterSpinner.setAdapter(filterAdapter);
 
         AlertDialog dialog = createSettingsSurfaceDialog(
-                "Топ нарушителей",
-                "Сортируйте приложения по количеству Auto-Kill, перезапусков и освобожденной ОЗУ.",
+                getString(R.string.settings_top_offenders_title),
+                getString(R.string.stats_top_offenders_dialog_subtitle),
                 content.rootView);
-        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Закрыть", (d, w) -> d.dismiss());
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_close), (d, w) -> d.dismiss());
         dialog.show();
         styleDialogButtons(dialog);
 
@@ -587,7 +594,7 @@ public class SettingsActivity extends BaseActivity {
         loading.setVisibility(View.VISIBLE);
         listView.setVisibility(View.GONE);
         emptyView.setVisibility(View.GONE);
-        summaryText.setText("Загрузка...");
+        summaryText.setText(getString(R.string.stats_loading));
 
         executor.execute(() -> {
             long windowMs = TOP_OFFENDER_FILTER_WINDOWS_MS[selectedFilterIndex];
@@ -612,9 +619,8 @@ public class SettingsActivity extends BaseActivity {
                 totalRecoveredKb += offender.recoveredKb;
             }
 
-            String summary = String.format(Locale.US,
-                    "%s: %d приложений | Auto-Kills %d | Перезапусков %d | Освобождено ОЗУ %s",
-                    TOP_OFFENDER_FILTER_LABELS[selectedFilterIndex],
+            String summary = getString(R.string.stats_top_offenders_summary,
+                    topOffenderFilterLabels[selectedFilterIndex],
                     offenders.size(),
                     totalKills,
                     totalRelaunches,
@@ -727,7 +733,7 @@ public class SettingsActivity extends BaseActivity {
             intent.setData(Uri.parse("package:" + packageName));
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Невозможно открыть информацию о приложении", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.settings_open_app_info_error), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -864,7 +870,7 @@ public class SettingsActivity extends BaseActivity {
 
     private void updateThemeText(int themeValue, boolean isAmoled) {
         if (isAmoled) {
-            binding.textTheme.setText("AMOLED");
+            binding.textTheme.setText(getString(R.string.settings_theme_amoled_short));
             return;
         }
         String[] themeLabels = getResources().getStringArray(R.array.settings_theme_labels);
@@ -911,7 +917,7 @@ public class SettingsActivity extends BaseActivity {
         String[] labels = getResources().getStringArray(R.array.settings_theme_labels);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Выберите тему приложения");
+        builder.setTitle(getString(R.string.settings_theme_dialog_title));
         builder.setSingleChoiceItems(labels, selectedIndex, (dialog, which) -> {
             if (which == 3) {
                 // AMOLED
@@ -939,7 +945,7 @@ public class SettingsActivity extends BaseActivity {
             dialog.dismiss();
             recreate();
         });
-        builder.setNegativeButton("Отмена", null);
+        builder.setNegativeButton(getString(R.string.dialog_cancel), null);
 
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawable(
@@ -952,7 +958,7 @@ public class SettingsActivity extends BaseActivity {
         int currentAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_INDIGO);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Цветовой акцент");
+        builder.setTitle(getString(R.string.settings_accent_title));
         builder.setSingleChoiceItems(getResources().getStringArray(R.array.settings_accent_labels), currentAccent,
                 (dialog, which) -> {
             sharedPreferences.edit().putInt(KEY_ACCENT, which).apply();
@@ -960,7 +966,7 @@ public class SettingsActivity extends BaseActivity {
             dialog.dismiss();
             recreate();
         });
-        builder.setNegativeButton("Отмена", null);
+        builder.setNegativeButton(getString(R.string.dialog_cancel), null);
 
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawable(
@@ -1014,7 +1020,7 @@ public class SettingsActivity extends BaseActivity {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Интервал Auto-Kill");
+        builder.setTitle(getString(R.string.settings_check_frequency_title));
         builder.setSingleChoiceItems(getResources().getStringArray(R.array.settings_kill_interval_labels), selectedIndex,
                 (dialog, which) -> {
             int newInterval = KILL_INTERVALS_MS[which];
@@ -1022,7 +1028,7 @@ public class SettingsActivity extends BaseActivity {
             updateKillIntervalText(newInterval);
             dialog.dismiss();
         });
-        builder.setNegativeButton("Отмена", null);
+        builder.setNegativeButton(getString(R.string.dialog_cancel), null);
 
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawable(
@@ -1040,15 +1046,15 @@ public class SettingsActivity extends BaseActivity {
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Белый список приложений (защищены от Auto-Kill)")
+                .setTitle(getString(R.string.settings_whitelist_dialog_title))
                 .setView(dialogView);
 
         AlertDialog whitelistDialog = builder.create();
         whitelistDialog.getWindow().setBackgroundDrawable(
                 new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
 
-        whitelistDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Отмена", (dialog, which) -> dialog.dismiss());
-        whitelistDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> {
+        whitelistDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_cancel), (dialog, which) -> dialog.dismiss());
+        whitelistDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
         });
 
         progressBar.setVisibility(View.VISIBLE);
@@ -1069,9 +1075,9 @@ public class SettingsActivity extends BaseActivity {
             listView.setVisibility(View.VISIBLE);
             searchBox.setVisibility(View.VISIBLE);
             filterOptions.setVisibility(View.VISIBLE);
-            
+
             setupFilterListeners(dialogView, filterAdapter);
-            
+
             appManager.updateRunningState(allApps, () -> {
                 if (!whitelistDialog.isShowing()) return;
                 filterAdapter.notifyDataSetChanged();
@@ -1092,7 +1098,7 @@ public class SettingsActivity extends BaseActivity {
                 }
             });
 
-            whitelistDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> {
+            whitelistDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
                 Set<String> packagesToWhitelist = filterAdapter.getSelectedPackages();
                 appManager.saveWhitelistedApps(packagesToWhitelist);
             });
@@ -1109,15 +1115,15 @@ public class SettingsActivity extends BaseActivity {
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Выберите приложения для скрытия из общего списка")
+                .setTitle(getString(R.string.settings_hidden_apps_dialog_title))
                 .setView(dialogView);
 
         AlertDialog filterDialog = builder.create();
         filterDialog.getWindow().setBackgroundDrawable(
                 new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
 
-        filterDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Отмена", (dialog, which) -> dialog.dismiss());
-        filterDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> {
+        filterDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_cancel), (dialog, which) -> dialog.dismiss());
+        filterDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
         });
 
         progressBar.setVisibility(View.VISIBLE);
@@ -1138,9 +1144,9 @@ public class SettingsActivity extends BaseActivity {
             listView.setVisibility(View.VISIBLE);
             searchBox.setVisibility(View.VISIBLE);
             filterOptions.setVisibility(View.VISIBLE);
-            
+
             setupFilterListeners(dialogView, filterAdapter);
-            
+
             appManager.updateRunningState(allApps, () -> {
                 if (!filterDialog.isShowing()) return;
                 filterAdapter.notifyDataSetChanged();
@@ -1161,7 +1167,7 @@ public class SettingsActivity extends BaseActivity {
                 }
             });
 
-            filterDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> {
+            filterDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
                 Set<String> packagesToHide = filterAdapter.getSelectedPackages();
                 appManager.saveHiddenApps(packagesToHide);
             });
@@ -1178,15 +1184,15 @@ public class SettingsActivity extends BaseActivity {
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Фоновые ограничения")
+                .setTitle(getString(R.string.settings_background_restriction_title))
                 .setView(dialogView);
 
         AlertDialog restrictionDialog = builder.create();
         restrictionDialog.getWindow().setBackgroundDrawable(
                 new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
 
-        restrictionDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Отмена", (dialog, which) -> dialog.dismiss());
-        restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> {
+        restrictionDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_cancel), (dialog, which) -> dialog.dismiss());
+        restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
         });
 
         progressBar.setVisibility(View.VISIBLE);
@@ -1229,7 +1235,7 @@ public class SettingsActivity extends BaseActivity {
 
             // При любом изменении — кнопка становится "Применить"
             filterAdapter.setOnSelectionChangedListener(() -> {
-                restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setText("Применить");
+                restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(getString(R.string.dialog_apply));
                 restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
                         ContextCompat.getColor(this, R.color.dialog_button_text));
             });
@@ -1251,27 +1257,26 @@ public class SettingsActivity extends BaseActivity {
 
                 if (systemAppCount > 0) {
                     new AlertDialog.Builder(SettingsActivity.this)
-                            .setTitle("Выбраны системные приложения")
-                            .setMessage("Вы выбрали " + systemAppCount
-                                    + " системных приложений(я) для фонового ограничения.\n\nЭто может сломать уведомления, виджеты, VPN, клавиатуры, вспомогательные сервисы, сопряжение с устройствами или нарушить стабильность работы устройства.\n\nВы хотите продолжить?")
-                            .setPositiveButton("Да, применить", (d2, w2) ->
+                            .setTitle(getString(R.string.settings_restriction_system_apps_title))
+                            .setMessage(getString(R.string.settings_restriction_system_apps_message, systemAppCount))
+                            .setPositiveButton(getString(R.string.settings_restriction_system_apps_confirm), (d2, w2) ->
                                     appManager.applyBackgroundRestriction(targetPackages, hardPackages, null))
-                            .setNegativeButton("Отмена", null)
+                            .setNegativeButton(getString(R.string.dialog_cancel), null)
                             .show();
                 } else if (!packagesToRestrict.isEmpty()) {
                     new AlertDialog.Builder(SettingsActivity.this)
-                            .setTitle("Предупреждение о фоновых ограничениях")
-                            .setMessage("Приложения с фоновыми ограничениями могут перестать синхронизироваться, пропускать уведомления, перестать обновлять виджеты или не выполнять фоновые задачи, пока вы не откроете их снова.\n\nВы хотите продолжить?")
-                            .setPositiveButton("Применить", (d2, w2) ->
+                            .setTitle(getString(R.string.settings_restriction_warning_title))
+                            .setMessage(getString(R.string.settings_restriction_warning_message))
+                            .setPositiveButton(getString(R.string.dialog_apply), (d2, w2) ->
                                     appManager.applyBackgroundRestriction(targetPackages, hardPackages, null))
-                            .setNegativeButton("Отмена", null)
+                            .setNegativeButton(getString(R.string.dialog_cancel), null)
                             .show();
                 } else {
                     appManager.applyBackgroundRestriction(targetPackages, hardPackages, null);
                 }
             };
 
-            restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (dialog, which) -> doApply.run());
+            restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> doApply.run());
             restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
                     ContextCompat.getColor(this, R.color.dialog_button_text));
         });
@@ -1309,7 +1314,7 @@ public class SettingsActivity extends BaseActivity {
                     updateSleepModeDelayText(newDelay);
                     dialog.dismiss();
                 });
-        builder.setNegativeButton("Отмена", null);
+        builder.setNegativeButton(getString(R.string.dialog_cancel), null);
 
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawable(
@@ -1328,15 +1333,15 @@ public class SettingsActivity extends BaseActivity {
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Приложения для режима сна")
+                .setTitle(getString(R.string.settings_sleep_mode_apps_dialog_title))
                 .setView(dialogView);
 
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawable(
                 new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
 
-        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Отмена", (d, w) -> d.dismiss());
-        dialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (d, w) -> {});
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_cancel), (d, w) -> d.dismiss());
+        dialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (d, w) -> {});
 
         progressBar.setVisibility(View.VISIBLE);
         listView.setVisibility(View.GONE);
@@ -1365,7 +1370,7 @@ public class SettingsActivity extends BaseActivity {
                 @Override public void afterTextChanged(android.text.Editable s) {}
             });
 
-            dialog.setButton(AlertDialog.BUTTON_POSITIVE, "Сохранить", (d, w) -> {
+            dialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (d, w) -> {
                 appManager.saveSleepModeApps(filterAdapter.getSelectedPackages());
             });
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
@@ -1387,7 +1392,7 @@ public class SettingsActivity extends BaseActivity {
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Выберите лимит загруженности ОЗУ")
+                .setTitle(getString(R.string.settings_ram_threshold_dialog_title))
                 .setSingleChoiceItems(getResources().getStringArray(R.array.settings_ram_threshold_labels), selected,
                         (dialog, which) -> {
                     sharedPreferences.edit().putInt(KEY_RAM_THRESHOLD, RAM_THRESHOLD_VALUES[which]).apply();
@@ -1426,14 +1431,17 @@ public class SettingsActivity extends BaseActivity {
         chkSystem.setOnCheckedChangeListener(listener);
         chkUser.setOnCheckedChangeListener(listener);
         chkRunning.setOnCheckedChangeListener(listener);
-        
+
         btnClear.setOnClickListener(v -> adapter.clearSelection());
     }
 
     private void showBackupRestoreDialog() {
-        String[] options = { "Сохранить настройки", "Восстановить настройки" };
+        String[] options = {
+                getString(R.string.settings_backup_option_save),
+                getString(R.string.settings_backup_option_restore)
+        };
         new AlertDialog.Builder(this)
-                .setTitle("Бэкап & Восстановление")
+                .setTitle(getString(R.string.settings_backup_restore_title))
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
                         createBackupLauncher.launch("appzuku_backup.json");
@@ -1448,20 +1456,20 @@ public class SettingsActivity extends BaseActivity {
         executor.execute(() -> {
             String json = backupManager.createBackupJson();
             if (json == null) {
-                handler.post(() -> Toast.makeText(this, "Failed to create backup data", Toast.LENGTH_SHORT).show());
+                handler.post(() -> Toast.makeText(this, getString(R.string.settings_backup_create_failed), Toast.LENGTH_SHORT).show());
                 return;
             }
 
             try (OutputStream os = getContentResolver().openOutputStream(uri)) {
                 if (os != null) {
                     os.write(json.getBytes(StandardCharsets.UTF_8));
-                    handler.post(() -> Toast.makeText(this, "Настройки успешно сохранены", Toast.LENGTH_SHORT).show());
+                    handler.post(() -> Toast.makeText(this, getString(R.string.settings_backup_success), Toast.LENGTH_SHORT).show());
                 } else {
-                    handler.post(() -> Toast.makeText(this, "Failed to write to file", Toast.LENGTH_SHORT).show());
+                    handler.post(() -> Toast.makeText(this, getString(R.string.settings_backup_write_failed), Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Export failed", e);
-                handler.post(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                handler.post(() -> Toast.makeText(this, getString(R.string.settings_backup_export_failed, e.getMessage()), Toast.LENGTH_SHORT).show());
             }
         });
     }
@@ -1470,7 +1478,7 @@ public class SettingsActivity extends BaseActivity {
         executor.execute(() -> {
             try (InputStream is = getContentResolver().openInputStream(uri);
                  BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                
+
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -1491,10 +1499,10 @@ public class SettingsActivity extends BaseActivity {
                                     && !appManager.canApplyBackgroundRestrictionNow()) {
                                 Toast.makeText(
                                         this,
-                                        "Восстановлены сохраненные настройки. Предоставьте Shizuku/Root доступ для повторного применения фоновых ограничений.",
+                                        getString(R.string.settings_restore_need_permission),
                                         Toast.LENGTH_LONG).show();
                             } else {
-                                Toast.makeText(this, "Восстановлено успешно", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, getString(R.string.settings_restore_success), Toast.LENGTH_SHORT).show();
                             }
                         };
 
@@ -1504,18 +1512,19 @@ public class SettingsActivity extends BaseActivity {
                             finishRestore.run();
                         }
                     } else {
-                        Toast.makeText(this, "Restore failed: Invalid data", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.settings_restore_failed), Toast.LENGTH_SHORT).show();
                     }
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Import failed", e);
-                handler.post(() -> Toast.makeText(this, "Import failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                handler.post(() -> Toast.makeText(this, getString(R.string.settings_restore_import_failed, e.getMessage()), Toast.LENGTH_SHORT).show());
             }
         });
     }
 
     private void showBackgroundRestrictionLogDialog() {
-        SettingsListContent content = createSettingsListContent("Пока не зарегистрировано ни одного случая ограничения фоновой активности.", false);
+        SettingsListContent content = createSettingsListContent(
+                getString(R.string.settings_restriction_log_empty), false);
         SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
         content.listView.setAdapter(adapter);
         content.listView.setEmptyView(content.emptyView);
@@ -1527,22 +1536,21 @@ public class SettingsActivity extends BaseActivity {
         });
         content.loading.setVisibility(View.VISIBLE);
         content.listView.setVisibility(View.GONE);
-        content.summaryText.setText("Загрузка...");
+        content.summaryText.setText(getString(R.string.stats_loading));
 
         AlertDialog dialog = createSettingsSurfaceDialog(
-                "Журнал фоновых ограничений",
-                "Последние результаты ограничений фоновой работы. Сохраняются в кэш, колличество записей ограничено до 200",
+                getString(R.string.settings_restriction_log_title),
+                getString(R.string.settings_restriction_log_dialog_subtitle),
                 content.rootView);
-        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Закрыть", (d, w) -> d.dismiss());
-        dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Очистить", (d, w) -> {
+        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_close), (d, w) -> d.dismiss());
+        dialog.setButton(AlertDialog.BUTTON_NEUTRAL, getString(R.string.settings_restriction_log_clear), (d, w) -> {
         });
         dialog.show();
         styleDialogButtons(dialog);
 
         Runnable reloadLog = () -> executor.execute(() -> {
             List<SettingsSurfaceRow> rows = buildRestrictionLogRows(BackgroundRestrictionLog.readEntries(this));
-            String summary = String.format(Locale.US, "Последние события: %d записей.",
-                    rows.size());
+            String summary = getString(R.string.settings_restriction_log_summary, rows.size());
             handler.post(() -> {
                 adapter.setItems(rows);
                 content.summaryText.setText(summary);
@@ -1556,7 +1564,7 @@ public class SettingsActivity extends BaseActivity {
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             appManager.clearBackgroundRestrictionLog();
             reloadLog.run();
-            Toast.makeText(this, "Журнал фоновых ограничений очищен", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.settings_restriction_log_cleared), Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -1597,12 +1605,11 @@ public class SettingsActivity extends BaseActivity {
                     "#" + (i + 1),
                     offender.appName,
                     offender.packageName,
-                    String.format(Locale.US,
-                            "Auto-Killed: %dx | Перезапусков: %dx | Освобождено ОЗУ: %s",
+                    getString(R.string.stats_offender_metrics,
                             offender.killCount,
                             offender.relaunchCount,
                             formatRecoveredSize(offender.recoveredKb)),
-                    "Оценка " + formatScore(offender.score),
+                    getString(R.string.stats_offender_score, formatScore(offender.score)),
                     offender.packageName));
         }
         return rows;
@@ -1670,15 +1677,15 @@ public class SettingsActivity extends BaseActivity {
         switch (action.trim().toLowerCase()) {
             case "restrict-hard":
             case "reapply-hard":
-                return "Жёсткое";
+                return getString(R.string.restriction_badge_hard);
             case "restrict-soft":
             case "reapply-soft":
             case "restrict":
-                return "Мягкое";
+                return getString(R.string.restriction_badge_soft);
             case "allow":
-                return "Снято";
+                return getString(R.string.restriction_badge_removed);
             case "reapply":
-                return "Повтор";
+                return getString(R.string.restriction_badge_retry);
             default:
                 return "";
         }
@@ -1696,7 +1703,7 @@ public class SettingsActivity extends BaseActivity {
 
     private String humanizeLogAction(String action) {
         if (action == null || action.trim().isEmpty()) {
-            return "Event";
+            return getString(R.string.log_action_event);
         }
         String normalized = action.trim().replace('-', ' ').replace('_', ' ');
         return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
@@ -1707,14 +1714,14 @@ public class SettingsActivity extends BaseActivity {
             return "";
         }
         switch (outcome.trim().toLowerCase()) {
-            case "ok":                          return "Отправлено";
-            case "verified":                    return "Выполнено";
-            case "failed":                      return "ОШИБКА";
-            case "skipped":                     return "Пропущено";
-            case "verify-failed":               return "НЕ ПРИМЕНИЛОСЬ";
-            case "verify-unavailable":          return "Проверка недоступна";
-            case "battery-whitelist-removed":   return "Удалено из whitelist";
-            case "battery-whitelist-restored":  return "Возвращено в whitelist";
+            case "ok":                          return getString(R.string.log_outcome_ok);
+            case "verified":                    return getString(R.string.log_outcome_verified);
+            case "failed":                      return getString(R.string.log_outcome_failed);
+            case "skipped":                     return getString(R.string.log_outcome_skipped);
+            case "verify-failed":               return getString(R.string.log_outcome_verify_failed);
+            case "verify-unavailable":          return getString(R.string.log_outcome_verify_unavailable);
+            case "battery-whitelist-removed":   return getString(R.string.log_outcome_battery_whitelist_removed);
+            case "battery-whitelist-restored":  return getString(R.string.log_outcome_battery_whitelist_restored);
             default:
                 String normalized = outcome.trim().replace('-', ' ').replace('_', ' ');
                 return normalized.toUpperCase(Locale.US);

@@ -78,8 +78,8 @@ public class ShappkyService extends Service {
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID_SERVICE)
-                .setContentTitle("ReAppzuku Service")
-                .setContentText("Мониторинг фоновых приложений")
+                .setContentTitle(getString(R.string.service_notification_title))
+                .setContentText(getString(R.string.service_notification_text))
                 .setSmallIcon(R.drawable.ic_shappky)
                 .setOngoing(true)
                 .build();
@@ -217,8 +217,8 @@ public class ShappkyService extends Service {
      */
     private void sendShizukuLostNotification() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_ACTIONS)
-                .setContentTitle("ReAppzuku сервисы")
-                .setContentText("Нет доступа к Shizuku. Приложение не может продолжить работу.")
+                .setContentTitle(getString(R.string.service_shizuku_lost_title))
+                .setContentText(getString(R.string.service_shizuku_lost_text))
                 .setSmallIcon(R.drawable.ic_shappky)
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -351,13 +351,13 @@ public class ShappkyService extends Service {
 
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID_SERVICE,
-                    "ReAppzuku Foreground Service",
+                    getString(R.string.service_channel_foreground_name),
                     NotificationManager.IMPORTANCE_LOW);
             nm.createNotificationChannel(serviceChannel);
 
             NotificationChannel actionsChannel = new NotificationChannel(
                     CHANNEL_ID_ACTIONS,
-                    "ReAppzuku Уведомления",
+                    getString(R.string.service_channel_actions_name),
                     NotificationManager.IMPORTANCE_HIGH);
             nm.createNotificationChannel(actionsChannel);
         }

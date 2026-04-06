@@ -160,8 +160,8 @@ public class MainActivity extends BaseActivity {
                 listAdapter.notifyItemChanged(position);
 
                 String message = isNowWhitelisted
-                        ? "Добавлено в белый список"
-                        : "Удалено из белого списка";
+                        ? getString(R.string.main_added_to_whitelist)
+                        : getString(R.string.main_removed_from_whitelist);
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
             }
 
@@ -237,21 +237,18 @@ public class MainActivity extends BaseActivity {
             intent.setData(Uri.parse("package:" + packageName));
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Не получилось открыть информацию о приложении", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.main_open_app_info_error), Toast.LENGTH_SHORT).show();
         }
     }
 
     private void showUninstallConfirmation(AppModel app) {
-        String message = "Для удаления приложения будут использованы команды оболочки (Shizuku/Root).\n\n" +
-                "Примечание: Системные приложения могут быть недоступны для удаления на всех устройствах.";
-
         new AlertDialog.Builder(this)
-                .setTitle("Удалить " + app.getAppName())
-                .setMessage(message)
-                .setPositiveButton("Удалить", (dialog, which) -> {
+                .setTitle(getString(R.string.main_uninstall_title, app.getAppName()))
+                .setMessage(getString(R.string.main_uninstall_message))
+                .setPositiveButton(getString(R.string.main_uninstall_confirm), (dialog, which) -> {
                     appManager.uninstallPackage(app.getPackageName(), this::loadBackgroundApps);
                 })
-                .setNegativeButton("Отмена", null)
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show();
     }
 
@@ -263,18 +260,18 @@ public class MainActivity extends BaseActivity {
         switch (listType) {
             case "whitelist":
                 currentSet = appManager.getWhitelistedApps();
-                addedMsg = "Добавлено в белый список";
-                removedMsg = "Удалено из белого списка";
+                addedMsg = getString(R.string.main_added_to_whitelist);
+                removedMsg = getString(R.string.main_removed_from_whitelist);
                 break;
             case "blacklist":
                 currentSet = appManager.getBlacklistedApps();
-                addedMsg = "Добавлено в черный список";
-                removedMsg = "Удалено из черного списка";
+                addedMsg = getString(R.string.main_added_to_blacklist);
+                removedMsg = getString(R.string.main_removed_from_blacklist);
                 break;
             case "hidden":
                 currentSet = appManager.getHiddenApps();
-                addedMsg = "Приложение скрыто";
-                removedMsg = "Приложение снова видимо";
+                addedMsg = getString(R.string.main_app_hidden);
+                removedMsg = getString(R.string.main_app_visible);
                 break;
             default:
                 return;
@@ -317,10 +314,10 @@ public class MainActivity extends BaseActivity {
         boolean enableRestriction = !app.isBackgroundRestrictionDesired();
         if (enableRestriction && app.isSystemApp()) {
             new AlertDialog.Builder(this)
-                    .setTitle("Предупреждение о системных приложениях")
-                    .setMessage("Ограничение фоновой активности для системного приложения может привести к сбоям в работе уведомлений, виджетов, VPN, клавиатуры, функций специальных возможностей или нестабильной работы устройства.\n\nПродолджая вы действуете на свой страх и риск.")
-                    .setPositiveButton("Применить", (dialog, which) -> applyBackgroundRestriction(app, true))
-                    .setNegativeButton("Отмена", null)
+                    .setTitle(getString(R.string.main_system_app_warning_title))
+                    .setMessage(getString(R.string.main_system_app_restriction_warning))
+                    .setPositiveButton(getString(R.string.dialog_apply), (dialog, which) -> applyBackgroundRestriction(app, true))
+                    .setNegativeButton(getString(R.string.dialog_cancel), null)
                     .show();
             return;
         }
@@ -329,23 +326,21 @@ public class MainActivity extends BaseActivity {
 
     private void showOutOfSyncRestrictionDialog(AppModel app) {
         new AlertDialog.Builder(this)
-                .setTitle("Фоновое ограничение не синхронизировано")
-                .setMessage(app.getAppName()
-                        + " Приложение по-прежнему находится в списке сохраненных ограничений ReAppzuku, но Android в данный момент не накладывает на него ограничения.\n\nВозобновить ограничение или удалить приложение из списка ReAppzuku?")
-                .setPositiveButton("Возобновить", (dialog, which) -> applyBackgroundRestriction(app, true))
-                .setNeutralButton("Удалить из списка", (dialog, which) -> applyBackgroundRestriction(app, false))
-                .setNegativeButton("Отмена", null)
+                .setTitle(getString(R.string.main_restriction_out_of_sync_title))
+                .setMessage(getString(R.string.main_restriction_out_of_sync_message, app.getAppName()))
+                .setPositiveButton(getString(R.string.main_restriction_resume), (dialog, which) -> applyBackgroundRestriction(app, true))
+                .setNeutralButton(getString(R.string.main_restriction_remove_from_list), (dialog, which) -> applyBackgroundRestriction(app, false))
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show();
     }
 
     private void showExternalRestrictionDialog(AppModel app) {
         new AlertDialog.Builder(this)
-                .setTitle("Ограничения наложены не с помощью ReAppzuku")
-                .setMessage(app.getAppName()
-                        + " в настоящее время ограничено Android, но этого нет в списке сохраненных приложений ReAppzuku.\n\nДобавить в ReAppzuku или снять текущее ограничение?")
-                .setPositiveButton("Добавить в ReAppzuku", (dialog, which) -> applyBackgroundRestriction(app, true))
-                .setNeutralButton("Снять ограничения", (dialog, which) -> applyBackgroundRestriction(app, false))
-                .setNegativeButton("Отмена", null)
+                .setTitle(getString(R.string.main_restriction_external_title))
+                .setMessage(getString(R.string.main_restriction_external_message, app.getAppName()))
+                .setPositiveButton(getString(R.string.main_restriction_add_to_reappzuku), (dialog, which) -> applyBackgroundRestriction(app, true))
+                .setNeutralButton(getString(R.string.main_restriction_remove), (dialog, which) -> applyBackgroundRestriction(app, false))
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show();
     }
 
@@ -355,15 +350,15 @@ public class MainActivity extends BaseActivity {
 
     private String getBackgroundRestrictionMenuTitle(AppModel app) {
         if (app.needsBackgroundRestrictionReapply()) {
-            return "Ограничение фонового режима (несоответствие синхронизации)";
+            return getString(R.string.main_restriction_menu_out_of_sync);
         }
         if (app.isBackgroundRestrictionExternal()) {
-            return "Фоновое ограничение (внешнее)";
+            return getString(R.string.main_restriction_menu_external);
         }
         if (app.isBackgroundRestrictionDesired() && !app.isBackgroundRestrictionActualKnown()) {
-            return "Фоновое ограничение (сохранено)";
+            return getString(R.string.main_restriction_menu_saved);
         }
-        return "Фоновое ограничение";
+        return getString(R.string.main_restriction_menu_default);
     }
 
     // Load background apps with selection preservation
@@ -388,7 +383,7 @@ public class MainActivity extends BaseActivity {
             }
 
             filterApps(currentSearchQuery);
-            binding.runningApps.setText("Активных приложений: " + fullAppsList.size());
+            binding.runningApps.setText(getString(R.string.main_active_apps_count, fullAppsList.size()));
             binding.swiperefreshlayout1.setRefreshing(false);
         });
     }
@@ -477,7 +472,7 @@ public class MainActivity extends BaseActivity {
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
-        searchView.setQueryHint("Поиск приложений...");
+        searchView.setQueryHint(getString(R.string.main_search_hint));
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -555,7 +550,7 @@ public class MainActivity extends BaseActivity {
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setView(dialogView)
-                .setPositiveButton("Применить", (dialog, which) -> {
+                .setPositiveButton(getString(R.string.dialog_apply), (dialog, which) -> {
                     int checkedId = radioGroup.getCheckedRadioButtonId();
                     int newSortMode = AppConstants.SORT_MODE_DEFAULT;
 
@@ -573,7 +568,7 @@ public class MainActivity extends BaseActivity {
                     sharedPreferences.edit().putInt(KEY_SORT_MODE, newSortMode).apply();
                     filterApps(currentSearchQuery); // Re-filter and sort
                 })
-                .setNegativeButton("Отмена", null)
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show();
     }
 
