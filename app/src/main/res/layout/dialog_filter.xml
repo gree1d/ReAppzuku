@@ -10,7 +10,7 @@
         android:id="@+id/filter_search"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Поиск приложений..."
+        android:hint="@string/main_search_hint"
         android:inputType="text"
         android:drawableStart="@android:drawable/ic_menu_search"
         android:drawablePadding="8dp"
@@ -34,7 +34,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Системные"
+            android:text="@string/filter_system"
             android:textColor="@color/text_primary"
             android:checked="false" />
 
@@ -43,7 +43,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Пользовательские"
+            android:text="@string/filter_user"
             android:textColor="@color/text_primary"
             android:checked="true" />
 
@@ -52,7 +52,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Активные"
+            android:text="@string/filter_running"
             android:textColor="@color/text_primary"
             android:checked="false" />
 
@@ -60,7 +60,7 @@
             android:id="@+id/filter_btn_clear"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Очистить"
+            android:text="@string/filter_clear"
             android:textColor="@color/colorAccent"
             android:textStyle="bold"
             android:padding="8dp"
