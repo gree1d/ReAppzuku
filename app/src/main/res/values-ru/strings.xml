@@ -282,3 +282,25 @@
     <string name="service_channel_foreground_name" translatable="false">ReAppzuku Foreground Service</string>
     <string name="service_channel_actions_name">ReAppzuku Уведомления</string>
 </resources>
+
+    <string name="settings_title">Настройки</string>
+    <string name="settings_about_section">О приложении</string>
+
+    <string name="menu_select_all">Выбрать все</string>
+    <string name="menu_deselect_all">Отменить выбор</string>
+
+    <string name="menu_app_info">Информация о приложении</string>
+    <string name="menu_uninstall">Удалить</string>
+    <string name="menu_add_to">Добавить в…</string>
+    <string name="menu_hidden">Скрытые</string>
+
+    <string name="sort_title">Сортировка</string>
+    <string name="sort_default">По умолчанию (Пользовательские → Системные)</string>
+    <string name="sort_ram_desc">Потребление ОЗУ. Больше → Меньше</string>
+    <string name="sort_ram_asc">Потребление ОЗУ. Меньше → Больше</string>
+    <string name="sort_name_asc">Имя A → Z</string>
+    <string name="sort_name_desc">Имя Z → A</string>
+
+    <string name="ram_usage">ОЗУ: %1$dMB / %2$dMB</string>
+    <string name="ram_usage_unavailable">ОЗУ: --</string>
+
