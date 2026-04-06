@@ -281,7 +281,6 @@
     <!-- ShappkyService — notification channel names -->
     <string name="service_channel_foreground_name" translatable="false">ReAppzuku Foreground Service</string>
     <string name="service_channel_actions_name">ReAppzuku Notifications</string>
-</resources>
 
     <!-- About -->
     <string name="settings_title">Settings</string>
@@ -308,3 +307,4 @@
     <!-- RamMonitor -->
     <string name="ram_usage">RAM: %1$dMB / %2$dMB</string>
     <string name="ram_usage_unavailable">RAM: --</string>
+</resources>
