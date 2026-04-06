@@ -35,7 +35,7 @@
 
 | Requirement | Description |
 |---|---|
-| **Android** | 8.0 and above. Background restrictions are only available on Android 11+ |
+| **Android** | 6.0 and above. Background restrictions are only available on Android 11+ |
 | **Root** or **Shizuku** | One of the two is required for features to work |
 
 ### Root vs Shizuku
