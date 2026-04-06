@@ -6,7 +6,7 @@
 <p align="center">
 <img src="https://img.shields.io/github/v/release/gree1d/ReAppzuku?label=Release&logo=github" alt="Latest Release">
 <img src="https://img.shields.io/badge/License-GPLv3-brown.svg"/>
-<img src="https://img.shields.io/badge/Android-8.0%2B-yellow.svg"/>
+<img src="https://img.shields.io/badge/Android-6.0%2B-yellow.svg"/>
 <img src="https://img.shields.io/badge/Root-Supported-brightgreen.svg"/>
 <img src="https://img.shields.io/badge/Shizuku-Supported-brightgreen.svg"/>
 </p>
