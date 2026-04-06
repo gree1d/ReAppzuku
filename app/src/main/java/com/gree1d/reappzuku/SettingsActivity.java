@@ -310,7 +310,7 @@ public class SettingsActivity extends BaseActivity {
         binding.layoutBlacklist.setOnClickListener(v -> showBlacklistDialog());
 
         // Help — opens GitHub
-        binding.layoutHelp.setOnClickListener(v -> openUrl("https://github.com/gree1d/ReAppzuku/blob/main/docs/help.md"));
+        binding.layoutHelp.setOnClickListener(v -> openUrl(getString(R.string.url_help)));
 
         // Shell mode display
         updateShellModeText();
@@ -336,6 +336,9 @@ public class SettingsActivity extends BaseActivity {
 
         // Check for Updates
         binding.layoutCheckUpdates.setOnClickListener(v -> openUrl("https://github.com/gree1d/ReAppzuku/releases"));
+        
+        // Author TG
+        binding.layoutTelegram.setOnClickListener(v -> openUrl("https://t.me/AkM0o"));
 
         updateKillModeVisibility();
     }
