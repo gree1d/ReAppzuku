@@ -2,7 +2,6 @@
 
 ---
 
-# ReAppzuku
 ![Logo](https://github.com/gree1d/ReAppzuku/blob/main/docs/images/logo.png)
 <p align="center">
 <img src="https://img.shields.io/badge/License-GPLv3-blue.svg"/>
