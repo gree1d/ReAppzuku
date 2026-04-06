@@ -282,7 +282,7 @@ Automatically performs Kill (force-stop) of apps on an interval while the backgr
 | 1 minute | Soft cleanup |
 | 5 minutes | Minimal intervention |
 
-#### Auto-Kill on screen off
+#### Kill on screen off
 
 Performs Kill (force-stop) at the moment the screen locks. Useful for cleaning up every time you put your phone down.
 
@@ -397,7 +397,7 @@ Shows activity over the last **12 hours**: number of Auto-Kills, restarts, freed
 
 App ranking by combined score (Kills + restarts + RAM volume). Filterable by: 12 hours / 24 hours / 7 days / all time.
 
-#### Restrictions log
+#### Background Restrictions log
 
 Detailed log of background restriction operations. Stored in cache, maximum 200 entries.
 
