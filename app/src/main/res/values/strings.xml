@@ -1,97 +1,221 @@
 <resources>
     <string name="app_name" translatable="false">ReAppzuku</string>
 
-    <string name="tile_kill_app_label">Остановить приложение</string>
-    <string name="tile_kill_app_subtitle">Закрыть приложение, работающее в фоновом режиме</string>
-    <string name="tile_background_kill_label">Остановить фоновые приложения</string>
-    <string name="tile_background_kill_subtitle">Запускает настроенный Auto-Kill</string>
-    <string name="shortcut_kill_short_label">Остановить приложение</string>
-    <string name="shortcut_kill_long_label">Завершить работу приложения в фоновом режиме</string>
+    <string name="tile_kill_app_label">Stop app</string>
+    <string name="tile_kill_app_subtitle">Close an app running in the background</string>
+    <string name="tile_background_kill_label">Stop background apps</string>
+    <string name="tile_background_kill_subtitle">Triggers the configured Auto-Kill</string>
+    <string name="shortcut_kill_short_label">Stop app</string>
+    <string name="shortcut_kill_long_label">Force-stop an app running in the background</string>
     <string name="url_open_failed">Unable to open link</string>
 
-    <string name="settings_section_appearance">Внешний вид</string>
-    <string name="settings_theme_title">Тема</string>
-    <string name="settings_theme_system">Система</string>
-    <string name="settings_theme_light">Светлая</string>
-    <string name="settings_theme_dark">Темная</string>
-    <string name="settings_theme_amoled">AMOLED (чёрный)</string>
+    <!-- Common dialog buttons -->
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_apply">Apply</string>
+    <string name="dialog_save">Save</string>
+    <string name="dialog_close">Close</string>
+    <string name="dialog_ok">OK</string>
 
-    <string name="settings_accent_title">Цветовой акцент</string>
-    <string name="settings_accent_subtitle">Основной цвет интерфейса</string>
+    <!-- MainActivity -->
+    <string name="main_search_hint">Search apps…</string>
+    <string name="main_active_apps_count">Active apps: %1$d</string>
+    <string name="main_added_to_whitelist">Added to whitelist</string>
+    <string name="main_removed_from_whitelist">Removed from whitelist</string>
+    <string name="main_added_to_blacklist">Added to blacklist</string>
+    <string name="main_removed_from_blacklist">Removed from blacklist</string>
+    <string name="main_app_hidden">App hidden</string>
+    <string name="main_app_visible">App is visible again</string>
+    <string name="main_open_app_info_error">Could not open app info</string>
+    <string name="main_uninstall_title">Uninstall %1$s</string>
+    <string name="main_uninstall_message">Shell commands (Shizuku/Root) will be used to uninstall this app.\n\nNote: System apps may not be removable on all devices.</string>
+    <string name="main_uninstall_confirm">Uninstall</string>
+    <string name="main_system_app_warning_title">System app warning</string>
+    <string name="main_system_app_restriction_warning">Restricting background activity for a system app may cause issues with notifications, widgets, VPN, keyboard, accessibility features, or device instability.\n\nBy continuing you proceed at your own risk.</string>
+    <string name="main_restriction_out_of_sync_title">Background restriction out of sync</string>
+    <string name="main_restriction_out_of_sync_message">%1$s is still in ReAppzuku\'s saved restriction list, but Android is not currently restricting it.\n\nResume the restriction or remove the app from ReAppzuku\'s list?</string>
+    <string name="main_restriction_resume">Resume</string>
+    <string name="main_restriction_remove_from_list">Remove from list</string>
+    <string name="main_restriction_external_title">Restriction not applied by ReAppzuku</string>
+    <string name="main_restriction_external_message">%1$s is currently restricted by Android, but it is not in ReAppzuku\'s saved app list.\n\nAdd to ReAppzuku or lift the current restriction?</string>
+    <string name="main_restriction_add_to_reappzuku">Add to ReAppzuku</string>
+    <string name="main_restriction_remove">Lift restriction</string>
+    <string name="main_restriction_menu_out_of_sync">Background restriction (out of sync)</string>
+    <string name="main_restriction_menu_external">Background restriction (external)</string>
+    <string name="main_restriction_menu_saved">Background restriction (saved)</string>
+    <string name="main_restriction_menu_default">Background restriction</string>
 
-    <string name="settings_section_automation">Автоматизация</string>
-    <string name="settings_background_service_title">Фоновый сервис</string>
-    <string name="settings_background_service_subtitle">Необходим для работы Auto-Kill по интервалу и при выключении экрана</string>
-    <string name="settings_periodic_kill_title">Периодический Auto-Kill</string>
-    <string name="settings_periodic_kill_subtitle">Выполнять Auto-Kill по интервалу</string>
-    <string name="settings_check_frequency_title">Интервал Auto-Kill</string>
-    <string name="settings_check_frequency_default">Каждые 18 секунд</string>
-    <string name="settings_screen_lock_title">Auto-Kill при выключении экрана</string>
-    <string name="settings_screen_lock_subtitle">Выполнить Auto-Kill при выключении экрана</string>
-    <string name="settings_ram_threshold_title">Лимит ОЗУ</string>
-    <string name="settings_ram_threshold_default">Auto-Kill только при загруженности ОЗУ 80%%</string>
-    <string name="settings_ram_threshold_summary">Auto-Kill только при загруженности ОЗУ %1$d%%</string>
+    <!-- SettingsActivity — shell mode status -->
+    <string name="settings_shell_shizuku_ok" translatable="false">Shizuku access ✅</string>
+    <string name="settings_shell_root_ok" translatable="false">Root access ✅</string>
+    <string name="settings_shell_no_access">No access ❌</string>
 
-    <string name="settings_section_kill_rules">Настройки Auto-Kill</string>
-    <string name="settings_mode_title">Режим работы Auto-Kill</string>
-    <string name="settings_mode_whitelist">Белый список</string>
-    <string name="settings_mode_blacklist">Черный список</string>
-    <string name="settings_whitelist_title">Белый список</string>
-    <string name="settings_whitelist_subtitle">Выбранные приложения никогда принудительно не останавливаются</string>
-    <string name="settings_blacklist_title">Черный список</string>
-    <string name="settings_blacklist_subtitle">Выбранные приложения принудительно останавливаются</string>
-    <string name="settings_show_system_apps_title">Показывать системные приложения</string>
-    <string name="settings_show_system_apps_subtitle">Включить отображение системных приложений в общем списке</string>
-    <string name="settings_show_persistent_apps_title">Показывать критичные приложения</string>
-    <string name="settings_show_persistent_apps_subtitle">Включить отображение критично важных системных приложений в общем списке</string>
+    <!-- SettingsActivity — system apps warning dialog -->
+    <string name="settings_system_apps_warning_title">⚠️ Warning: system apps</string>
+    <string name="settings_system_apps_warning_message">System apps are critical to device stability. Blocking or stopping system apps (e.g. Security on Xiaomi devices) may cause crashes, boot loops, or device malfunction.\n\nOnly modify system apps if you know what you are doing.</string>
+    <string name="settings_system_apps_i_understand">I understand</string>
 
-    <string name="settings_section_advanced_tools">Дополнительные инструменты</string>
-    <string name="settings_background_restriction_title">Фоновые ограничения</string>
-    <string name="settings_background_restriction_subtitle">Оставляйте выбранные приложения в спящем режиме</string>
-    <string name="settings_reapply_restrictions_title">Повторно применить настройки фоновых ограничений</string>
-    <string name="settings_reapply_restrictions_subtitle">Восстановить сохраненные ограничения</string>
-    <string name="settings_sleep_mode_title">Режим сна</string>
-    <string name="settings_sleep_mode_subtitle">Замораживать приложения в режиме сна</string>
-    <string name="settings_sleep_mode_apps_title">Список приложений для режима сна</string>
-    <string name="settings_sleep_mode_apps_subtitle">Выберите приложения для заморозки в режиме сна</string>
-    <string name="settings_sleep_mode_delay_title">Таймер заморозки</string>
-    <string name="settings_sleep_mode_delay_subtitle">Продолжительность периода бездействия до заморозки</string>
-    <string name="settings_sleep_mode_delay_fallback">После %1$d минут</string>
+    <!-- SettingsActivity — sleep mode restart dialog -->
+    <string name="settings_sleep_mode_restart_message">ReAppzuku needs to restart for this feature to work correctly. The app will now be force-closed.</string>
+
+    <!-- SettingsActivity — dialog titles -->
+    <string name="settings_kill_mode_dialog_title">Select Auto-Kill mode</string>
+    <string name="settings_blacklist_dialog_title">Blacklisted apps (Auto-Kill targets)</string>
+    <string name="settings_whitelist_dialog_title">Whitelisted apps (protected from Auto-Kill)</string>
+    <string name="settings_hidden_apps_dialog_title">Select apps to hide from the main list</string>
+    <string name="settings_sleep_mode_apps_dialog_title">Sleep mode apps</string>
+    <string name="settings_theme_amoled_short" translatable="false">AMOLED</string>
+    <string name="settings_theme_dialog_title">Select app theme</string>
+    <string name="settings_ram_threshold_dialog_title">Select RAM usage limit</string>
+
+    <!-- SettingsActivity — misc toasts -->
+    <string name="settings_no_saved_restrictions">No saved background restrictions to re-apply.</string>
+    <string name="settings_open_app_info_error">Unable to open app info</string>
+
+    <!-- SettingsActivity — background restriction warnings -->
+    <string name="settings_restriction_system_apps_title">System apps selected</string>
+    <string name="settings_restriction_system_apps_message">You have selected %1$d system app(s) for background restriction.\n\nThis may break notifications, widgets, VPN, keyboards, accessibility services, device pairing, or cause device instability.\n\nDo you want to continue?</string>
+    <string name="settings_restriction_system_apps_confirm">Yes, apply</string>
+    <string name="settings_restriction_warning_title">Background restriction warning</string>
+    <string name="settings_restriction_warning_message">Apps with background restrictions may stop syncing, miss notifications, stop updating widgets, or fail to run background tasks until you open them again.\n\nDo you want to continue?</string>
+
+    <!-- SettingsActivity — backup & restore -->
+    <string name="settings_backup_option_save">Save settings</string>
+    <string name="settings_backup_option_restore">Restore settings</string>
+    <string name="settings_backup_create_failed">Failed to create backup data</string>
+    <string name="settings_backup_success">Settings saved successfully</string>
+    <string name="settings_backup_write_failed">Failed to write to file</string>
+    <string name="settings_backup_export_failed">Export failed: %1$s</string>
+    <string name="settings_restore_success">Restored successfully</string>
+    <string name="settings_restore_need_permission">Saved settings restored. Grant Shizuku/Root access to re-apply background restrictions.</string>
+    <string name="settings_restore_failed">Restore failed: Invalid data</string>
+    <string name="settings_restore_import_failed">Import failed: %1$s</string>
+
+    <!-- SettingsActivity — restriction log dialog -->
+    <string name="settings_restriction_log_empty">No background restriction events recorded yet.</string>
+    <string name="settings_restriction_log_dialog_subtitle">Recent background restriction results. Cached with a limit of 200 entries.</string>
+    <string name="settings_restriction_log_clear">Clear</string>
+    <string name="settings_restriction_log_summary">Recent events: %1$d entries.</string>
+    <string name="settings_restriction_log_cleared">Background restriction log cleared</string>
+
+    <!-- Stats / Kill history -->
+    <string name="stats_kill_detail">Auto-Killed %1$dx</string>
+    <string name="stats_last_kill_time"> (Last %1$s)</string>
+    <string name="stats_relaunch_detail">Relaunches %1$dx</string>
+    <string name="stats_last_relaunch_time"> (Last %1$s)</string>
+    <string name="stats_recovered_ram">RAM freed %1$s</string>
+    <string name="stats_summary_12h">Last 12 hours: %1$d apps | Auto-Kills %2$d | Relaunches %3$d | RAM freed %4$s</string>
+    <string name="stats_no_activity_12h">No activity in the last 12 hours.</string>
+    <string name="stats_dialog_subtitle">Last 12 hours</string>
+    <string name="stats_restrict_high_relaunch">Restrict resource-heavy apps from running in the background.</string>
+    <string name="stats_loading">Loading…</string>
+
+    <!-- Top offenders -->
+    <string name="stats_top_offenders_empty">No offenders found for this period.</string>
+    <string name="stats_top_offenders_dialog_subtitle">Sort apps by Auto-Kill count, relaunch count, and RAM freed.</string>
+    <string name="stats_top_offenders_summary">%1$s: %2$d apps | Auto-Kills %3$d | Relaunches %4$d | RAM freed %5$s</string>
+    <string name="stats_offender_metrics">Auto-Killed: %1$dx | Relaunches: %2$dx | RAM freed: %3$s</string>
+    <string name="stats_offender_score">Score %1$s</string>
+
+    <!-- Restriction type badges -->
+    <string name="restriction_badge_hard">Hard</string>
+    <string name="restriction_badge_soft">Soft</string>
+    <string name="restriction_badge_removed">Removed</string>
+    <string name="restriction_badge_retry">Retry</string>
+
+    <!-- FilterAppsAdapter — restriction type dialog -->
+    <string name="filter_restriction_type_dialog_title">Restriction type</string>
+    <string name="filter_restriction_soft_option">Soft (default) — blocks auto-start (RUN_ANY_IN_BACKGROUND)</string>
+    <string name="filter_restriction_hard_option">Hard — blocks all background activity (Soft + START_FOREGROUND + RECEIVE_BOOT_COMPLETED + removal from battery optimization whitelist)</string>
+
+    <!-- Log outcome labels -->
+    <string name="log_outcome_ok">Sent</string>
+    <string name="log_outcome_verified">Applied</string>
+    <string name="log_outcome_failed">ERROR</string>
+    <string name="log_outcome_skipped">Skipped</string>
+    <string name="log_outcome_verify_failed">NOT APPLIED</string>
+    <string name="log_outcome_verify_unavailable">Verification unavailable</string>
+    <string name="log_outcome_battery_whitelist_removed">Removed from whitelist</string>
+    <string name="log_outcome_battery_whitelist_restored">Restored to whitelist</string>
+    <string name="log_action_event">Event</string>
+
+    <!-- Settings items -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_amoled">AMOLED (black)</string>
+    <string name="settings_accent_title">Accent color</string>
+    <string name="settings_accent_subtitle">Primary interface color</string>
+    <string name="settings_section_automation">Automation</string>
+    <string name="settings_background_service_title">Background service</string>
+    <string name="settings_background_service_subtitle">Required for interval-based Auto-Kill and screen-off Auto-Kill</string>
+    <string name="settings_periodic_kill_title">Periodic Auto-Kill</string>
+    <string name="settings_periodic_kill_subtitle">Run Auto-Kill on a set interval</string>
+    <string name="settings_check_frequency_title">Auto-Kill interval</string>
+    <string name="settings_check_frequency_default">Every 18 seconds</string>
+    <string name="settings_screen_lock_title">Auto-Kill on screen off</string>
+    <string name="settings_screen_lock_subtitle">Run Auto-Kill when the screen turns off</string>
+    <string name="settings_ram_threshold_title">RAM limit</string>
+    <string name="settings_ram_threshold_default">Auto-Kill only when RAM usage exceeds 80%%</string>
+    <string name="settings_ram_threshold_summary">Auto-Kill only when RAM usage exceeds %1$d%%</string>
+    <string name="settings_section_kill_rules">Auto-Kill settings</string>
+    <string name="settings_mode_title">Auto-Kill mode</string>
+    <string name="settings_mode_whitelist">Whitelist</string>
+    <string name="settings_mode_blacklist">Blacklist</string>
+    <string name="settings_whitelist_title">Whitelist</string>
+    <string name="settings_whitelist_subtitle">Selected apps are never force-stopped</string>
+    <string name="settings_blacklist_title">Blacklist</string>
+    <string name="settings_blacklist_subtitle">Selected apps are force-stopped</string>
+    <string name="settings_show_system_apps_title">Show system apps</string>
+    <string name="settings_show_system_apps_subtitle">Enable display of system apps in the main list</string>
+    <string name="settings_show_persistent_apps_title">Show critical apps</string>
+    <string name="settings_show_persistent_apps_subtitle">Enable display of critical system apps in the main list</string>
+    <string name="settings_section_advanced_tools">Advanced tools</string>
+    <string name="settings_background_restriction_title">Background restrictions</string>
+    <string name="settings_background_restriction_subtitle">Keep selected apps in a dormant state</string>
+    <string name="settings_reapply_restrictions_title">Re-apply background restriction settings</string>
+    <string name="settings_reapply_restrictions_subtitle">Restore saved restrictions</string>
+    <string name="settings_sleep_mode_title">Sleep mode</string>
+    <string name="settings_sleep_mode_subtitle">Freeze apps during sleep mode</string>
+    <string name="settings_sleep_mode_apps_title">Sleep mode app list</string>
+    <string name="settings_sleep_mode_apps_subtitle">Select apps to freeze during sleep mode</string>
+    <string name="settings_sleep_mode_delay_title">Freeze timer</string>
+    <string name="settings_sleep_mode_delay_subtitle">Idle period before apps are frozen</string>
+    <string name="settings_sleep_mode_delay_fallback">After %1$d minutes</string>
 
     <string-array name="settings_sleep_mode_delay_labels">
-        <item>5 минут</item>
-        <item>10 минут</item>
-        <item>15 минут</item>
-        <item>20 минут</item>
-        <item>30 минут</item>
-        <item>60 минут</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>20 minutes</item>
+        <item>30 minutes</item>
+        <item>60 minutes</item>
     </string-array>
-    <string name="settings_clear_cache_title">Очистить кэш приложений</string>
-    <string name="settings_clear_cache_subtitle">Очистить ОЗУ от кэша всех приложений</string>
-    <string name="settings_hidden_apps_title">Скрытые приложения</string>
-    <string name="settings_hidden_apps_subtitle">Скрыть приложения из общего списка</string>
-    <string name="settings_backup_restore_title">Бэкап &amp; Восстановление</string>
-    <string name="settings_backup_restore_subtitle">Сохранить и восстановить настройки ReAppzuku</string>
 
-    <string name="settings_section_stats_history">Статистика &amp; Журналы</string>
-    <string name="settings_kill_history_title">Журнал Auto-Kill</string>
-    <string name="settings_kill_history_subtitle">Auto-Kills, перезапуски и освобожденная ОЗУ</string>
-    <string name="settings_top_offenders_title">Топ нарушителей</string>
-    <string name="settings_top_offenders_subtitle">Приложения с наибольшим количеством Auto-Kill или перезапусков</string>
-    <string name="settings_restriction_log_title">Журнал фоновых ограничений</string>
-    <string name="settings_restriction_log_subtitle">Последние результаты ограничений и ошибки</string>
-
-    <string name="settings_section_information">Информация</string>
-    <string name="settings_help_title">Помощь</string>
-    <string name="settings_help_subtitle">Инструкция по настройке и использованию</string>
-    <string name="settings_shell_mode_title">Режим работы</string>
-    <string name="settings_source_code_title">Исходный код</string>
-    <string name="settings_source_code_subtitle">Открыть репозиторий GitHub</string>
-    <string name="settings_check_updates_title">Проверить обновления</string>
-    <string name="settings_check_updates_subtitle">Открыть последний релиз на GitHub</string>
+    <string name="settings_clear_cache_title">Clear app caches</string>
+    <string name="settings_clear_cache_subtitle">Free RAM by clearing all app caches</string>
+    <string name="settings_hidden_apps_title">Hidden apps</string>
+    <string name="settings_hidden_apps_subtitle">Hide apps from the main list</string>
+    <string name="settings_backup_restore_title">Backup &amp; Restore</string>
+    <string name="settings_backup_restore_subtitle">Save and restore ReAppzuku settings</string>
+    <string name="settings_section_stats_history">Statistics &amp; Logs</string>
+    <string name="settings_kill_history_title">Auto-Kill log</string>
+    <string name="settings_kill_history_subtitle">Auto-Kills, relaunches and freed RAM</string>
+    <string name="settings_top_offenders_title">Top offenders</string>
+    <string name="settings_top_offenders_subtitle">Apps with the highest Auto-Kill or relaunch count</string>
+    <string name="settings_restriction_log_title">Background restriction log</string>
+    <string name="settings_restriction_log_subtitle">Recent restriction results and errors</string>
+    <string name="settings_section_information">Information</string>
+    <string name="settings_help_title">Help</string>
+    <string name="settings_help_subtitle">Setup and usage guide</string>
+    <string name="settings_shell_mode_title">Shell mode</string>
+    <string name="settings_source_code_title">Source code</string>
+    <string name="settings_source_code_subtitle">Open GitHub repository</string>
+    <string name="settings_check_updates_title">Check for updates</string>
+    <string name="settings_check_updates_subtitle">Open the latest release on GitHub</string>
     <string name="settings_version_label">ReAppzuku v%1$s</string>
-
-    <string name="settings_interval_fallback">Каждые %1$d секунд</string>
+    <string name="settings_interval_fallback">Every %1$d seconds</string>
 
     <string-array name="settings_theme_labels">
         <item>@string/settings_theme_system</item>
@@ -101,26 +225,26 @@
     </string-array>
 
     <string-array name="settings_accent_labels">
-        <item>По умолчанию (системный)</item>
-        <item>Индиго</item>
-        <item>Алый</item>
-        <item>Лесной зелёный</item>
-        <item>Сланцево-синий</item>
-        <item>Пыльная роза</item>
-        <item>Янтарный</item>
-        <item>Морская волна</item>
-        <item>Терракота</item>
-        <item>Мокко</item>
-        <item>Оливковый</item>
-        <item>Стальной</item>
+        <item>Default (system)</item>
+        <item>Indigo</item>
+        <item>Crimson</item>
+        <item>Forest green</item>
+        <item>Slate blue</item>
+        <item>Dusty rose</item>
+        <item>Amber</item>
+        <item>Teal</item>
+        <item>Terracotta</item>
+        <item>Mocha</item>
+        <item>Olive</item>
+        <item>Steel</item>
     </string-array>
 
     <string-array name="settings_kill_interval_labels">
-        <item>Каждые 10 секунд</item>
-        <item>Каждые 18 секунд</item>
-        <item>Каждые 30 секунд</item>
-        <item>Каждую 1 минуту</item>
-        <item>Каждые 5 минут</item>
+        <item>Every 10 seconds</item>
+        <item>Every 18 seconds</item>
+        <item>Every 30 seconds</item>
+        <item>Every 1 minute</item>
+        <item>Every 5 minutes</item>
     </string-array>
 
     <string-array name="settings_ram_threshold_labels">
@@ -131,4 +255,30 @@
         <item>95%</item>
         <item>100%</item>
     </string-array>
+
+    <string-array name="settings_top_offender_filter_labels">
+        <item>Last 12 hours</item>
+        <item>Last 24 hours</item>
+        <item>Last 7 days</item>
+        <item>All time</item>
+    </string-array>
+
+    <!-- BackgroundAppManager — toasts and notifications -->
+    <string name="bg_manager_auto_kill_active">Auto-Kill active</string>
+    <string name="bg_manager_stopped_apps">Stopped %1$d background apps</string>
+    <string name="bg_manager_restriction_applied">Background restriction settings applied</string>
+    <string name="bg_manager_restrictions_reapplied">Restrictions re-applied</string>
+    <string name="bg_manager_restrictions_reapply_partial">Some restrictions could not be applied</string>
+
+    <!-- ShappkyService — foreground notification -->
+    <string name="service_notification_title" translatable="false">ReAppzuku Service</string>
+    <string name="service_notification_text">Monitoring background apps</string>
+
+    <!-- ShappkyService — Shizuku lost notification -->
+    <string name="service_shizuku_lost_title">ReAppzuku services</string>
+    <string name="service_shizuku_lost_text">No Shizuku access. The app cannot continue running.</string>
+
+    <!-- ShappkyService — notification channel names -->
+    <string name="service_channel_foreground_name" translatable="false">ReAppzuku Foreground Service</string>
+    <string name="service_channel_actions_name">ReAppzuku Notifications</string>
 </resources>
