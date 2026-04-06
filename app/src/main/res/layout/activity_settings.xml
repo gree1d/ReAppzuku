@@ -22,7 +22,7 @@
             android:theme="@style/AppTheme.AppBarOverlay"
             app:navigationIcon="@drawable/ic_back"
             app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:title="Настройки"
+            app:title="@string/settings_title"
             app:titleTextColor="@android:color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -814,7 +814,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="О приложении"
+                android:text="@string/settings_about_section"
                 android:textColor="?attr/colorSecondary"
                 android:textSize="14sp"
                 android:textStyle="bold"

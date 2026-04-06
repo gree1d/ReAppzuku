@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Сортировка"
+        android:text="@string/sort_title"
         android:textSize="20sp"
         android:textStyle="bold"
         android:paddingBottom="16dp" />
@@ -22,35 +22,35 @@
             android:id="@+id/sort_default"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="По умолчанию (Пользовательские → Системные)"
+            android:text="@string/sort_default"
             android:padding="8dp" />
 
         <RadioButton
             android:id="@+id/sort_ram_desc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Потребление ОЗУ. Больше → Меньше"
+            android:text="@string/sort_ram_desc"
             android:padding="8dp" />
 
         <RadioButton
             android:id="@+id/sort_ram_asc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Потребление ОЗУ. Меньше → Больше"
+            android:text="@string/sort_ram_asc"
             android:padding="8dp" />
 
         <RadioButton
             android:id="@+id/sort_name_asc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Имя A → Z"
+            android:text="@string/sort_name_asc"
             android:padding="8dp" />
 
         <RadioButton
             android:id="@+id/sort_name_desc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Имя Z → A"
+            android:text="@string/sort_name_desc"
             android:padding="8dp" />
 
     </RadioGroup>
