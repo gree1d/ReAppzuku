@@ -100,7 +100,7 @@ public class MainActivity extends BaseActivity {
         // Initialize components
         shellManager = new ShellManager(this, handler, executor);
         appManager = new BackgroundAppManager(this, handler, executor, shellManager);
-        ramMonitor = new RamMonitor(handler, binding.ramUsage, binding.ramUsageText);
+        ramMonitor = new RamMonitor(this, handler, binding.ramUsage, binding.ramUsageText);
 
         listAdapter = new BackgroundAppsRecyclerViewAdapter(this);
         binding.recyclerView.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
