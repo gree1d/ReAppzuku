@@ -54,6 +54,11 @@ ReAppzuku automatically protects critical system processes (Google Play Services
  * Support for system, light, dark, and AMOLED themes.
  * Configurable color accents (Indigo, Crimson, Amber, and more).
 
+## 🌐 Translation
+I welcome your translations!\
+If you want to help localize the app in your language, you can:
+ * Submit a **Pull Request** with your changes to strings.xml.
+ * Open an **Issue** and attach your strings.xml (please pack it into a .zip archive first) or just paste the XML code into the comment.  
 
 ## License
 ReAppzuku is licensed under the [GNU General Public License v3.0](LICENSE).
