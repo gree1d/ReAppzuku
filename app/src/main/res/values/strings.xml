@@ -288,12 +288,12 @@
 
     <!-- Мain menu (main.xml) -->
     <string name="menu_select_all">Select all</string>
-    <string name="menu_deselect_all">Deselect all</string>
+    <string name="menu_deselect_all">Unselect all</string>
 
     <!-- Context menu app (menu_app_options.xml) -->
     <string name="menu_app_info">App info</string>
     <string name="menu_uninstall">Uninstall</string>
-    <string name="menu_add_to">Add to…</string>
+    <string name="menu_add_to">Add to list…</string>
     <string name="menu_hidden">Hidden</string>
 
     <!-- Dialog sort (dialog_sort.xml) -->
