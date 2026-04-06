@@ -282,3 +282,29 @@
     <string name="service_channel_foreground_name" translatable="false">ReAppzuku Foreground Service</string>
     <string name="service_channel_actions_name">ReAppzuku Notifications</string>
 </resources>
+
+    <!-- About -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_about_section">About</string>
+
+    <!-- Мain menu (main.xml) -->
+    <string name="menu_select_all">Select all</string>
+    <string name="menu_deselect_all">Deselect all</string>
+
+    <!-- Context menu app (menu_app_options.xml) -->
+    <string name="menu_app_info">App info</string>
+    <string name="menu_uninstall">Uninstall</string>
+    <string name="menu_add_to">Add to…</string>
+    <string name="menu_hidden">Hidden</string>
+
+    <!-- Dialog sort (dialog_sort.xml) -->
+    <string name="sort_title">Sort</string>
+    <string name="sort_default">Default (User → System)</string>
+    <string name="sort_ram_desc">RAM usage: High → Low</string>
+    <string name="sort_ram_asc">RAM usage: Low → High</string>
+    <string name="sort_name_asc">Name A → Z</string>
+    <string name="sort_name_desc">Name Z → A</string>
+
+    <!-- RamMonitor -->
+    <string name="ram_usage">RAM: %1$dMB / %2$dMB</string>
+    <string name="ram_usage_unavailable">RAM: --</string>
