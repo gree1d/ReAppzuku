@@ -302,4 +302,14 @@
 
     <string name="ram_usage">ОЗУ: %1$dMB / %2$dMB</string>
     <string name="ram_usage_unavailable">ОЗУ: --</string>
+    
+    <string name="filter_system">Системные</string>
+    <string name="filter_user">Пользовательские</string>
+    <string name="filter_running">Активные</string>
+    <string name="filter_clear">Очистить</string>
+    
+    <string name="url_help">https://github.com/gree1d/ReAppzuku/blob/main/docs/HELP_RU.md</string>
+    
+    <string name="settings_telegram_title">Telegram</string>
+    <string name="settings_telegram_subtitle">Связаться с разработчиком</string>
 </resources> 
