@@ -67,6 +67,9 @@ public class ShellManager {
 
     /**
      * Blocking check for root access. Should only be called from background thread.
+     * Uses "id -u" to verify the actual UID after su — returns true only if uid=0.
+     * This correctly handles cases where su exists but permission was denied by
+     * the root manager (Magisk, KernelSU, APatch, etc.).
      */
     private boolean checkRootAccessBlocking() {
         Process process = null;
@@ -74,11 +77,16 @@ public class ShellManager {
         try {
             process = Runtime.getRuntime().exec("su");
             os = new DataOutputStream(process.getOutputStream());
-            os.writeBytes("id\n");
+            os.writeBytes("id -u\n");
             os.writeBytes("exit\n");
             os.flush();
-            int exitValue = process.waitFor();
-            return exitValue == 0;
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()));
+            String output = reader.readLine();
+            process.waitFor();
+
+            return "0".equals(output != null ? output.trim() : "");
         } catch (IOException | InterruptedException e) {
             Log.d(TAG, "Root not available: " + e.getMessage());
             return false;
