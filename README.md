@@ -2,15 +2,17 @@
 ![Logo](https://github.com/gree1d/ReAppzuku/blob/main/docs/images/logo.png)
 <p align="center">
 <img src="https://img.shields.io/badge/License-GPLv3-blue.svg"/>
-<img src="https://img.shields.io/badge/Android-8.0%2B-green.svg"/>
+<img src="https://img.shields.io/badge/Android-8.0%2B-yellow.svg"/>
+<img src="https://img.shields.io/badge/Root-Supported-brightgreen.svg"/>
 <img src="https://img.shields.io/badge/Shizuku-Supported-brightgreen.svg"/>
 </p>
 
 ReAppzuku — это форк Appzuku (Shappky), предлагающий расширенный контроль за фоновой активностью приложений Android.
 
 Инструмент позволяет пользователю мониторить и контролировать приложения, которые потребляют ОЗУ, работают в фоновом режиме продолжительное время, потребляя заряд батареи и нагружая процессор.\
-Для работы необходимы Shizuku права.\
-Возможность ручной принудительной остановки одним нажатием, периодический Kill по таймеру, гибкие ограничения фоновой работы для выбранных приложений.
+Возможность ручной принудительной остановки одним нажатием, периодический Kill по таймеру, гибкие ограничения фоновой работы для выбранных приложений.\
+\
+Для работы программы необходимы Root или Shizuku права.
 
 
 ## ⚙️ Ключевые особенности
@@ -32,7 +34,7 @@ ReAppzuku — это форк Appzuku (Shappky), предлагающий рас
 | Компонент | Требование |
 |---|---|
 | ОС Android | 6.0+ (Фоновые ограничения требуют 11+) |
-| Доступ |  Shizuku |
+| Доступ |  Root или Shizuku |
 
 ## 🚀 Быстрый старт
  * Настройте среду: Установите и активируйте [Shizuku](https://github.com/thedjchi/Shizuku).
