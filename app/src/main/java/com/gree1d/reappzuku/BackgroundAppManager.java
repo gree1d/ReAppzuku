@@ -245,7 +245,7 @@ public class BackgroundAppManager {
             return String.format(java.util.Locale.US, "%.2f GB", kb / (1024f * 1024f));
     }
 
-    // === FIX 2: Improved loadBackgroundApps with better ps parsing ===
+    // Load background apps using 'ps' command via Shizuku
     public void loadBackgroundApps(Consumer<List<AppModel>> callback) {
         executor.execute(() -> {
             List<AppModel> result = new ArrayList<>();
@@ -258,35 +258,36 @@ public class BackgroundAppManager {
 
             // Execute shell command to get running processes
             if (shellManager.hasAnyShellPermission()) {
-                // Стабильная команда через /proc
-                String command = "for f in /proc/[0-9]*/cmdline; do cat \"$f\" 2>/dev/null | tr '\\0' '\\n'; done | " +
-                                 "grep -E '^[a-z][a-z0-9]*\\.[a-z0-9.]*' | cut -d: -f1 | sort | uniq";
-
+                String command = "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'";
                 try {
                     String fullOutput = shellManager.runShellCommandAndGetFullOutput(command);
                     if (fullOutput != null) {
                         try (BufferedReader reader = new BufferedReader(new StringReader(fullOutput))) {
                             String line;
                             while ((line = reader.readLine()) != null) {
-                                String pkg = line.trim();
-
-                                if (pkg.contains(":")) {
-                                    pkg = pkg.split(":")[0];
-                                }
-
-                                if (!pkg.isEmpty() && pkg.contains(".") && !pkg.startsWith("ERROR:")) {
-                                    try {
-                                        packageManager.getApplicationInfo(pkg, 0);
-                                        // Для RAM мы оставляем старый ps (можно улучшить позже)
-                                        runningPackagesFromPs.add(pkg + ":0");
-                                    } catch (PackageManager.NameNotFoundException ignored) {
+                                String[] parts = line.trim().split("\\s+");
+                                if (parts.length >= 2) {
+                                    String packageName = parts[1].trim();
+                                    String appRam = parts[0].trim();
+                                    if (!packageName.isEmpty() && packageName.contains(".")
+                                            && !packageName.startsWith("ERROR:")) {
+                                        try {
+                                            packageManager.getApplicationInfo(packageName, 0);
+                                            runningPackagesFromPs.add(packageName + ":" + appRam); // Store with RAM
+                                        } catch (PackageManager.NameNotFoundException ignored) {
+                                        }
                                     }
                                 }
                             }
                         }
+                    } else {
+                        handler.post(() -> Toast
+                                .makeText(context, "Failed to get running apps output", Toast.LENGTH_SHORT).show());
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Error getting running apps via /proc", e);
+                    handler.post(() -> Toast
+                            .makeText(context, "Error getting running apps: " + e.getMessage(), Toast.LENGTH_SHORT)
+                            .show());
                 }
             }
 
@@ -295,6 +296,11 @@ public class BackgroundAppManager {
                 String[] parts = packageEntry.split(":");
                 String packageName = parts[0];
                 long ramUsage = 0;
+                try {
+                    ramUsage = parts.length > 1 ? Long.parseLong(parts[1]) : 0;
+                } catch (NumberFormatException e) {
+                    Log.w(TAG, "Failed to parse RAM value for " + packageName, e);
+                }
 
                 try {
                     if (hiddenApps.contains(packageName)) {
