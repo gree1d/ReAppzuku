@@ -18,7 +18,7 @@
 
     <!-- MainActivity -->
     <string name="main_search_hint">Search apps…</string>
-    <string name="main_active_apps_count">Active apps: %1$d</string>
+    <string name="main_active_apps_count">Running apps: %1$d</string>
     <string name="main_added_to_whitelist">Added to whitelist</string>
     <string name="main_removed_from_whitelist">Removed from whitelist</string>
     <string name="main_added_to_blacklist">Added to blacklist</string>
@@ -209,7 +209,7 @@
     <string name="settings_section_information">Information</string>
     <string name="settings_help_title">Help</string>
     <string name="settings_help_subtitle">Setup and usage guide</string>
-    <string name="settings_shell_mode_title">Shell mode</string>
+    <string name="settings_shell_mode_title">Access mode</string>
     <string name="settings_source_code_title">Source code</string>
     <string name="settings_source_code_subtitle">Open GitHub repository</string>
     <string name="settings_check_updates_title">Check for updates</string>
@@ -293,7 +293,7 @@
     <!-- Context menu app (menu_app_options.xml) -->
     <string name="menu_app_info">App info</string>
     <string name="menu_uninstall">Uninstall</string>
-    <string name="menu_add_to">Add to list…</string>
+    <string name="menu_add_to">Add to…</string>
     <string name="menu_hidden">Hidden</string>
 
     <!-- Dialog sort (dialog_sort.xml) -->
@@ -311,7 +311,7 @@
     <!-- Filter dialog (dialog_filter.xml) -->
     <string name="filter_system">System</string>
     <string name="filter_user">User</string>
-    <string name="filter_running">Active</string>
+    <string name="filter_running">Running</string>
     <string name="filter_clear">Clear</string>
 
     <!-- Help URL -->
@@ -320,4 +320,9 @@
     <!-- Developer Tg -->
     <string name="settings_telegram_title">Telegram</string>
     <string name="settings_telegram_subtitle">Contact the developer</string>
+        
+    <!-- Background Restrictions list-->
+    <string name="restriction_status_saved">Saved in ReAppzuku</string>
+    <string name="restriction_status_external">Restricted, but not by ReAppzuku</string>
+    <string name="restriction_status_not_applied">Saved in ReAppzuku, but not applied</string>
 </resources>
