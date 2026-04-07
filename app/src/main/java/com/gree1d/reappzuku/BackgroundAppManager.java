@@ -99,8 +99,7 @@ public class BackgroundAppManager {
     public void performAutoKill(Runnable onComplete) {
         executor.execute(() -> {
             if (!shellManager.resolveAnyShellPermission()) {
-                if (onComplete != null)
-                    handler.post(onComplete);
+                if (onComplete != null) handler.post(onComplete);
                 return;
             }
 
@@ -109,19 +108,20 @@ public class BackgroundAppManager {
             Set<String> blacklistedApps = getBlacklistedApps();
             int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
 
-            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
-            if (dumpOutput == null) {
-                if (onComplete != null)
-                    handler.post(onComplete);
-                return;
-            }
+            Log.d(TAG, "AutoKill started | Mode: " + (killMode == 1 ? "BLACKLIST" : "WHITELIST") +
+                    " | Whitelist size: " + whitelistedApps.size() +
+                    " | Blacklist size: " + blacklistedApps.size() +
+                    " | Hidden size: " + hiddenApps.size());
 
-            // === СТАБИЛЬНЫЙ СПОСОБ ПОЛУЧЕНИЯ ПРОЦЕССОВ ЧЕРЕЗ /proc (работает через Shizuku) ===
+            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
+
+            // === Получение списка запущенных пакетов ===
             String processesOutput = shellManager.runShellCommandAndGetFullOutput(
                     "for f in /proc/[0-9]*/cmdline; do cat \"$f\" 2>/dev/null | tr '\\0' '\\n'; done | " +
                     "grep -E '^[a-z][a-z0-9]*\\.[a-z0-9.]*' | cut -d: -f1 | sort | uniq");
 
             if (processesOutput == null || processesOutput.trim().isEmpty()) {
+                Log.w(TAG, "No processes output received");
                 if (onComplete != null) handler.post(onComplete);
                 return;
             }
@@ -133,47 +133,65 @@ public class BackgroundAppManager {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     String pkgName = line.trim();
-
-                    // Очистка имени от подпроцессов (например: com.google.android.gms.persistent → com.google.android.gms)
                     if (pkgName.contains(":")) {
                         pkgName = pkgName.split(":")[0];
                     }
-
                     if (!pkgName.isEmpty() && pkgName.contains(".")) {
                         try {
                             pm.getApplicationInfo(pkgName, 0);
                             runningPackages.add(pkgName);
-                        } catch (PackageManager.NameNotFoundException ignored) {
-                        }
+                        } catch (PackageManager.NameNotFoundException ignored) {}
                     }
                 }
-            } catch (IOException ignored) {
-            }
+            } catch (IOException ignored) {}
 
+            Log.d(TAG, "Found running packages: " + runningPackages.size());
+
+            // === ФИЛЬТРАЦИЯ — ИСПРАВЛЕННАЯ ЛОГИКА ===
             List<String> toKill = runningPackages.stream()
                     .filter(pkg -> {
                         try {
-                            // Common checks: foreground, hidden, protected
-                            if (hiddenApps.contains(pkg) || ProtectedApps.isProtected(context, pkg)
-                                    || containsPackage(dumpOutput, pkg)) {
+                            // 1. Защищённые приложения — никогда не убиваем
+                            if (hiddenApps.contains(pkg) || ProtectedApps.isProtected(context, pkg)) {
+                                Log.d(TAG, "Skipped (hidden/protected): " + pkg);
                                 return false;
                             }
 
-                            if (killMode == 1) { // Blacklist Mode (Default)
-                                return blacklistedApps.contains(pkg);
-                            } else { // Whitelist Mode
-                                if (whitelistedApps.contains(pkg))
-                                    return false;
-                                ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
-                                return (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) == 0;
+                            // 2. Приложения на переднем плане
+                            if (containsPackage(dumpOutput, pkg)) {
+                                Log.d(TAG, "Skipped (foreground): " + pkg);
+                                return false;
                             }
-                        } catch (PackageManager.NameNotFoundException e) {
+
+                            // 3. Режимы работы
+                            if (killMode == 1) { // BLACKLIST MODE (по умолчанию)
+                                boolean shouldKill = blacklistedApps.contains(pkg);
+                                if (shouldKill) Log.d(TAG, "Will kill (blacklisted): " + pkg);
+                                return shouldKill;
+                            } 
+                            else { // WHITELIST MODE
+                                if (whitelistedApps.contains(pkg)) {
+                                    Log.d(TAG, "Skipped (whitelisted): " + pkg);
+                                    return false;
+                                }
+                                // Убиваем всё, что не в whitelist и не persistent
+                                ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
+                                boolean isPersistent = (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) != 0;
+                                boolean shouldKill = !isPersistent;
+                                if (shouldKill) Log.d(TAG, "Will kill (not whitelisted): " + pkg);
+                                return shouldKill;
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Filter error for " + pkg, e);
                             return false;
                         }
                     })
                     .collect(Collectors.toList());
 
+            Log.d(TAG, "Final apps to kill: " + toKill.size() + " → " + toKill);
+
             if (!toKill.isEmpty()) {
+                // ... (остальной код без изменений: recordSuccessfulKills, force-stop, notification и т.д.)
                 Map<String, Long> recoveredKbByPackage = new HashMap<>();
                 for (AppModel app : currentAppsList) {
                     recoveredKbByPackage.put(app.getPackageName(), app.getAppRamBytes());
@@ -187,16 +205,16 @@ public class BackgroundAppManager {
                 shellManager.runShellCommandAndGetFullOutput(finalCommand);
 
                 sendKillNotification(toKill.size());
-
                 updateWidget();
 
                 try {
                     Thread.sleep(RELAUNCH_CHECK_DELAY_MS);
-                } catch (InterruptedException ignored) {
-                }
+                } catch (InterruptedException ignored) {}
 
                 com.gree1d.reappzuku.db.AppDatabase db = com.gree1d.reappzuku.db.AppDatabase.getInstance(context);
                 checkRelaunches(toKill, db);
+            } else {
+                Log.d(TAG, "Nothing to kill according to current rules");
             }
 
             if (onComplete != null)
