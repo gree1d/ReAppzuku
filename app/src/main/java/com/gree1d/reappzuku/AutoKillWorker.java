@@ -45,23 +45,57 @@ public class AutoKillWorker extends Worker {
     public Result doWork() {
         SharedPreferences prefs = getApplicationContext().getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
 
-        if (!prefs.getBoolean(KEY_AUTO_KILL_ENABLED, false)) {
-            return Result.success();
-        }
-        if (!prefs.getBoolean(KEY_PERIODIC_KILL_ENABLED, false)) {
-            return Result.success();
-        }
-        if (ShappkyService.isRunning()) {
-            return Result.success();
-        }
+        if (!prefs.getBoolean(KEY_AUTO_KILL_ENABLED, false)) return Result.success();
+        if (!prefs.getBoolean(KEY_PERIODIC_KILL_ENABLED, false)) return Result.success();
+        if (ShappkyService.isRunning()) return Result.success();
 
         boolean ramThresholdEnabled = prefs.getBoolean(KEY_RAM_THRESHOLD_ENABLED, false);
         if (ramThresholdEnabled) {
             int threshold = prefs.getInt(KEY_RAM_THRESHOLD, DEFAULT_RAM_THRESHOLD_PERCENT);
-            if (getCurrentRamUsagePercent() < threshold) {
-                return Result.success();
-            }
+            if (getCurrentRamUsagePercent() < threshold) return Result.success();
         }
+
+        Handler handler = new Handler(Looper.getMainLooper());
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        try {
+            ShellManager shellManager = new ShellManager(getApplicationContext(), handler, executor);
+            BackgroundAppManager appManager = new BackgroundAppManager(
+                    getApplicationContext(), handler, executor, shellManager);
+
+            if (!shellManager.hasAnyShellPermission()) {
+                try { Thread.sleep(ROOT_CHECK_TIMEOUT_MS); }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return Result.failure();
+                }
+                if (!shellManager.hasAnyShellPermission()) return Result.failure();
+            }
+
+            CountDownLatch latch = new CountDownLatch(1);
+            Log.d("AutoKillWorker", "Triggering performAutoKill from WORKER");
+
+            appManager.performAutoKill(latch::countDown);
+
+            boolean finished = latch.await(60, TimeUnit.SECONDS);
+            if (!finished) {
+                Log.w("AutoKillWorker", "performAutoKill timed out after 60s");
+                return Result.retry();
+            }
+
+            long pruneThreshold = System.currentTimeMillis() - STATS_PRUNE_THRESHOLD_MS;
+            AppDatabase.getInstance(getApplicationContext())
+                    .appStatsDao().deleteOldStats(pruneThreshold);
+
+            return Result.success();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Result.retry();
+        } finally {
+            executor.shutdown();
+        }
+    }
 
         // Initialize components for background work
         Handler handler = new Handler(Looper.getMainLooper());

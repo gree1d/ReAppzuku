@@ -99,7 +99,7 @@ public class BackgroundAppManager {
         public synchronized void performAutoKill(Runnable onComplete) {
         executor.execute(() -> {
             if (!shellManager.resolveAnyShellPermission()) {
-                if (onComplete != null) handler.post(onComplete);
+                if (onComplete != null) onComplete.run();
                 return;
             }
 
@@ -114,7 +114,7 @@ public class BackgroundAppManager {
                 Log.w(TAG, "ABORTING Auto-Kill: Mode is Whitelist but list is EMPTY!");
                 handler.post(() -> Toast.makeText(context, 
                     context.getString(R.string.toast_error_whitelist_empty), Toast.LENGTH_SHORT).show());
-                if (onComplete != null) handler.post(onComplete);
+                if (onComplete != null) onComplete.run();
                 return;
             }
 
@@ -126,7 +126,7 @@ public class BackgroundAppManager {
 
             if (psOutput == null || psOutput.trim().isEmpty()) {
                 Log.w(TAG, "No processes output received via ps");
-                if (onComplete != null) handler.post(onComplete);
+                if (onComplete != null) onComplete.run();
                 return;
             }
 
@@ -204,7 +204,7 @@ public class BackgroundAppManager {
                 checkRelaunches(toKill, db);
             }
 
-            if (onComplete != null) handler.post(onComplete);
+            if (onComplete != null) onComplete.run();
         });
     }
 
