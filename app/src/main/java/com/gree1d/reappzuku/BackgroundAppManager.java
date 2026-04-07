@@ -98,11 +98,11 @@ public class BackgroundAppManager {
 
     public void performAutoKill(Runnable onComplete) {
         executor.execute(() -> {
-        if (!shellManager.resolveAnyShellPermission()) {
-            if (onComplete != null)
-                handler.post(onComplete);
-            return;
-        }
+            if (!shellManager.resolveAnyShellPermission()) {
+                if (onComplete != null)
+                    handler.post(onComplete);
+                return;
+            }
 
             Set<String> hiddenApps = getHiddenApps();
             Set<String> whitelistedApps = getWhitelistedApps();
@@ -116,24 +116,31 @@ public class BackgroundAppManager {
                 return;
             }
 
-            String psOutput = shellManager.runShellCommandAndGetFullOutput(
-                    "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
-            if (psOutput == null) {
-                if (onComplete != null)
-                    handler.post(onComplete);
+            // === FIX 1: Improved process list via dumpsys + package name cleaning ===
+            String processesOutput = shellManager.runShellCommandAndGetFullOutput(
+                    "dumpsys activity processes | grep 'ProcessRecord' | cut -d: -f2 | cut -d/ -f1");
+
+            if (processesOutput == null) {
+                if (onComplete != null) handler.post(onComplete);
                 return;
             }
 
             Set<String> runningPackages = new HashSet<>();
             PackageManager pm = context.getPackageManager();
-            try (BufferedReader reader = new BufferedReader(new StringReader(psOutput))) {
+            try (BufferedReader reader = new BufferedReader(new StringReader(processesOutput))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    String packageName = line.trim();
-                    if (!packageName.isEmpty() && packageName.contains(".")) {
+                    String pkgName = line.trim();
+                    
+                    // Clean sub-processes (e.g. com.android.vending:download_service → com.android.vending)
+                    if (pkgName.contains(":")) {
+                        pkgName = pkgName.split(":")[0];
+                    }
+
+                    if (!pkgName.isEmpty() && pkgName.contains(".")) {
                         try {
-                            pm.getApplicationInfo(packageName, 0);
-                            runningPackages.add(packageName);
+                            pm.getApplicationInfo(pkgName, 0);
+                            runningPackages.add(pkgName);
                         } catch (PackageManager.NameNotFoundException ignored) {
                         }
                     }
@@ -207,6 +214,10 @@ public class BackgroundAppManager {
             String line;
             while ((line = reader.readLine()) != null) {
                 String pkg = line.trim();
+                // === FIX 3: Clean package name for correct matching ===
+                if (pkg.contains(":")) {
+                    pkg = pkg.split(":")[0];
+                }
                 if (recentlyKilled.contains(pkg)) {
                     db.appStatsDao().incrementRelaunch(pkg, now);
                 }
@@ -230,7 +241,7 @@ public class BackgroundAppManager {
             return String.format(java.util.Locale.US, "%.2f GB", kb / (1024f * 1024f));
     }
 
-    // Load background apps using 'ps' command via Shizuku
+    // === FIX 2: Improved loadBackgroundApps with better ps parsing ===
     public void loadBackgroundApps(Consumer<List<AppModel>> callback) {
         executor.execute(() -> {
             List<AppModel> result = new ArrayList<>();
@@ -243,7 +254,8 @@ public class BackgroundAppManager {
 
             // Execute shell command to get running processes
             if (shellManager.hasAnyShellPermission()) {
-                String command = "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'";
+                // Removed aggressive grep -v '[-:@]' for better compatibility
+                String command = "ps -A -o rss,name | grep '\\.'"; 
                 try {
                     String fullOutput = shellManager.runShellCommandAndGetFullOutput(command);
                     if (fullOutput != null) {
@@ -252,13 +264,18 @@ public class BackgroundAppManager {
                             while ((line = reader.readLine()) != null) {
                                 String[] parts = line.trim().split("\\s+");
                                 if (parts.length >= 2) {
-                                    String packageName = parts[1].trim();
-                                    String appRam = parts[0].trim();
-                                    if (!packageName.isEmpty() && packageName.contains(".")
-                                            && !packageName.startsWith("ERROR:")) {
+                                    String ram = parts[0].trim();
+                                    String pkg = parts[1].trim();
+
+                                    // Clean sub-processes for correct whitelist comparison
+                                    if (pkg.contains(":")) {
+                                        pkg = pkg.split(":")[0];
+                                    }
+
+                                    if (!pkg.isEmpty() && pkg.contains(".") && !pkg.startsWith("ERROR:")) {
                                         try {
-                                            packageManager.getApplicationInfo(packageName, 0);
-                                            runningPackagesFromPs.add(packageName + ":" + appRam); // Store with RAM
+                                            packageManager.getApplicationInfo(pkg, 0);
+                                            runningPackagesFromPs.add(pkg + ":" + ram); // Store with RAM
                                         } catch (PackageManager.NameNotFoundException ignored) {
                                         }
                                     }
