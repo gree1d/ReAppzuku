@@ -21,24 +21,24 @@
     <color name="amoled_surface_variant">#0D0D0D</color>
 
     <!-- Акцент: Индиго (по умолчанию) -->
-    <color name="accent_indigo_primary">#1A237E</color>
+    <color name="accent_indigo_primary">#4B0082</color>
     <color name="accent_indigo_secondary">#534BAE</color>
-    <color name="accent_indigo_dark">#000051</color>
+    <color name="accent_indigo_dark">#37006E</color>
 
     <!-- Акцент: Алый -->
-    <color name="accent_crimson_primary">#8B1A1A</color>
-    <color name="accent_crimson_secondary">#A94040</color>
-    <color name="accent_crimson_dark">#5C0000</color>
+    <color name="accent_crimson_primary">#FF4040</color>
+    <color name="accent_crimson_secondary">#FF6868</color>
+    <color name="accent_crimson_dark">#B90000</color>
 
     <!-- Акцент: Лесной зелёный -->
-    <color name="accent_forest_primary">#1B4332</color>
-    <color name="accent_forest_secondary">#2D6A4F</color>
-    <color name="accent_forest_dark">#081C15</color>
+    <color name="accent_forest_primary">#0E770E</color>
+    <color name="accent_forest_secondary">#2C952C</color>
+    <color name="accent_forest_dark">#004F00</color>
 
     <!-- Акцент: Сланцево-синий -->
-    <color name="accent_slate_primary">#2C3E6B</color>
-    <color name="accent_slate_secondary">#4A5F8A</color>
-    <color name="accent_slate_dark">#1A253F</color>
+    <color name="accent_slate_primary">#1414B9</color>
+    <color name="accent_slate_secondary">#2828CD</color>
+    <color name="accent_slate_dark">#000069</color>
 
     <!-- Акцент: Пыльная роза -->
     <color name="accent_rose_primary">#7B4F5E</color>
@@ -46,9 +46,9 @@
     <color name="accent_rose_dark">#4E2F3A</color>
 
     <!-- Акцент: Янтарный -->
-    <color name="accent_amber_primary">#7B5A00</color>
+    <color name="accent_amber_primary">#F5B500</color>
     <color name="accent_amber_secondary">#A07820</color>
-    <color name="accent_amber_dark">#4E3800</color>
+    <color name="accent_amber_dark">#AF6F00</color>
 
     <!-- Акцент: Морская волна -->
     <color name="accent_teal_primary">#1A4F52</color>
@@ -71,7 +71,7 @@
     <color name="accent_olive_dark">#252B21</color>
 
     <!-- Акцент: Стальной -->
-    <color name="accent_steel_primary">#3D5068</color>
-    <color name="accent_steel_secondary">#5A7088</color>
-    <color name="accent_steel_dark">#1E2F3E</color>
+    <color name="accent_steel_primary">#676F74</color>
+    <color name="accent_steel_secondary">#7B8388</color>
+    <color name="accent_steel_dark">#495156</color>
 </resources>
