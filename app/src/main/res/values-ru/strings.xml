@@ -295,8 +295,8 @@
 
     <string name="sort_title">Сортировка</string>
     <string name="sort_default">По умолчанию (Пользовательские → Системные)</string>
-    <string name="sort_ram_desc">Потребление ОЗУ. Больше → Меньше</string>
-    <string name="sort_ram_asc">Потребление ОЗУ. Меньше → Больше</string>
+    <string name="sort_ram_desc">Потребление ОЗУ: Больше → Меньше</string>
+    <string name="sort_ram_asc">Потребление ОЗУ: Меньше → Больше</string>
     <string name="sort_name_asc">Имя A → Z</string>
     <string name="sort_name_desc">Имя Z → A</string>
 
@@ -312,4 +312,8 @@
     
     <string name="settings_telegram_title">Telegram</string>
     <string name="settings_telegram_subtitle">Связаться с разработчиком</string>
-</resources> 
+    
+    <string name="restriction_status_saved">Сохранено в ReAppzuku</string>
+    <string name="restriction_status_external">Ограничено, но не с помощью ReAppzuku</string>
+    <string name="restriction_status_not_applied">Сохранено в ReAppzuku, но не применилось</string>
+</resources>
