@@ -29,15 +29,62 @@ public final class ProtectedApps {
      * These apps are critical for device operation.
      */
     private static final Set<String> PROTECTED_PACKAGES = new HashSet<>(Arrays.asList(
+            // --- Core & Development ---
             "com.gree1d.reappzuku", // Self
             "com.google.android.gms", // Google Play Services
+            "com.google.android.gsf", // Google Services Framework
             "com.android.systemui", // System UI
+            "com.android.settings", // Settings
+            "com.android.phone", // Phone / Dialer
+            "com.android.contacts", // Contacts
+            "com.android.mms", // SMS Service
+            "com.android.server.telecom", // Telecom Server
             "com.android.bluetooth", // Bluetooth
             "com.android.externalstorage", // External Storage
             "com.google.android.providers.media.module", // Media Module
+            "com.google.android.packageinstaller", // Package Installer
+            "com.google.android.permissioncontroller", // Permission Controller
+            "com.google.android.inputmethod.latin", // Gboard
+            "rikka.shizuku.common", // Shizuku
+            "moe.shizuku.privileged.api", // Shizuku thedjchi fork
+
+            // --- Xiaomi / Poco / Redmi (MIUI & HyperOS) ---
+            "com.miui.securitycenter", // Security App
+            "com.miui.home", // MIUI Launcher
             "com.miui.miwallpaper", // MIUI Wallpaper
-            "com.android.camera" // Camera
+            "com.android.camera", // Camera
+            "com.miui.guardprovider", // Security Guard
+
+            // --- Samsung (One UI) ---
+            "com.samsung.android.lool", // Device Care
+            "com.samsung.android.sm.devicesecurity", // Device Security
+            "com.sec.android.app.launcher", // One UI Home
+
+            // --- Oppo / Realme / OnePlus (ColorOS & derivatives) ---
+            "com.coloros.safecenter", // Phone Manager
+            "com.oppo.launcher", // System Launcher
+            "com.coloros.assistantscreen", // Smart Assistant
+
+            // --- Vivo / iQOO (Funtouch OS / OriginOS) ---
+            "com.iqoo.secure", // iManager
+            "com.bbk.launcher2", // Vivo Launcher
+
+            // --- Huawei / Honor (EMUI / MagicOS) ---
+            "com.huawei.systemmanager", // Optimizer
+            "com.huawei.android.launcher", // Huawei Home
+            "com.hihonor.systemmanager", // Honor System Manager
+            
+            // --- Root Managers ---
+            "com.topjohnwu.magisk", // Magisk
+            "me.weishu.kernelsu", // KernelSU
+            "com.rifsxd.ksunext", // KernelSU Next
+            "me.bmax.apatch", // APatch
+            "com.suki.suki", // SukiSU
+            "com.suki.suki_ultra", // SukiSU Ultra
+            "org.sukisu.manager" // SukiSU (Alternative/New builds)
+            
     ));
+
 
     /**
      * Check if a package is protected from being killed.

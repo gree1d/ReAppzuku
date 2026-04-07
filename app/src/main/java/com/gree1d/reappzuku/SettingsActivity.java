@@ -434,8 +434,9 @@ public class SettingsActivity extends BaseActivity {
                 }
             });
 
-            dialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (d, w) -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 appManager.saveBlacklistedApps(filterAdapter.getSelectedPackages());
+                dialog.dismiss();
             });
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
         });
@@ -1101,9 +1102,10 @@ public class SettingsActivity extends BaseActivity {
                 }
             });
 
-            whitelistDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
+            whitelistDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 Set<String> packagesToWhitelist = filterAdapter.getSelectedPackages();
                 appManager.saveWhitelistedApps(packagesToWhitelist);
+                whitelistDialog.dismiss();
             });
             whitelistDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
         });
@@ -1170,9 +1172,10 @@ public class SettingsActivity extends BaseActivity {
                 }
             });
 
-            filterDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
+            filterDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 Set<String> packagesToHide = filterAdapter.getSelectedPackages();
                 appManager.saveHiddenApps(packagesToHide);
+                filterDialog.dismiss();
             });
             filterDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
         });

@@ -548,7 +548,7 @@ public class MainActivity extends BaseActivity {
         }
         radioGroup.check(selectedRadioId);
 
-        new androidx.appcompat.app.AlertDialog.Builder(this)
+        androidx.appcompat.app.AlertDialog sortDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setPositiveButton(getString(R.string.dialog_apply), (dialog, which) -> {
                     int checkedId = radioGroup.getCheckedRadioButtonId();
@@ -569,7 +569,20 @@ public class MainActivity extends BaseActivity {
                     filterApps(currentSearchQuery); // Re-filter and sort
                 })
                 .setNegativeButton(getString(R.string.dialog_cancel), null)
-                .show();
+                .create();
+
+        sortDialog.show();
+
+        boolean isDarkTheme = sharedPreferences.getBoolean(KEY_AMOLED, false)
+                || sharedPreferences.getInt(KEY_THEME,
+                        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                        == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES;
+        if (isDarkTheme) {
+            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                    .setTextColor(Color.WHITE);
+            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
+                    .setTextColor(Color.WHITE);
+        }
     }
 
     @Override
