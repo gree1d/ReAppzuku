@@ -1758,10 +1758,40 @@ public class SettingsActivity extends BaseActivity {
 
     private void applyAutomationStateFromPreferences() {
         boolean automationEnabled = sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false);
+        
         if (automationEnabled) {
+            // Проверка: режим Whitelist (0) и пустой список
+            int killMode = sharedPreferences.getInt(KEY_KILL_MODE, 0);
+            Set<String> whitelistedApps = sharedPreferences.getStringSet(KEY_WHITELISTED_APPS, new HashSet<>());
+
+            if (killMode == 0 && whitelistedApps.isEmpty()) {
+                // 1. Сбрасываем значение в SharedPreferences
+                sharedPreferences.edit().putBoolean(KEY_AUTO_KILL_ENABLED, false).apply();
+                
+                // 2. Выключаем визуальный переключатель через binding
+                if (binding.switchAutoKill != null) {
+                    binding.switchAutoKill.setChecked(false);
+                }
+
+                // 3. Показываем диалог из ресурсов strings.xml
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.dialog_unsafe_whitelist_title)
+                        .setMessage(R.string.dialog_unsafe_whitelist_message)
+                        .setPositiveButton(R.string.dialog_unsafe_whitelist_ok, (dialog, which) -> dialog.dismiss())
+                        .setCancelable(false)
+                        .show();
+                
+                // 4. Останавливаем процессы
+                stopService(new Intent(this, ShappkyService.class));
+                AutoKillWorker.cancel(this);
+                return;
+            }
+
+            // Если всё в порядке — запускаем автоматизацию
             startAutomationService();
             AutoKillWorker.schedule(this);
         } else {
+            // Если выключено — останавливаем
             stopService(new Intent(this, ShappkyService.class));
             AutoKillWorker.cancel(this);
         }

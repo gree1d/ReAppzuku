@@ -96,12 +96,29 @@ public class BackgroundAppManager {
         });
     }
 
-    public void performAutoKill(Runnable onComplete) {
+            public synchronized void performAutoKill(Runnable onComplete) {
         executor.execute(() -> {
             if (!shellManager.resolveAnyShellPermission()) {
                 if (onComplete != null) handler.post(onComplete);
                 return;
             }
+
+            int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
+            Set<String> whitelistedApps = getWhitelistedApps();
+
+            // === НОВАЯ ПРОВЕРКА БЕЗОПАСНОСТИ ===
+            // Если выбран Белый список, но он пуст — отменяем убийство.
+            if (killMode == 0 && whitelistedApps.isEmpty()) {
+                Log.w(TAG, "ABORTING Auto-Kill: Mode is Whitelist but list is EMPTY. This is dangerous!");
+                
+                // Используем строку из ресурсов через context.getString()
+                handler.post(() -> Toast.makeText(context, 
+                    context.getString(R.string.toast_error_whitelist_empty), Toast.LENGTH_SHORT).show());
+
+                if (onComplete != null) handler.post(onComplete);
+                return;
+            }
+            // ===================================
 
             Set<String> hiddenApps = getHiddenApps();
             Set<String> whitelistedApps = getWhitelistedApps();
@@ -196,25 +213,37 @@ public class BackgroundAppManager {
 
             Log.d(TAG, "Final apps to kill: " + toKill.size() + " → " + toKill);
 
-            if (!toKill.isEmpty()) {
-                // ... (остальной код без изменений: recordSuccessfulKills, force-stop, notification и т.д.)
+                        if (!toKill.isEmpty()) {
+                // 1. Сначала считаем RAM и записываем статистику (как и было)
                 Map<String, Long> recoveredKbByPackage = new HashMap<>();
                 for (AppModel app : currentAppsList) {
                     recoveredKbByPackage.put(app.getPackageName(), app.getAppRamBytes());
                 }
                 recordSuccessfulKills(toKill, recoveredKbByPackage);
 
-                String finalCommand = toKill.stream()
-                        .map(pkg -> "am force-stop " + pkg)
-                        .collect(Collectors.joining("; "));
+                // 2. РАЗБИВКА НА ПАЧКИ (Batching)
+                int batchSize = 5; // По 5 приложений за один вызов su
+                List<String> toKillList = new ArrayList<>(toKill);
+                
+                for (int i = 0; i < toKillList.size(); i += batchSize) {
+                    int end = Math.min(i + batchSize, toKillList.size());
+                    List<String> batch = toKillList.subList(i, end);
+                    
+                    // Формируем строку для текущей пачки
+                    String batchCommand = batch.stream()
+                            .map(pkg -> "am force-stop " + pkg)
+                            .collect(Collectors.joining("; "));
 
-                // === Финальный лог===
-                Log.d(TAG, "FINAL EXECUTION COMMAND: " + finalCommand);
-                // =====================
+                    Log.d(TAG, "Executing batch (" + (i/batchSize + 1) + "): " + batchCommand);
+                    
+                    // Выполняем именно эту пачку
+                    shellManager.runShellCommandAndGetFullOutput(batchCommand);
+                    
+                    // Пауза 150мс, чтобы система (и драйверы Qualcomm) успели обработать закрытие
+                    try { Thread.sleep(150); } catch (InterruptedException ignored) {}
+                }
 
-                // Выполнение команды
-                shellManager.runShellCommandAndGetFullOutput(finalCommand);
-
+                // 3. Завершающие действия
                 sendKillNotification(toKill.size());
                 updateWidget();
 
