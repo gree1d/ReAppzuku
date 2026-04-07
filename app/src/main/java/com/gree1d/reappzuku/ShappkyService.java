@@ -292,10 +292,11 @@ public class ShappkyService extends Service {
 
             // Move logic to background thread to avoid Main Thread I/O
             executor.execute(() -> {
+                boolean autoKillEnabled = prefs.getBoolean(KEY_AUTO_KILL_ENABLED, false);
                 boolean periodicKillEnabled = prefs.getBoolean(KEY_PERIODIC_KILL_ENABLED, false);
                 boolean ramThresholdEnabled = prefs.getBoolean(KEY_RAM_THRESHOLD_ENABLED, false);
 
-                if (periodicKillEnabled) {
+                if (autoKillEnabled && periodicKillEnabled) {
                     if (ramThresholdEnabled) {
                         int threshold = prefs.getInt(KEY_RAM_THRESHOLD, DEFAULT_RAM_THRESHOLD_PERCENT);
                         if (getCurrentRamUsagePercent() >= threshold) {
@@ -307,7 +308,6 @@ public class ShappkyService extends Service {
                         appManager.performAutoKill(() -> handler.post(this::scheduleNextKill));
                     }
                 } else {
-                    // Periodic kill disabled, just schedule next check
                     handler.post(this::scheduleNextKill);
                 }
             });
