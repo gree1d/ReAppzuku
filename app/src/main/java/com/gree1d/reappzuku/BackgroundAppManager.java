@@ -96,114 +96,101 @@ public class BackgroundAppManager {
         });
     }
 
-    public synchronized void performAutoKill(Runnable onComplete) {
-        if (!shellManager.resolveAnyShellPermission()) {
-            if (onComplete != null) onComplete.run();
-            return;
-        }
-
-        // 1. Получаем данные один раз
-        int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
-        Set<String> whitelistedApps = getWhitelistedApps();
-        Set<String> blacklistedApps = getBlacklistedApps();
-        Set<String> hiddenApps = getHiddenApps();
-
-        // 2. Проверка безопасности
-        if (killMode == 0 && whitelistedApps.isEmpty()) {
-            Log.w(TAG, "ABORTING Auto-Kill: Mode is Whitelist but list is EMPTY!");
-            handler.post(() -> Toast.makeText(context,
-                context.getString(R.string.toast_error_whitelist_empty), Toast.LENGTH_SHORT).show());
-            if (onComplete != null) onComplete.run();
-            return;
-        }
-
-        // 3. Работа с Shell: получаем фокус и список процессов с RAM
-        String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
-
-        // Самый быстрый способ: RSS (память) и PACKAGE (имя)
-        String psOutput = shellManager.runShellCommandAndGetFullOutput("ps -A -o rss,package");
-
-        if (psOutput == null || psOutput.trim().isEmpty()) {
-            Log.w(TAG, "No processes output received via ps");
-            if (onComplete != null) onComplete.run();
-            return;
-        }
-
-        // 4. Парсинг процессов и сбор реальной RAM
-        Map<String, Long> recoveredKbByPackage = new HashMap<>();
-        String[] lines = psOutput.split("\n");
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (trimmed.startsWith("RSS") || trimmed.isEmpty()) continue;
-            String[] parts = trimmed.split("\\s+");
-            if (parts.length >= 2) {
-                try {
-                    long rssKb = Long.parseLong(parts[0]);
-                    String pkg = parts[1];
-                    recoveredKbByPackage.put(pkg, recoveredKbByPackage.getOrDefault(pkg, 0L) + rssKb);
-                } catch (NumberFormatException ignored) {}
+    public void performAutoKill(Runnable onComplete) {
+        executor.execute(() -> {
+            if (!shellManager.resolveAnyShellPermission()) {
+                if (onComplete != null)
+                    handler.post(onComplete);
+                return;
             }
-        }
 
-        Set<String> runningPackages = recoveredKbByPackage.keySet();
-        PackageManager pm = context.getPackageManager();
+            Set<String> hiddenApps = getHiddenApps();
+            Set<String> whitelistedApps = getWhitelistedApps();
+            Set<String> blacklistedApps = getBlacklistedApps();
+            int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
 
-        // 5. Фильтрация
-        List<String> toKill = runningPackages.stream()
-                .filter(pkg -> {
-                    try {
-                        // Защищённые
-                        if (hiddenApps.contains(pkg) || ProtectedApps.isProtected(context, pkg)) return false;
-                        // Передний план
-                        if (containsPackage(dumpOutput, pkg)) return false;
+            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
+            if (dumpOutput == null) {
+                if (onComplete != null)
+                    handler.post(onComplete);
+                return;
+            }
 
-                        if (killMode == 1) { // BLACKLIST
-                            return blacklistedApps.contains(pkg);
-                        } else { // WHITELIST
-                            if (whitelistedApps.contains(pkg)) return false;
-                            // Проверка на системную критичность (persistent)
-                            ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
-                            return (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) == 0;
+            String psOutput = shellManager.runShellCommandAndGetFullOutput(
+                    "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
+            if (psOutput == null) {
+                if (onComplete != null)
+                    handler.post(onComplete);
+                return;
+            }
+
+            Set<String> runningPackages = new HashSet<>();
+            PackageManager pm = context.getPackageManager();
+            try (BufferedReader reader = new BufferedReader(new StringReader(psOutput))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String packageName = line.trim();
+                    if (!packageName.isEmpty() && packageName.contains(".")) {
+                        try {
+                            pm.getApplicationInfo(packageName, 0);
+                            runningPackages.add(packageName);
+                        } catch (PackageManager.NameNotFoundException ignored) {
                         }
-                    } catch (Exception e) {
-                        return false;
                     }
-                })
-                .collect(Collectors.toList());
+                }
+            } catch (IOException ignored) {
+            }
 
-        Log.d(TAG, "Final apps to kill: " + toKill.size());
+            List<String> toKill = runningPackages.stream()
+                    .filter(pkg -> {
+                        try {
+                            if (hiddenApps.contains(pkg) || ProtectedApps.isProtected(context, pkg)
+                                    || containsPackage(dumpOutput, pkg)) {
+                                return false;
+                            }
 
-        // 6. Исполнение
-        if (!toKill.isEmpty()) {
-            // Записываем статистику, используя РЕАЛЬНУЮ мапу RAM, которую мы собрали выше
-            recordSuccessfulKills(toKill, recoveredKbByPackage);
+                            if (killMode == 1) { // Blacklist Mode (Default)
+                                return blacklistedApps.contains(pkg);
+                            } else { // Whitelist Mode
+                                if (whitelistedApps.contains(pkg))
+                                    return false;
+                                ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
+                                return (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) == 0;
+                            }
+                        } catch (PackageManager.NameNotFoundException e) {
+                            return false;
+                        }
+                    })
+                    .collect(Collectors.toList());
 
-            // Разбивка на пачки по 5 штук
-            int batchSize = 5;
-            for (int i = 0; i < toKill.size(); i += batchSize) {
-                int end = Math.min(i + batchSize, toKill.size());
-                List<String> batch = toKill.subList(i, end);
+            if (!toKill.isEmpty()) {
+                Map<String, Long> recoveredKbByPackage = new HashMap<>();
+                for (AppModel app : currentAppsList) {
+                    recoveredKbByPackage.put(app.getPackageName(), app.getAppRamBytes());
+                }
+                recordSuccessfulKills(toKill, recoveredKbByPackage);
 
-                String batchCommand = batch.stream()
+                String killCommand = toKill.stream()
                         .map(pkg -> "am force-stop " + pkg)
                         .collect(Collectors.joining("; "));
+                String finalCommand = killCommand + "; am kill-all";
 
-                Log.d(TAG, "Executing batch: " + batchCommand);
-                shellManager.runShellCommandAndGetFullOutput(batchCommand);
+                shellManager.runShellCommandAndGetFullOutput(finalCommand);
 
-                try { Thread.sleep(150); } catch (InterruptedException ignored) {}
+                sendKillNotification(toKill.size());
+                updateWidget();
+
+                try {
+                    Thread.sleep(RELAUNCH_CHECK_DELAY_MS);
+                } catch (InterruptedException ignored) {
+                }
+                com.gree1d.reappzuku.db.AppDatabase db = com.gree1d.reappzuku.db.AppDatabase.getInstance(context);
+                checkRelaunches(toKill, db);
             }
 
-            sendKillNotification(toKill.size());
-            updateWidget();
-
-            try { Thread.sleep(RELAUNCH_CHECK_DELAY_MS); } catch (InterruptedException ignored) {}
-
-            com.gree1d.reappzuku.db.AppDatabase db = com.gree1d.reappzuku.db.AppDatabase.getInstance(context);
-            checkRelaunches(toKill, db);
-        }
-
-        if (onComplete != null) onComplete.run();
+            if (onComplete != null)
+                handler.post(onComplete);
+        });
     }
 
     private void checkRelaunches(List<String> recentlyKilled, com.gree1d.reappzuku.db.AppDatabase db) {
