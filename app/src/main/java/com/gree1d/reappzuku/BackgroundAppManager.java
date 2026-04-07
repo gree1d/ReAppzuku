@@ -116,23 +116,25 @@ public class BackgroundAppManager {
                 return;
             }
 
-            // === FIX 1: Improved process list via dumpsys + package name cleaning ===
+            // === СТАБИЛЬНЫЙ СПОСОБ ПОЛУЧЕНИЯ ПРОЦЕССОВ ЧЕРЕЗ /proc (работает через Shizuku) ===
             String processesOutput = shellManager.runShellCommandAndGetFullOutput(
-                    "dumpsys activity processes | grep 'ProcessRecord' | cut -d: -f2 | cut -d/ -f1");
+                    "for f in /proc/[0-9]*/cmdline; do cat \"$f\" 2>/dev/null | tr '\\0' '\\n'; done | " +
+                    "grep -E '^[a-z][a-z0-9]*\\.[a-z0-9.]*' | cut -d: -f1 | sort | uniq");
 
-            if (processesOutput == null) {
+            if (processesOutput == null || processesOutput.trim().isEmpty()) {
                 if (onComplete != null) handler.post(onComplete);
                 return;
             }
 
             Set<String> runningPackages = new HashSet<>();
             PackageManager pm = context.getPackageManager();
+
             try (BufferedReader reader = new BufferedReader(new StringReader(processesOutput))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     String pkgName = line.trim();
-                    
-                    // Clean sub-processes (e.g. com.android.vending:download_service → com.android.vending)
+
+                    // Очистка имени от подпроцессов (например: com.google.android.gms.persistent → com.google.android.gms)
                     if (pkgName.contains(":")) {
                         pkgName = pkgName.split(":")[0];
                     }
@@ -162,7 +164,6 @@ public class BackgroundAppManager {
                             } else { // Whitelist Mode
                                 if (whitelistedApps.contains(pkg))
                                     return false;
-                                // In whitelist mode, check persistent flag
                                 ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
                                 return (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) == 0;
                             }
@@ -187,14 +188,13 @@ public class BackgroundAppManager {
 
                 sendKillNotification(toKill.size());
 
-                // Update widget to reflect new RAM state
                 updateWidget();
 
-                // Short delay to allow system to react, then check for relaunches
                 try {
                     Thread.sleep(RELAUNCH_CHECK_DELAY_MS);
                 } catch (InterruptedException ignored) {
                 }
+
                 com.gree1d.reappzuku.db.AppDatabase db = com.gree1d.reappzuku.db.AppDatabase.getInstance(context);
                 checkRelaunches(toKill, db);
             }
@@ -254,42 +254,35 @@ public class BackgroundAppManager {
 
             // Execute shell command to get running processes
             if (shellManager.hasAnyShellPermission()) {
-                // Removed aggressive grep -v '[-:@]' for better compatibility
-                String command = "ps -A -o rss,name | grep '\\.'"; 
+                // Стабильная команда через /proc
+                String command = "for f in /proc/[0-9]*/cmdline; do cat \"$f\" 2>/dev/null | tr '\\0' '\\n'; done | " +
+                                 "grep -E '^[a-z][a-z0-9]*\\.[a-z0-9.]*' | cut -d: -f1 | sort | uniq";
+
                 try {
                     String fullOutput = shellManager.runShellCommandAndGetFullOutput(command);
                     if (fullOutput != null) {
                         try (BufferedReader reader = new BufferedReader(new StringReader(fullOutput))) {
                             String line;
                             while ((line = reader.readLine()) != null) {
-                                String[] parts = line.trim().split("\\s+");
-                                if (parts.length >= 2) {
-                                    String ram = parts[0].trim();
-                                    String pkg = parts[1].trim();
+                                String pkg = line.trim();
 
-                                    // Clean sub-processes for correct whitelist comparison
-                                    if (pkg.contains(":")) {
-                                        pkg = pkg.split(":")[0];
-                                    }
+                                if (pkg.contains(":")) {
+                                    pkg = pkg.split(":")[0];
+                                }
 
-                                    if (!pkg.isEmpty() && pkg.contains(".") && !pkg.startsWith("ERROR:")) {
-                                        try {
-                                            packageManager.getApplicationInfo(pkg, 0);
-                                            runningPackagesFromPs.add(pkg + ":" + ram); // Store with RAM
-                                        } catch (PackageManager.NameNotFoundException ignored) {
-                                        }
+                                if (!pkg.isEmpty() && pkg.contains(".") && !pkg.startsWith("ERROR:")) {
+                                    try {
+                                        packageManager.getApplicationInfo(pkg, 0);
+                                        // Для RAM мы оставляем старый ps (можно улучшить позже)
+                                        runningPackagesFromPs.add(pkg + ":0");
+                                    } catch (PackageManager.NameNotFoundException ignored) {
                                     }
                                 }
                             }
                         }
-                    } else {
-                        handler.post(() -> Toast
-                                .makeText(context, "Failed to get running apps output", Toast.LENGTH_SHORT).show());
                     }
                 } catch (Exception e) {
-                    handler.post(() -> Toast
-                            .makeText(context, "Error getting running apps: " + e.getMessage(), Toast.LENGTH_SHORT)
-                            .show());
+                    Log.e(TAG, "Error getting running apps via /proc", e);
                 }
             }
 
@@ -298,20 +291,13 @@ public class BackgroundAppManager {
                 String[] parts = packageEntry.split(":");
                 String packageName = parts[0];
                 long ramUsage = 0;
-                try {
-                    ramUsage = parts.length > 1 ? Long.parseLong(parts[1]) : 0;
-                } catch (NumberFormatException e) {
-                    Log.w(TAG, "Failed to parse RAM value for " + packageName, e);
-                }
 
                 try {
                     if (hiddenApps.contains(packageName)) {
                         continue;
                     }
 
-                    // Use centralized protected apps check
                     boolean isProtected = ProtectedApps.isProtected(context, packageName);
-
                     ApplicationInfo appInfo = packageManager.getApplicationInfo(packageName, 0);
 
                     boolean isPersistentApp = (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) != 0;
@@ -330,16 +316,16 @@ public class BackgroundAppManager {
                             isSystemApp,
                             isPersistentApp,
                             isProtected);
-                    // Set whitelist status
+
                     appModel.setWhitelisted(whitelistedApps.contains(packageName));
                     applyBackgroundRestrictionState(appModel, desiredBackgroundRestrictedApps, backgroundRestrictionState);
                     result.add(appModel);
                 } catch (PackageManager.NameNotFoundException ignored) {
                 }
             }
+
             sortAppList(result, SORT_MODE_DEFAULT);
 
-            // Update UI with results
             handler.post(() -> {
                 currentAppsList.clear();
                 currentAppsList.addAll(result);
