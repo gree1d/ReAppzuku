@@ -115,6 +115,12 @@ public class BackgroundAppManager {
 
             String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
 
+            if (dumpOutput == null || dumpOutput.trim().isEmpty()) {
+                Log.e(TAG, "dumpsys output is NULL or empty! All foreground checks will FAIL.");
+            } else {
+                Log.d(TAG, "dumpsys output length: " + dumpOutput.length() + " chars");
+            }
+
             // === Получение списка запущенных пакетов ===
             String processesOutput = shellManager.runShellCommandAndGetFullOutput(
                     "for f in /proc/[0-9]*/cmdline; do cat \"$f\" 2>/dev/null | tr '\\0' '\\n'; done | " +
@@ -1279,18 +1285,30 @@ public class BackgroundAppManager {
      */
     private static boolean containsPackage(String output, String packageName) {
         if (output == null || packageName == null) return false;
+
         int idx = output.indexOf(packageName);
+        if (idx == -1) {
+            Log.d(TAG, "containsPackage: NOT FOUND in dumpsys: " + packageName);
+            return false;
+        }
+
         while (idx != -1) {
-            // Проверяем символ после совпадения — должен быть не буква/цифра/точка
             int end = idx + packageName.length();
             boolean endOk = end >= output.length()
                     || !Character.isLetterOrDigit(output.charAt(end)) && output.charAt(end) != '.';
-            // Проверяем символ перед совпадением — должен быть не буква/цифра/точка
             boolean startOk = idx == 0
                     || !Character.isLetterOrDigit(output.charAt(idx - 1)) && output.charAt(idx - 1) != '.';
-            if (startOk && endOk) return true;
+            if (startOk && endOk) {
+                int from = Math.max(0, idx - 40);
+                int to = Math.min(output.length(), end + 40);
+                Log.d(TAG, "containsPackage: FOUND " + packageName
+                        + " | context: [" + output.substring(from, to).replace("\n", "↵") + "]");
+                return true;
+            }
             idx = output.indexOf(packageName, idx + 1);
         }
+
+        Log.d(TAG, "containsPackage: found as substring but boundaries failed: " + packageName);
         return false;
     }
 

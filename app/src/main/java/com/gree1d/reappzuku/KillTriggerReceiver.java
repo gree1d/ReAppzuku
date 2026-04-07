@@ -55,6 +55,7 @@ public class KillTriggerReceiver extends BroadcastReceiver {
                 context.startService(unfreezeIntent);
             }
         } else if (ShappkyService.ACTION_IDLE_FREEZE.equals(action)) {
+            Log.d(TAG, "Idle freeze alarm received, forwarding to service");
             // Triggered by AlarmManager after idle threshold — forward to service
             Log.d(TAG, "Idle freeze alarm received, forwarding to service");
             Intent freezeIntent = new Intent(context, ShappkyService.class);

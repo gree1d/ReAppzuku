@@ -88,6 +88,7 @@ public class AutoKillWorker extends Worker {
 
             // Synchronous waiting for async kill
             CountDownLatch latch = new CountDownLatch(1);
+            android.util.Log.d("AutoKillWorker", "Triggering performAutoKill from WORKER");
             appManager.performAutoKill(latch::countDown);
 
             try {
