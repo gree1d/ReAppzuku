@@ -44,6 +44,7 @@ import androidx.core.content.ContextCompat;
 import com.gree1d.reappzuku.databinding.ActivitySettingsBinding;
 
 import java.util.Set;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;

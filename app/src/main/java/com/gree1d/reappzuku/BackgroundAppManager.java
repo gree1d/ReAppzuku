@@ -96,40 +96,37 @@ public class BackgroundAppManager {
         });
     }
 
-            public synchronized void performAutoKill(Runnable onComplete) {
+        public synchronized void performAutoKill(Runnable onComplete) {
         executor.execute(() -> {
             if (!shellManager.resolveAnyShellPermission()) {
                 if (onComplete != null) handler.post(onComplete);
                 return;
             }
 
+            // 1. Получаем данные ОДИН РАЗ в самом начале
             int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
             Set<String> whitelistedApps = getWhitelistedApps();
+            Set<String> blacklistedApps = getBlacklistedApps();
+            Set<String> hiddenApps = getHiddenApps();
 
-            // === НОВАЯ ПРОВЕРКА БЕЗОПАСНОСТИ ===
-            // Если выбран Белый список, но он пуст — отменяем убийство.
+            // 2. ПРОВЕРКА БЕЗОПАСНОСТИ
             if (killMode == 0 && whitelistedApps.isEmpty()) {
                 Log.w(TAG, "ABORTING Auto-Kill: Mode is Whitelist but list is EMPTY. This is dangerous!");
                 
-                // Используем строку из ресурсов через context.getString()
                 handler.post(() -> Toast.makeText(context, 
                     context.getString(R.string.toast_error_whitelist_empty), Toast.LENGTH_SHORT).show());
 
                 if (onComplete != null) handler.post(onComplete);
                 return;
             }
-            // ===================================
 
-            Set<String> hiddenApps = getHiddenApps();
-            Set<String> whitelistedApps = getWhitelistedApps();
-            Set<String> blacklistedApps = getBlacklistedApps();
-            int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
-
+            // 3. ЛОГИРОВАНИЕ (используем уже полученные переменные)
             Log.d(TAG, "AutoKill started | Mode: " + (killMode == 1 ? "BLACKLIST" : "WHITELIST") +
                     " | Whitelist size: " + whitelistedApps.size() +
                     " | Blacklist size: " + blacklistedApps.size() +
                     " | Hidden size: " + hiddenApps.size());
 
+            // 4. РАБОТА С ШЕЛЛОМ
             String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
 
             if (dumpOutput == null || dumpOutput.trim().isEmpty()) {
@@ -138,7 +135,6 @@ public class BackgroundAppManager {
                 Log.d(TAG, "dumpsys output length: " + dumpOutput.length() + " chars");
             }
 
-            // === Получение списка запущенных пакетов ===
             String processesOutput = shellManager.runShellCommandAndGetFullOutput(
                     "for f in /proc/[0-9]*/cmdline; do cat \"$f\" 2>/dev/null | tr '\\0' '\\n'; done | " +
                     "grep -E '^[a-z][a-z0-9]*\\.[a-z0-9.]*' | cut -d: -f1 | sort | uniq");
