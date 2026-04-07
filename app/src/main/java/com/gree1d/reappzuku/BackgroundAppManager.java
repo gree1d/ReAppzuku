@@ -208,6 +208,11 @@ public class BackgroundAppManager {
                         .map(pkg -> "am force-stop " + pkg)
                         .collect(Collectors.joining("; "));
 
+                // === Финальный лог===
+                Log.d(TAG, "FINAL EXECUTION COMMAND: " + finalCommand);
+                // =====================
+
+                // Выполнение команды
                 shellManager.runShellCommandAndGetFullOutput(finalCommand);
 
                 sendKillNotification(toKill.size());
