@@ -150,9 +150,9 @@ public class BackgroundAppManager {
                                 return false;
                             }
 
-                            if (killMode == 1) { // Blacklist Mode
+                            if (killMode == 1) { // Blacklist Mode (Default)
                                 return blacklistedApps.contains(pkg);
-                            } else { // Whitelist Mode (Default)
+                            } else { // Whitelist Mode
                                 if (whitelistedApps.contains(pkg))
                                     return false;
                                 // In whitelist mode, check persistent flag
@@ -516,7 +516,7 @@ public class BackgroundAppManager {
     }
 
     public int getKillMode() {
-        return sharedpreferences.getInt(KEY_KILL_MODE, 0);
+        return sharedpreferences.getInt(KEY_KILL_MODE, 1);
     }
 
     public void setKillMode(int mode) {
