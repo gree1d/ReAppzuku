@@ -19,7 +19,7 @@ One-tap manual force-stop, periodic Kill via a timer, and flexible background re
 Root or Shizuku privileges are required to run the app.
 
 
-## ⚙️ Key Features
+## ⚙️ Features
  * Smart automation:
    * Periodic Auto-Kill: intervals from 10 seconds to 5 minutes.
    * Kill on screen lock: force-stop background processes immediately after the screen turns off.
