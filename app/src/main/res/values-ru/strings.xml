@@ -316,4 +316,9 @@
     <string name="restriction_status_saved">Сохранено в ReAppzuku</string>
     <string name="restriction_status_external">Ограничено, но не с помощью ReAppzuku</string>
     <string name="restriction_status_not_applied">Сохранено в ReAppzuku, но не применилось</string>
+    
+    <string name="dialog_unsafe_whitelist_title">Опасная конфигурация</string>
+    <string name="dialog_unsafe_whitelist_message">Вы выбрали режим Белый список, но ваш список пуст. В режиме Root это приведет к попытке завершения всех системных процессов, что вызовет перезагрузку устройства (Kernel/System panic). Сначала добавьте важные приложения в белый список.</string>
+    <string name="dialog_unsafe_whitelist_ok">Понятно</string>
+    <string name="toast_error_whitelist_empty">Auto-Kill отменен: Белый список пуст</string>
 </resources>
