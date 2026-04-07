@@ -1,5 +1,6 @@
 package com.gree1d.reappzuku;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 
 public class AppModel {
@@ -79,15 +80,15 @@ public class AppModel {
         return backgroundRestrictionActualKnown && backgroundRestrictionDesired && !backgroundRestrictionActual;
     }
 
-    public String getBackgroundRestrictionStatusText() {
+    public String getBackgroundRestrictionStatusText(Context context) {
         if (!backgroundRestrictionActualKnown) {
-            return backgroundRestrictionDesired ? "Сохранено в ReAppzuku" : "";
+            return backgroundRestrictionDesired ? context.getString(R.string.restriction_status_saved) : "";
         }
         if (isBackgroundRestrictionExternal()) {
-            return "Ограничено, но не с помощью ReAppzuku";
+            return context.getString(R.string.restriction_status_external);
         }
         if (needsBackgroundRestrictionReapply()) {
-            return "Сохранено в ReAppzuku, но не применилось";
+            return context.getString(R.string.restriction_status_not_applied);
         }
         return "";
     }

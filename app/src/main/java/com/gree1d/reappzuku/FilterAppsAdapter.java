@@ -202,7 +202,7 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         AppModel app = getItem(position);
         holder.appName.setText(app.getAppName());
 
-        String statusText = app.getBackgroundRestrictionStatusText();
+        String statusText = app.getBackgroundRestrictionStatusText(context);
         if (statusText.isEmpty()) {
             holder.appStatus.setVisibility(View.GONE);
         } else {
