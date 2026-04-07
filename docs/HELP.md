@@ -305,9 +305,9 @@ An additional condition — Kill triggers **only if** RAM usage exceeds the sele
 
 Determines **which** apps Auto-Kill affects.
 
-**🛡️ Whitelist (default)** — kills all background apps **except** those added to the whitelist. Use this for maximum cleanup.
+**🛡️ Whitelist** — kills all background apps **except** those added to the whitelist. Use this for maximum cleanup.
 
-**🎯 Blacklist** — kills **only** apps from the blacklist. Use this to selectively stop specific apps without touching others.
+**🎯 Blacklist (default)** — kills **only** apps from the blacklist. Use this to selectively stop specific apps without touching others.
 
 #### White / Black list
 
