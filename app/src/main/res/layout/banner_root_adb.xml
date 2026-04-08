@@ -31,28 +31,13 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Icon + title row -->
-        <LinearLayout
+        <!-- Title -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:importantForAccessibility="no"
-                android:src="@drawable/ic_warning" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="@string/adb_banner_title"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
+            android:text="@string/adb_banner_title"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
         <!-- Description -->
         <TextView
