@@ -66,6 +66,13 @@
                 style="?android:progressBarStyleHorizontal" />
         </LinearLayout>
 
+        <include
+            android:id="@+id/adbBanner"
+            layout="@layout/banner_root_adb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swiperefreshlayout1"
             android:layout_width="match_parent"
