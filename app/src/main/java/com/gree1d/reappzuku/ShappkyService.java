@@ -74,7 +74,7 @@ public class ShappkyService extends Service {
     public void onCreate() {
         super.onCreate();
         shellManager = new ShellManager(this, handler, executor);
-        appManager = new BackgroundAppManager(this, handler, executor, shellManager);
+        appManager = new BackgroundAppManager(this, handler, executor, shellManager, null);
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID_SERVICE)

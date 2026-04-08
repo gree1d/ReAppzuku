@@ -198,7 +198,7 @@ public class RootHelper {
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         NotificationCompat.Builder b = new NotificationCompat.Builder(context, CHANNEL_ID_ADB_SERVICE)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentTitle(context.getString(R.string.adb_notification_title))
                 .setContentText(context.getString(R.string.adb_notification_text))
                 .setOngoing(true)

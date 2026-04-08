@@ -101,7 +101,7 @@ public class SettingsActivity extends BaseActivity {
 
         // Initialize app manager for dialogs
         shellManager = new ShellManager(this.getApplicationContext(), handler, executor);
-        appManager = new BackgroundAppManager(this.getApplicationContext(), handler, executor, shellManager);
+        appManager = new BackgroundAppManager(this.getApplicationContext(), handler, executor, shellManager, null);
         backupManager = new BackupManager(this);
 
         setupToolbar();
