@@ -44,17 +44,37 @@ public class BackgroundAppManager {
     private final Handler handler;
     private final ExecutorService executor;
     private final ShellManager shellManager;
+    private final RootHelper rootHelper;
     private final List<AppModel> currentAppsList = new ArrayList<>();
     private boolean showSystemApps = false;
     private boolean showPersistentApps = false;
     private SharedPreferences sharedpreferences;
 
-    public BackgroundAppManager(Context context, Handler handler, ExecutorService executor, ShellManager shellManager) {
+    public BackgroundAppManager(Context context, Handler handler, ExecutorService executor,
+            ShellManager shellManager, RootHelper rootHelper) {
         this.context = context;
         this.handler = handler;
         this.executor = executor;
         this.shellManager = shellManager;
+        this.rootHelper = rootHelper;
         this.sharedpreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+    }
+
+    /**
+     * Runs a {@code ps -A} command, routing through ADB shell on Android 10+ with root
+     * (where the {@code su} SELinux context blocks {@code ps -A -o} output),
+     * or falling back to {@link ShellManager} via {@code su} otherwise.
+     *
+     * @param psCommand the full ps command with pipes, e.g.
+     *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
+     */
+    private String runPs(String psCommand) {
+        if (rootHelper != null
+                && shellManager.hasRootAccess()
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return rootHelper.runPsViaAdb();
+        }
+        return shellManager.runShellCommandAndGetFullOutput(psCommand);
     }
 
     public boolean supportsBackgroundRestriction() {
@@ -116,9 +136,9 @@ public class BackgroundAppManager {
                 return;
             }
 
-            String psOutput = shellManager.runShellCommandAndGetFullOutput(
+            String psOutput = runPs(
                     "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
-            if (psOutput == null) {
+            if (psOutput == null || psOutput.trim().isEmpty()) {
                 if (onComplete != null)
                     handler.post(onComplete);
                 return;
@@ -194,7 +214,7 @@ public class BackgroundAppManager {
     }
 
     private void checkRelaunches(List<String> recentlyKilled, com.gree1d.reappzuku.db.AppDatabase db) {
-        String psOutput = shellManager.runShellCommandAndGetFullOutput("ps -A -o name | grep '\\.'");
+        String psOutput = runPs("ps -A -o name | grep '\\.'");
         if (psOutput == null)
             return;
 
@@ -245,7 +265,7 @@ public class BackgroundAppManager {
             if (shellManager.hasAnyShellPermission()) {
                 String command = "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'";
                 try {
-                    String fullOutput = shellManager.runShellCommandAndGetFullOutput(command);
+                    String fullOutput = runPs(command);
                     if (fullOutput != null) {
                         try (BufferedReader reader = new BufferedReader(new StringReader(fullOutput))) {
                             String line;
@@ -342,7 +362,7 @@ public class BackgroundAppManager {
         }
 
         executor.execute(() -> {
-            String psOutput = shellManager.runShellCommandAndGetFullOutput(
+            String psOutput = runPs(
                     "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'");
             
             java.util.Map<String, Long> runningMap = new java.util.HashMap<>();
