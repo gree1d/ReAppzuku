@@ -115,7 +115,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_force_stop"
+                android:src="@drawable/ic_force_stop_themed"
                 android:focusable="false" />
         </LinearLayout>
 

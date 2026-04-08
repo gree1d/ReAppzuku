@@ -94,7 +94,7 @@
         android:layout_margin="16dp"
         android:layout_gravity="right|bottom"
         app:backgroundTint="#0136FF"
-        app:srcCompat="@drawable/ic_force_stop"
+        app:srcCompat="@drawable/ic_force_stop_themed"
         app:tint="@android:color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
