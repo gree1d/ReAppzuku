@@ -321,4 +321,26 @@
     <string name="dialog_unsafe_whitelist_message">Вы выбрали режим Белый список, но ваш список пуст. В режиме Root это приведет к попытке завершения всех системных процессов, что вызовет перезагрузку устройства (Kernel/System panic). Сначала добавьте важные приложения в белый список.</string>
     <string name="dialog_unsafe_whitelist_ok">Понятно</string>
     <string name="toast_error_whitelist_empty">Auto-Kill отменен: Белый список пуст</string>
+
+    <!-- RootHelper / ADB banner -->
+    <string name="adb_banner_title">Требуется ADB-сервис</string>
+    <string name="adb_banner_description">На Android 10+ команда ps работает некорректно с root. Запустите ADB-сервис для правильного определения фоновых процессов.</string>
+    <string name="adb_banner_btn_start">Запустить сервис</string>
+    <string name="adb_banner_btn_start_loading">Запуск…</string>
+    <string name="adb_banner_btn_info">Что это?</string>
+    
+    <!-- Info dialog -->
+    <string name="adb_info_title">Зачем нужен ADB-сервис?</string>
+    <string name="adb_info_message">На Android 10 и новее команда ps с root-правами не возвращает список процессов из-за ограничений SELinux.\n\nReAppzuku обходит это, запуская ADB-демон в TCP-режиме на порту 5555 — так же, как Shizuku. Команды выполняются в shell-контексте, где ps работает корректно.\n\nЧто происходит при нажатии «Запустить сервис»:\n• Через root запускается adbd на 127.0.0.1:5555\n• Появится постоянное уведомление\n\n⚠ Сервис сбрасывается при перезагрузке — кнопка появится снова.</string>
+    <string name="adb_info_btn_ok">Понятно</string>
+    
+    <!-- Toasts -->
+    <string name="adb_service_started">ADB-сервис запущен</string>
+    <string name="adb_service_failed">Не удалось запустить: %s</string>
+    
+    <!-- Notification -->
+    <string name="adb_notification_channel_name">ADB WiFi сервис</string>
+    <string name="adb_notification_channel_desc">Статус ADB отладки по WiFi</string>
+    <string name="adb_notification_title">ADB WiFi сервис активен</string>
+    <string name="adb_notification_text">Используется для чтения списка процессов на Android 10+</string>
 </resources>
