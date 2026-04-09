@@ -333,22 +333,29 @@
     
     <!-- ADB helper for Root --> 
     <string name="adb_banner_title">ADB Connection Required</string>
-    <string name="adb_banner_description">On Android 10+, the "ps" command is restricted via root due to SELinux. Enable Wireless debugging in Developer options—the app will connect automatically.</string>
-    <string name="adb_banner_btn_start">Enable Debugging</string>
+    <string name="adb_banner_description">On Android 10+, the "ps" command is restricted via root due to SELinux. Tap the button, enable Wireless Debugging, and enter the code from the notification.</string>
+    <string name="adb_banner_btn_start">Start Service</string>
     <string name="adb_banner_btn_start_loading">Connecting…</string>
     <string name="adb_banner_btn_info">What is this?</string>
 
-    <string name="adb_info_title">Why Wireless Debugging?</string>
-    <string name="adb_info_message">On Android 10 and newer, SELinux restricts the "ps" command when run via root, preventing the process list from being returned.\n\nIn the ADB shell context (Wireless debugging), the same command works correctly.\n\nWhat happens when you tap "Enable Debugging":\n• Wireless debugging settings will open\n• Once enabled, the app connects automatically\n• Your key is added to trusted via root—no pairing code required\n\n⚠ Wireless debugging turns off after a reboot—the button will reappear if needed.</string>
+    <string name="adb_info_title">Why is ADB service needed?</string>
+    <string name="adb_info_message">On Android 10 and above, SELinux blocks the "ps" command when executed via root.\n\nHowever, the same command works correctly within the ADB shell context (Wireless Debugging) — this is the same method used by Shizuku.\n\nHow to connect:\n1. Tap "Start Service"\n2. In the Developer Options, enable "Wireless Debugging"\n3. Tap "Pair device with pairing code"\n4. Enter PORT:CODE from the dialog into the app's notification\n\n⚠ You will need to reconnect after a reboot.</string>
     <string name="adb_info_btn_ok">Got it</string>
 
     <string name="adb_service_started">ADB Connected</string>
     <string name="adb_service_failed">Error: %s</string>
-    <string name="adb_error_wd_not_enabled">Please enable Wireless debugging in Developer options</string>
-    <string name="adb_error_connection_failed">Connection failed. Try toggling Wireless debugging off and on again.</string>
+    <string name="adb_error_wd_not_enabled">Please enable Wireless Debugging in Developer Options</string>
+    <string name="adb_error_connection_failed">Connection failed. Please try again.</string>
+    <string name="adb_error_pair_failed">Invalid code or port. Please try again.</string>
+    <string name="adb_error_invalid_format">Invalid format. Enter PORT:CODE, e.g., 37849:123456</string>
+
+    <string name="adb_notif_pair_title">ReAppzuku — ADB Pairing</string>
+    <string name="adb_notif_pair_text">Enable Wireless Debugging → "Pair device with pairing code" → enter PORT:CODE here</string>
+    <string name="adb_notif_input_hint">PORT:CODE, e.g., 37849:123456</string>
+    <string name="adb_notif_btn_connect">Connect</string>
 
     <string name="adb_notification_channel_name">ADB Connection</string>
-    <string name="adb_notification_channel_desc">Status of the Wireless debugging connection</string>
+    <string name="adb_notification_channel_desc">Wireless Debugging connection status</string>
     <string name="adb_notification_title">ADB Connected</string>
-    <string name="adb_notification_text">Wireless debugging active — process list available</string>
+    <string name="adb_notification_text">Wireless Debugging active — process list is available</string>
 </resources>
