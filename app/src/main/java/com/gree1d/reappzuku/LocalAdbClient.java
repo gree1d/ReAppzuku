@@ -98,6 +98,11 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         return mCertificate;
     }
 
+    @Override
+    protected String getDeviceName() {
+        return "ReAppzuku";
+    }
+
     // ── Public API ────────────────────────────────────────────────────────────
 
     /**
