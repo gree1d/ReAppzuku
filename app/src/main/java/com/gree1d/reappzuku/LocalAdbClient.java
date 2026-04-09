@@ -158,7 +158,7 @@ public class LocalAdbClient {
         }
         AdbStream stream = null;
         try {
-            stream = connection.openStream("shell:" + command);
+            stream = connection.open("shell:" + command);
             StringBuilder sb = new StringBuilder();
             InputStream is = stream.openInputStream();
             byte[] buf = new byte[4096];

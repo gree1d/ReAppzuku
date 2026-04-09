@@ -8,10 +8,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
-import android.provider.Settings;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.RemoteInput;
 
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -20,42 +20,37 @@ import static com.gree1d.reappzuku.AppConstants.*;
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 
 /**
- * Manages ADB connectivity for rooted Android 10+ devices.
+ * Manages ADB Wireless Debugging connectivity for Android 10+ rooted devices.
  *
- * <p>On Android 10+, SELinux prevents {@code ps -A -o rss,name} from returning
- * output when run via {@code su}. The same command works correctly in the ADB
- * shell SELinux context.</p>
- *
- * <h3>How it works</h3>
- * <ol>
- *   <li>Detects whether Wireless Debugging is enabled by reading
- *       {@code service.adb.tls.port} via root.</li>
- *   <li>Writes our RSA public key directly to {@code /data/misc/adb/adb_keys}
- *       via root — bypassing the pairing flow entirely.</li>
- *   <li>Connects to the TLS port using our AndroidKeyStore certificate.
- *       adbd verifies us by matching the cert's public key against {@code adb_keys}.</li>
- * </ol>
- *
- * <p>The user only needs to enable <em>Wireless Debugging</em> once in
- * Developer Options — no pairing code required.</p>
- *
- * <h3>Lifecycle (managed by {@link MainActivity})</h3>
+ * <h3>Flow</h3>
  * <ol>
  *   <li>Banner shown when {@link #checkNeedsAdbService} returns {@code true}.</li>
- *   <li>User taps "Включить отладку" → {@link #openWirelessDebuggingSettings}.</li>
- *   <li>User returns to app → {@link #tryConnect} runs automatically.</li>
- *   <li>On success: banner hidden, ongoing notification posted.</li>
+ *   <li>User taps "Запустить сервис" → {@link #showPairingNotification(String)} is called
+ *       and the user is sent to Wireless Debugging settings.</li>
+ *   <li>User taps "Подключить устройство с помощью ввода кода" in Android settings,
+ *       gets a port + 6-digit code, enters {@code PORT:CODE} in the notification.</li>
+ *   <li>{@link AdbPairingReceiver} fires → {@link #pairAndConnect} runs:
+ *       pairs via SPAKE2, reads main TLS port, connects.</li>
+ *   <li>On success: banner hidden, ongoing "connected" notification shown.</li>
  * </ol>
+ *
+ * <p>Uses a singleton pattern so {@link AdbPairingReceiver} can access the instance
+ * without having to re-construct it.</p>
  */
 public class RootHelper {
 
     private static final String TAG = "RootHelper";
 
+    // Singleton
+    private static volatile RootHelper instance;
+
     private final Context context;
-    private final Handler handler;
     private final ShellManager shellManager;
     private final SharedPreferences prefs;
     private final LocalAdbClient adbClient;
+
+    /** Callback to update MainActivity UI after pairing result. */
+    private volatile AdbServiceCallback pendingCallback;
 
     // ── Callback ──────────────────────────────────────────────────────────────
 
@@ -65,118 +60,111 @@ public class RootHelper {
         void onStopped();
     }
 
+    // ── Singleton ─────────────────────────────────────────────────────────────
+
+    public static RootHelper getInstance(Context context) {
+        return instance;
+    }
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public RootHelper(Context context, Handler handler, ShellManager shellManager) {
         this.context = context.getApplicationContext();
-        this.handler = handler;
         this.shellManager = shellManager;
         this.prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        this.adbClient = new LocalAdbClient(context, shellManager);
-
-        // Restore saved port if we connected before
-        int savedPort = prefs.getInt(KEY_ADB_TLS_PORT, 0);
-        if (savedPort > 0) {
-            adbClient.setTlsPort(savedPort);
-        }
+        this.adbClient = new LocalAdbClient(context);
+        instance = this;
     }
 
     // ── Banner logic ──────────────────────────────────────────────────────────
 
     /**
      * Asynchronously decides whether the banner should be visible.
-     * Returns {@code true} when: root + Android 10+ + ps doesn't work yet.
+     * Returns true when: root + Android 10+ + not yet connected.
      */
     public void checkNeedsAdbService(ExecutorService executor, Consumer<Boolean> callback) {
         executor.execute(() -> {
             boolean needs = shellManager.hasRootAccess()
                     && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                    && !isConnectedBlocking();
-            handler.post(() -> callback.accept(needs));
+                    && !adbClient.isConnected();
+            android.os.Handler main = new android.os.Handler(
+                    android.os.Looper.getMainLooper());
+            main.post(() -> callback.accept(needs));
         });
     }
 
+    // ── Entry point from MainActivity ─────────────────────────────────────────
+
     /**
-     * Synchronous check — must be called from a background thread.
-     * Returns true if we have an active TLS port and ps returns output.
+     * Called when user taps "Запустить сервис" in the banner.
+     * Shows the pairing notification and opens Wireless Debugging settings.
      */
-    public boolean isConnectedBlocking() {
-        int port = adbClient.getTlsPort();
-        if (port <= 0) return false;
-        // Quick validation: verify the port is still open
-        return adbClient.testTlsConnection(port);
+    public void startServiceFlow(Context activityContext,
+            ExecutorService executor, AdbServiceCallback callback) {
+        this.pendingCallback = callback;
+        showPairingNotification(null); // no error yet
+        openWirelessDebuggingSettings(activityContext);
     }
 
-    // ── Connect ───────────────────────────────────────────────────────────────
+    // ── Pairing (called from AdbPairingReceiver) ──────────────────────────────
 
     /**
-     * Attempts to connect to Wireless Debugging:
-     * <ol>
-     *   <li>Reads the TLS port via {@code getprop service.adb.tls.port}.</li>
-     *   <li>Writes our public key to {@code adb_keys} via root.</li>
-     *   <li>Tests the TLS connection.</li>
-     * </ol>
-     * Posts callbacks on the main handler.
+     * Pairs using the code, then connects to the main TLS port.
+     * Must be called from a background thread.
      */
-    public void tryConnect(ExecutorService executor, AdbServiceCallback callback) {
-        executor.execute(() -> {
-            Log.d(TAG, "tryConnect: reading wireless debugging port");
+    public void pairAndConnect(String host, int pairingPort, String code) {
+        // 1. Pair via SPAKE2
+        boolean paired = adbClient.pair(host, pairingPort, code);
+        if (!paired) {
+            Log.e(TAG, "Pairing failed");
+            showPairingNotification(
+                    context.getString(R.string.adb_error_pair_failed));
+            notifyCallback(false,
+                    context.getString(R.string.adb_error_pair_failed));
+            return;
+        }
 
-            int port = getWirelessDebuggingPortBlocking();
-            if (port <= 0) {
-                Log.w(TAG, "Wireless Debugging not enabled (port=0)");
-                handler.post(() -> callback.onFailed(
-                        context.getString(R.string.adb_error_wd_not_enabled)));
-                return;
-            }
-            Log.d(TAG, "Wireless Debugging port: " + port);
+        // 2. Read main TLS port
+        int tlsPort = getWirelessDebuggingPort();
+        if (tlsPort <= 0) {
+            Log.e(TAG, "Cannot read TLS port");
+            showPairingNotification(
+                    context.getString(R.string.adb_error_wd_not_enabled));
+            notifyCallback(false,
+                    context.getString(R.string.adb_error_wd_not_enabled));
+            return;
+        }
 
-            // Register our key so adbd will trust our TLS cert
-            adbClient.ensureKeyRegistered();
-            sleep(300);
+        // 3. Connect
+        boolean connected = adbClient.connect(tlsPort);
+        if (!connected) {
+            Log.e(TAG, "Connection failed");
+            showPairingNotification(
+                    context.getString(R.string.adb_error_connection_failed));
+            notifyCallback(false,
+                    context.getString(R.string.adb_error_connection_failed));
+            return;
+        }
 
-            // Test connection
-            if (adbClient.testTlsConnection(port)) {
-                adbClient.setTlsPort(port);
-                prefs.edit()
-                        .putBoolean(KEY_ADB_WIFI_RUNNING, true)
-                        .putInt(KEY_ADB_TLS_PORT, port)
-                        .apply();
-                postConnectedNotification();
-                Log.d(TAG, "Connected to adbd via TLS on port " + port);
-                handler.post(callback::onStarted);
-            } else {
-                Log.w(TAG, "TLS connection test failed on port " + port);
-                handler.post(() -> callback.onFailed(
-                        context.getString(R.string.adb_error_connection_failed)));
-            }
-        });
-    }
-
-    /**
-     * Clears the saved connection and cancels the notification.
-     */
-    public void disconnect(ExecutorService executor, AdbServiceCallback callback) {
-        executor.execute(() -> {
-            adbClient.setTlsPort(0);
-            prefs.edit()
-                    .putBoolean(KEY_ADB_WIFI_RUNNING, false)
-                    .putInt(KEY_ADB_TLS_PORT, 0)
-                    .apply();
-            cancelConnectedNotification();
-            handler.post(callback::onStopped);
-        });
+        // 4. Success
+        prefs.edit()
+                .putBoolean(KEY_ADB_WIFI_RUNNING, true)
+                .putInt(KEY_ADB_TLS_PORT, tlsPort)
+                .apply();
+        cancelPairingNotification();
+        postConnectedNotification();
+        Log.d(TAG, "Connected to adbd on port " + tlsPort);
+        notifyCallback(true, null);
     }
 
     // ── ps via ADB shell ──────────────────────────────────────────────────────
 
     /**
-     * Runs {@code ps -A -o rss,name …} via the ADB shell context.
-     * Returns stdout, or {@code null} if not connected.
+     * Runs the ps command via ADB shell context.
      * Must be called from a background thread.
      */
     public String runPsViaAdb() {
-        if (adbClient.getTlsPort() <= 0) {
+        if (!adbClient.isConnected()) {
             Log.w(TAG, "runPsViaAdb: not connected");
             return null;
         }
@@ -185,74 +173,105 @@ public class RootHelper {
 
     // ── Settings shortcut ─────────────────────────────────────────────────────
 
-    /**
-     * Opens the Wireless Debugging settings page directly (Android 11+),
-     * falling back to general Developer Options on older versions.
-     */
     public static void openWirelessDebuggingSettings(Context context) {
         Intent intent;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11+ — direct Wireless Debugging page
             intent = new Intent("android.settings.WIRELESS_DEBUG_SETTINGS");
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             try {
                 context.startActivity(intent);
                 return;
-            } catch (Exception ignored) {
-                // Some OEMs don't expose this action — fall through
-            }
+            } catch (Exception ignored) {}
         }
-        // Fallback: Developer Options
-        intent = new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
+        intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            context.startActivity(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Cannot open developer settings", e);
-        }
+        try { context.startActivity(intent); } catch (Exception ignored) {}
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Notification: pairing input ───────────────────────────────────────────
 
     /**
-     * Reads the Wireless Debugging TLS port from system properties via root.
-     * Returns 0 if not available.
+     * Shows (or updates) the notification with a RemoteInput field
+     * for entering {@code PORT:CODE}.
+     *
+     * @param errorMessage shown below the input hint when non-null
      */
-    private int getWirelessDebuggingPortBlocking() {
-        // Primary: TLS port (Android 11+ Wireless Debugging)
-        String portStr = shellManager.runShellCommandAndGetFullOutput(
-                "getprop service.adb.tls.port");
-        if (portStr != null) {
-            portStr = portStr.trim();
-            if (!portStr.isEmpty() && !portStr.equals("0")) {
-                try {
-                    return Integer.parseInt(portStr);
-                } catch (NumberFormatException ignored) {}
-            }
-        }
-        return 0;
+    public void showPairingNotification(String errorMessage) {
+        NotificationManager nm = nm();
+        if (nm == null) return;
+        ensureChannel(nm);
+
+        // RemoteInput — text field in the notification
+        RemoteInput remoteInput = new RemoteInput.Builder(AdbPairingReceiver.KEY_CODE_INPUT)
+                .setLabel(context.getString(R.string.adb_notif_input_hint))
+                .build();
+
+        // Intent for the "Подключить" action button
+        Intent pairIntent = new Intent(context, AdbPairingReceiver.class)
+                .setAction(AdbPairingReceiver.ACTION_PAIR);
+        PendingIntent pairPi = PendingIntent.getBroadcast(
+                context, 0, pairIntent,
+                PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Action action =
+                new NotificationCompat.Action.Builder(
+                        android.R.drawable.ic_menu_send,
+                        context.getString(R.string.adb_notif_btn_connect),
+                        pairPi)
+                        .addRemoteInput(remoteInput)
+                        .build();
+
+        String text = errorMessage != null
+                ? errorMessage
+                : context.getString(R.string.adb_notif_pair_text);
+
+        NotificationCompat.Builder b =
+                new NotificationCompat.Builder(context, CHANNEL_ID_ADB_SERVICE)
+                        .setSmallIcon(android.R.drawable.ic_dialog_info)
+                        .setContentTitle(context.getString(R.string.adb_notif_pair_title))
+                        .setContentText(text)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setOngoing(true)
+                        .addAction(action);
+
+        nm.notify(NOTIFICATION_ID_ADB_SERVICE, b.build());
     }
 
-    // ── Notification ──────────────────────────────────────────────────────────
+    /** Updates the notification to show a progress/connecting state. */
+    public void showPairingProgressNotification() {
+        NotificationManager nm = nm();
+        if (nm == null) return;
+        ensureChannel(nm);
+
+        NotificationCompat.Builder b =
+                new NotificationCompat.Builder(context, CHANNEL_ID_ADB_SERVICE)
+                        .setSmallIcon(android.R.drawable.ic_dialog_info)
+                        .setContentTitle(context.getString(R.string.adb_notif_pair_title))
+                        .setContentText(context.getString(R.string.adb_banner_btn_start_loading))
+                        .setProgress(0, 0, true)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setOngoing(true);
+
+        nm.notify(NOTIFICATION_ID_ADB_SERVICE, b.build());
+    }
+
+    private void cancelPairingNotification() {
+        NotificationManager nm = nm();
+        if (nm != null) nm.cancel(NOTIFICATION_ID_ADB_SERVICE);
+    }
+
+    // ── Notification: connected (ongoing) ────────────────────────────────────
 
     private void postConnectedNotification() {
-        NotificationManager nm =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager nm = nm();
         if (nm == null) return;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel ch = new NotificationChannel(
-                    CHANNEL_ID_ADB_SERVICE,
-                    context.getString(R.string.adb_notification_channel_name),
-                    NotificationManager.IMPORTANCE_LOW);
-            ch.setDescription(context.getString(R.string.adb_notification_channel_desc));
-            nm.createNotificationChannel(ch);
-        }
+        ensureChannel(nm);
 
         Intent intent = new Intent(context, MainActivity.class)
                 .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pi = PendingIntent.getActivity(
-                context, 0, intent,
+                context, 1, intent,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         NotificationCompat.Builder b =
@@ -264,20 +283,44 @@ public class RootHelper {
                         .setPriority(NotificationCompat.PRIORITY_LOW)
                         .setContentIntent(pi);
 
-        nm.notify(NOTIFICATION_ID_ADB_SERVICE, b.build());
+        nm.notify(NOTIFICATION_ID_ADB_CONNECTED, b.build());
     }
 
-    private void cancelConnectedNotification() {
-        NotificationManager nm =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) nm.cancel(NOTIFICATION_ID_ADB_SERVICE);
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private int getWirelessDebuggingPort() {
+        String portStr = shellManager.runShellCommandAndGetFullOutput(
+                "getprop service.adb.tls.port");
+        if (portStr == null) return 0;
+        portStr = portStr.trim();
+        if (portStr.isEmpty() || portStr.equals("0")) return 0;
+        try { return Integer.parseInt(portStr); }
+        catch (NumberFormatException e) { return 0; }
     }
 
-    private static void sleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    private void notifyCallback(boolean success, String error) {
+        AdbServiceCallback cb = pendingCallback;
+        if (cb == null) return;
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            if (success) cb.onStarted();
+            else cb.onFailed(error != null ? error : "Unknown error");
+        });
+    }
+
+    private void ensureChannel(NotificationManager nm) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel ch = new NotificationChannel(
+                    CHANNEL_ID_ADB_SERVICE,
+                    context.getString(R.string.adb_notification_channel_name),
+                    NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription(
+                    context.getString(R.string.adb_notification_channel_desc));
+            nm.createNotificationChannel(ch);
         }
+    }
+
+    private NotificationManager nm() {
+        return (NotificationManager)
+                context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
 }
