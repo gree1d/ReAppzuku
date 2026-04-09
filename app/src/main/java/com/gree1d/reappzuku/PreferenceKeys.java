@@ -53,4 +53,5 @@ public final class PreferenceKeys {
 
     // ADB WiFi service state
     public static final String KEY_ADB_WIFI_RUNNING = "adb_wifi_running";
+    public static final String KEY_ADB_TLS_PORT = "adb_tls_port";
 }

@@ -8,13 +8,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
@@ -22,24 +20,31 @@ import static com.gree1d.reappzuku.AppConstants.*;
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 
 /**
- * Manages ADB-over-WiFi service lifecycle for rooted devices.
+ * Manages ADB connectivity for rooted Android 10+ devices.
  *
- * <p>On Android 10+, SELinux restricts the {@code su} context so that
- * {@code ps -A -o rss,name} returns no output. The same command works correctly
- * in the {@code shell} SELinux context (i.e. via {@code adb shell}).
- * This helper starts {@code adbd} in TCP mode on {@link AppConstants#ADB_WIFI_PORT}
- * using root, after which {@link ShellManager} can send {@code ps} through the
- * local ADB shell context instead of {@code su}.</p>
+ * <p>On Android 10+, SELinux prevents {@code ps -A -o rss,name} from returning
+ * output when run via {@code su}. The same command works correctly in the ADB
+ * shell SELinux context.</p>
  *
- * <p>All other commands (am force-stop, dumpsys, appops, etc.) continue to run
- * through {@code su} as before — only {@code ps} needs the shell context.</p>
+ * <h3>How it works</h3>
+ * <ol>
+ *   <li>Detects whether Wireless Debugging is enabled by reading
+ *       {@code service.adb.tls.port} via root.</li>
+ *   <li>Writes our RSA public key directly to {@code /data/misc/adb/adb_keys}
+ *       via root — bypassing the pairing flow entirely.</li>
+ *   <li>Connects to the TLS port using our AndroidKeyStore certificate.
+ *       adbd verifies us by matching the cert's public key against {@code adb_keys}.</li>
+ * </ol>
  *
- * <p>Typical lifecycle managed by {@link MainActivity}:</p>
+ * <p>The user only needs to enable <em>Wireless Debugging</em> once in
+ * Developer Options — no pairing code required.</p>
+ *
+ * <h3>Lifecycle (managed by {@link MainActivity})</h3>
  * <ol>
  *   <li>Banner shown when {@link #checkNeedsAdbService} returns {@code true}.</li>
- *   <li>User taps "Запустить сервис" → {@link #startAdbWifiService}.</li>
- *   <li>On success, banner hidden; ongoing notification posted.</li>
- *   <li>State persisted in SharedPreferences; verified via TCP probe on next launch.</li>
+ *   <li>User taps "Включить отладку" → {@link #openWirelessDebuggingSettings}.</li>
+ *   <li>User returns to app → {@link #tryConnect} runs automatically.</li>
+ *   <li>On success: banner hidden, ongoing notification posted.</li>
  * </ol>
  */
 public class RootHelper {
@@ -52,7 +57,7 @@ public class RootHelper {
     private final SharedPreferences prefs;
     private final LocalAdbClient adbClient;
 
-    // ── Public callback ───────────────────────────────────────────────────────
+    // ── Callback ──────────────────────────────────────────────────────────────
 
     public interface AdbServiceCallback {
         void onStarted();
@@ -68,116 +73,169 @@ public class RootHelper {
         this.shellManager = shellManager;
         this.prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         this.adbClient = new LocalAdbClient(context, shellManager);
+
+        // Restore saved port if we connected before
+        int savedPort = prefs.getInt(KEY_ADB_TLS_PORT, 0);
+        if (savedPort > 0) {
+            adbClient.setTlsPort(savedPort);
+        }
     }
 
-    // ── Banner visibility logic ───────────────────────────────────────────────
+    // ── Banner logic ──────────────────────────────────────────────────────────
 
     /**
-     * Asynchronously checks whether the root-ADB banner should be shown.
-     * Condition: root available + Android 10+ + service not already running.
-     * Runs the TCP probe on the executor to avoid blocking the main thread.
+     * Asynchronously decides whether the banner should be visible.
+     * Returns {@code true} when: root + Android 10+ + ps doesn't work yet.
      */
     public void checkNeedsAdbService(ExecutorService executor, Consumer<Boolean> callback) {
         executor.execute(() -> {
             boolean needs = shellManager.hasRootAccess()
-                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q // Android 10+
-                    && !isAdbServiceRunningBlocking();
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    && !isConnectedBlocking();
             handler.post(() -> callback.accept(needs));
         });
     }
 
     /**
-     * Synchronous variant – must only be called from a background thread.
+     * Synchronous check — must be called from a background thread.
+     * Returns true if we have an active TLS port and ps returns output.
      */
-    public boolean isAdbServiceRunningBlocking() {
-        if (!prefs.getBoolean(KEY_ADB_WIFI_RUNNING, false)) return false;
-        return isPortOpen(ADB_WIFI_PORT);
+    public boolean isConnectedBlocking() {
+        int port = adbClient.getTlsPort();
+        if (port <= 0) return false;
+        // Quick validation: verify the port is still open
+        return adbClient.testTlsConnection(port);
     }
 
-    // ── Service start / stop ──────────────────────────────────────────────────
+    // ── Connect ───────────────────────────────────────────────────────────────
 
     /**
-     * Starts {@code adbd} in TCP mode on {@link AppConstants#ADB_WIFI_PORT} using root.
-     * Posts result callbacks on the main handler.
+     * Attempts to connect to Wireless Debugging:
+     * <ol>
+     *   <li>Reads the TLS port via {@code getprop service.adb.tls.port}.</li>
+     *   <li>Writes our public key to {@code adb_keys} via root.</li>
+     *   <li>Tests the TLS connection.</li>
+     * </ol>
+     * Posts callbacks on the main handler.
      */
-    public void startAdbWifiService(ExecutorService executor, AdbServiceCallback callback) {
+    public void tryConnect(ExecutorService executor, AdbServiceCallback callback) {
         executor.execute(() -> {
-            Log.d(TAG, "Starting ADB WiFi service on port " + ADB_WIFI_PORT);
+            Log.d(TAG, "tryConnect: reading wireless debugging port");
 
-            // 1. Tell adbd which TCP port to listen on
-            shellManager.runShellCommandAndGetFullOutput(
-                    "setprop service.adb.tcp.port " + ADB_WIFI_PORT);
+            int port = getWirelessDebuggingPortBlocking();
+            if (port <= 0) {
+                Log.w(TAG, "Wireless Debugging not enabled (port=0)");
+                handler.post(() -> callback.onFailed(
+                        context.getString(R.string.adb_error_wd_not_enabled)));
+                return;
+            }
+            Log.d(TAG, "Wireless Debugging port: " + port);
 
-            // 2. Restart adbd so it picks up the new property
-            shellManager.runShellCommandAndGetFullOutput("stop adbd");
-            sleep(600);
-            shellManager.runShellCommandAndGetFullOutput("start adbd");
-
-            // 3. Allow daemon to fully start
-            sleep(1400);
-
-            // 4. Register our RSA key in adb_keys (adbd re-reads after restart above)
+            // Register our key so adbd will trust our TLS cert
             adbClient.ensureKeyRegistered();
-            sleep(400);
+            sleep(300);
 
-            // 5. Verify the port is actually open
-            if (isPortOpen(ADB_WIFI_PORT)) {
-                prefs.edit().putBoolean(KEY_ADB_WIFI_RUNNING, true).apply();
-                postAdbNotification();
-                Log.d(TAG, "ADB WiFi service started successfully");
+            // Test connection
+            if (adbClient.testTlsConnection(port)) {
+                adbClient.setTlsPort(port);
+                prefs.edit()
+                        .putBoolean(KEY_ADB_WIFI_RUNNING, true)
+                        .putInt(KEY_ADB_TLS_PORT, port)
+                        .apply();
+                postConnectedNotification();
+                Log.d(TAG, "Connected to adbd via TLS on port " + port);
                 handler.post(callback::onStarted);
             } else {
-                Log.w(TAG, "adbd started but port " + ADB_WIFI_PORT + " is not open");
+                Log.w(TAG, "TLS connection test failed on port " + port);
                 handler.post(() -> callback.onFailed(
-                        context.getString(R.string.adb_service_failed,
-                                "Порт " + ADB_WIFI_PORT + " не открылся после запуска adbd.")));
+                        context.getString(R.string.adb_error_connection_failed)));
             }
         });
     }
 
     /**
-     * Resets {@code adbd} back to USB-only mode.
+     * Clears the saved connection and cancels the notification.
      */
-    public void stopAdbWifiService(ExecutorService executor, AdbServiceCallback callback) {
+    public void disconnect(ExecutorService executor, AdbServiceCallback callback) {
         executor.execute(() -> {
-            Log.d(TAG, "Stopping ADB WiFi service");
-            shellManager.runShellCommandAndGetFullOutput("setprop service.adb.tcp.port -1");
-            shellManager.runShellCommandAndGetFullOutput("stop adbd");
-            sleep(400);
-            shellManager.runShellCommandAndGetFullOutput("start adbd");
-
-            prefs.edit().putBoolean(KEY_ADB_WIFI_RUNNING, false).apply();
-            cancelAdbNotification();
+            adbClient.setTlsPort(0);
+            prefs.edit()
+                    .putBoolean(KEY_ADB_WIFI_RUNNING, false)
+                    .putInt(KEY_ADB_TLS_PORT, 0)
+                    .apply();
+            cancelConnectedNotification();
             handler.post(callback::onStopped);
         });
     }
 
-    // ── ps command via ADB shell ──────────────────────────────────────────────
+    // ── ps via ADB shell ──────────────────────────────────────────────────────
 
     /**
-     * Runs {@code ps -A -o rss,name | grep '\.' | grep -v '[-:@]' | awk '{print $2}'}
-     * through the local ADB shell context (127.0.0.1:5555).
-     *
-     * <p>Use this instead of {@link ShellManager#runShellCommandAndGetFullOutput}
-     * for the {@code ps} command on Android 10+ rooted devices, where the {@code su}
-     * SELinux context blocks {@code ps -A -o} output.</p>
-     *
-     * <p>Must be called from a background thread.</p>
-     *
-     * @return stdout of the ps command, or {@code null} if adbd is not running
-     *         or the connection failed.
+     * Runs {@code ps -A -o rss,name …} via the ADB shell context.
+     * Returns stdout, or {@code null} if not connected.
+     * Must be called from a background thread.
      */
     public String runPsViaAdb() {
-        if (!isAdbServiceRunningBlocking()) {
-            Log.w(TAG, "runPsViaAdb: adbd not running");
+        if (adbClient.getTlsPort() <= 0) {
+            Log.w(TAG, "runPsViaAdb: not connected");
             return null;
         }
         return adbClient.runPsCommand();
     }
 
+    // ── Settings shortcut ─────────────────────────────────────────────────────
+
+    /**
+     * Opens the Wireless Debugging settings page directly (Android 11+),
+     * falling back to general Developer Options on older versions.
+     */
+    public static void openWirelessDebuggingSettings(Context context) {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11+ — direct Wireless Debugging page
+            intent = new Intent("android.settings.WIRELESS_DEBUG_SETTINGS");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                context.startActivity(intent);
+                return;
+            } catch (Exception ignored) {
+                // Some OEMs don't expose this action — fall through
+            }
+        }
+        // Fallback: Developer Options
+        intent = new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            context.startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Cannot open developer settings", e);
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Reads the Wireless Debugging TLS port from system properties via root.
+     * Returns 0 if not available.
+     */
+    private int getWirelessDebuggingPortBlocking() {
+        // Primary: TLS port (Android 11+ Wireless Debugging)
+        String portStr = shellManager.runShellCommandAndGetFullOutput(
+                "getprop service.adb.tls.port");
+        if (portStr != null) {
+            portStr = portStr.trim();
+            if (!portStr.isEmpty() && !portStr.equals("0")) {
+                try {
+                    return Integer.parseInt(portStr);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return 0;
+    }
+
     // ── Notification ──────────────────────────────────────────────────────────
 
-    private void postAdbNotification() {
+    private void postConnectedNotification() {
         NotificationManager nm =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
@@ -197,33 +255,22 @@ public class RootHelper {
                 context, 0, intent,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
-        NotificationCompat.Builder b = new NotificationCompat.Builder(context, CHANNEL_ID_ADB_SERVICE)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle(context.getString(R.string.adb_notification_title))
-                .setContentText(context.getString(R.string.adb_notification_text))
-                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setContentIntent(pi);
+        NotificationCompat.Builder b =
+                new NotificationCompat.Builder(context, CHANNEL_ID_ADB_SERVICE)
+                        .setSmallIcon(android.R.drawable.ic_dialog_info)
+                        .setContentTitle(context.getString(R.string.adb_notification_title))
+                        .setContentText(context.getString(R.string.adb_notification_text))
+                        .setOngoing(true)
+                        .setPriority(NotificationCompat.PRIORITY_LOW)
+                        .setContentIntent(pi);
 
         nm.notify(NOTIFICATION_ID_ADB_SERVICE, b.build());
     }
 
-    private void cancelAdbNotification() {
+    private void cancelConnectedNotification() {
         NotificationManager nm =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm != null) nm.cancel(NOTIFICATION_ID_ADB_SERVICE);
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /** Non-blocking TCP probe. Returns true if port is open on localhost. */
-    private boolean isPortOpen(int port) {
-        try (Socket s = new Socket()) {
-            s.connect(new InetSocketAddress("127.0.0.1", port), 400);
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
     }
 
     private static void sleep(long ms) {
