@@ -136,7 +136,7 @@ public class RootHelper {
         }
 
         // 3. Connect
-        boolean connected = adbClient.connect(tlsPort);
+        boolean connected = adbClient.connect("127.0.0.1", tlsPort);
         if (!connected) {
             Log.e(TAG, "Connection failed");
             showPairingNotification(
