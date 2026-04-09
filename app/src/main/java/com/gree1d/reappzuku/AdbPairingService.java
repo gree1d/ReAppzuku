@@ -66,7 +66,7 @@ public class AdbPairingService extends Service {
             return START_NOT_STICKY;
         }
 
-        startForeground(NOTIFICATION_ID_ADB_PAIRING_SERVICE, buildSearchingNotification());
+        startForeground(NOTIFICATION_ID_ADB_SERVICE, buildSearchingNotification());
         startDiscovery();
         scheduleTimeout();
 
