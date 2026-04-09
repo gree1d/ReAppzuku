@@ -109,11 +109,25 @@ public class RootHelper {
     // ── Pairing (called from AdbPairingReceiver) ──────────────────────────────
 
     /**
-     * Pairs using the code, then connects to the main TLS port.
+     * Pairs using the 6-digit code, then connects to the main TLS port.
+     * Pairing port and host are resolved automatically via root.
      * Must be called from a background thread.
      */
-    public void pairAndConnect(String host, int pairingPort, String code) {
-        // 1. Pair via SPAKE2
+    public void pairAndConnect(String code) {
+        // 1. Read pairing port
+        int pairingPort = getPairingPort();
+        if (pairingPort <= 0) {
+            Log.e(TAG, "Cannot read pairing port");
+            showPairingNotification(
+                    context.getString(R.string.adb_error_wd_not_enabled));
+            notifyCallback(false,
+                    context.getString(R.string.adb_error_wd_not_enabled));
+            return;
+        }
+
+        String host = "127.0.0.1";
+
+        // 2. Pair via SPAKE2
         boolean paired = adbClient.pair(host, pairingPort, code);
         if (!paired) {
             Log.e(TAG, "Pairing failed");
@@ -287,6 +301,20 @@ public class RootHelper {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Reads the current ADB pairing port via root.
+     * Android rotates this port each time the pairing dialog is opened.
+     */
+    private int getPairingPort() {
+        String portStr = shellManager.runShellCommandAndGetFullOutput(
+                "dumpsys adb | grep -i 'mPairingPort\\|pairing_port\\|PairingPort' | grep -oE '[0-9]{4,5}' | head -1");
+        if (portStr == null) return 0;
+        portStr = portStr.trim();
+        if (portStr.isEmpty() || portStr.equals("0")) return 0;
+        try { return Integer.parseInt(portStr); }
+        catch (NumberFormatException e) { return 0; }
+    }
 
     private int getWirelessDebuggingPort() {
         String portStr = shellManager.runShellCommandAndGetFullOutput(
