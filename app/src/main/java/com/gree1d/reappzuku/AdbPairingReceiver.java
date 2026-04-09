@@ -11,17 +11,15 @@ import androidx.core.app.RemoteInput;
 import java.util.concurrent.Executors;
 
 /**
- * BroadcastReceiver that handles the pairing code submission from the
- * Wireless Debugging notification.
- *
- * <p>Expected input: 6-digit code shown in Android Wireless Debugging dialog.
- * The pairing port is discovered automatically via mDNS in {@link RootHelper#startServiceFlow}.</p>
+ * Handles the 6-digit pairing code submitted from the notification.
+ * The pairing port is discovered by {@link AdbPairingService} via mDNS
+ * and stored in {@link RootHelper#discoveredPairingPort}.
  */
 public class AdbPairingReceiver extends BroadcastReceiver {
 
     private static final String TAG = "AdbPairingReceiver";
 
-    public static final String ACTION_PAIR = "com.gree1d.reappzuku.ACTION_ADB_PAIR";
+    public static final String ACTION_PAIR   = "com.gree1d.reappzuku.ACTION_ADB_PAIR";
     public static final String KEY_CODE_INPUT = "adb_pair_code";
 
     @Override
@@ -36,9 +34,9 @@ public class AdbPairingReceiver extends BroadcastReceiver {
 
         String code = input.toString().trim();
 
-        // Validate: must be exactly 6 digits
+        // Must be exactly 6 digits
         if (!code.matches("\\d{6}")) {
-            Log.w(TAG, "Invalid code format: expected 6 digits");
+            Log.w(TAG, "Invalid code: expected 6 digits, got: " + code.length() + " chars");
             RootHelper rootHelper = RootHelper.getInstance(context);
             if (rootHelper != null) {
                 rootHelper.showPairingNotification(
@@ -55,11 +53,10 @@ public class AdbPairingReceiver extends BroadcastReceiver {
             return;
         }
 
-        // Show "Подключение…" spinner immediately
         rootHelper.showPairingProgressNotification();
 
-        // Run pairing + connect off main thread
+        final String finalCode = code;
         Executors.newSingleThreadExecutor().execute(() ->
-                rootHelper.pairAndConnect(code));
+                rootHelper.pairAndConnect(finalCode));
     }
 }

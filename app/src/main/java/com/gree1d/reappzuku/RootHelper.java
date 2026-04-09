@@ -52,7 +52,7 @@ public class RootHelper {
     /** Callback to update MainActivity UI after pairing result. */
     private volatile AdbServiceCallback pendingCallback;
 
-    /** Pairing port discovered via mDNS, -1 if not yet found. */
+    /** Pairing port discovered via mDNS in AdbPairingService. -1 until discovered. */
     private volatile int discoveredPairingPort = -1;
 
     // ── Callback ──────────────────────────────────────────────────────────────
@@ -100,39 +100,32 @@ public class RootHelper {
 
     /**
      * Called when user taps "Запустить сервис" in the banner.
-     * Opens Wireless Debugging settings, discovers pairing port via mDNS,
-     * then shows the code-input notification.
+     * Starts AdbPairingService (foreground) which runs mDNS discovery,
+     * then opens Wireless Debugging settings.
      */
     public void startServiceFlow(Context activityContext,
             ExecutorService executor, AdbServiceCallback callback) {
         this.pendingCallback = callback;
         this.discoveredPairingPort = -1;
-
-        // Show "Подключение…" spinner while waiting for mDNS
-        showPairingProgressNotification();
-
-        // Open settings so user can tap "Подключить устройство с помощью кода"
+        // Start foreground service FIRST — it will keep NsdManager alive in background
+        AdbPairingService.start(context);
+        // Then open settings so the user taps "Pair device with pairing code"
         openWirelessDebuggingSettings(activityContext);
+    }
 
-        // mDNS discovery — Android announces the pairing port when dialog opens
-        AdbMdnsDiscovery.discover(context, port -> {
-            if (port > 0) {
-                Log.d(TAG, "mDNS: pairing port = " + port);
-                discoveredPairingPort = port;
-                showPairingNotification(null); // ready — show code input
-            } else {
-                Log.e(TAG, "mDNS: pairing port not found");
-                showPairingNotification(
-                        context.getString(R.string.adb_error_wd_not_enabled));
-            }
-        }, 15_000);
+    /**
+     * Called by {@link AdbPairingService} when the pairing port is discovered via mDNS.
+     * Shows the code-input notification to the user.
+     */
+    public void onPairingPortDiscovered(int port) {
+        this.discoveredPairingPort = port;
+        showPairingNotification(null); // show code input field
     }
 
     // ── Pairing (called from AdbPairingReceiver) ──────────────────────────────
 
     /**
-     * Pairs using the 6-digit code. Pairing port is read from discoveredPairingPort
-     * (set earlier by mDNS discovery in startServiceFlow).
+     * Pairs using the 6-digit code. Pairing port was set by {@link #onPairingPortDiscovered}.
      * Must be called from a background thread.
      */
     public void pairAndConnect(String code) {
