@@ -332,22 +332,23 @@
     <string name="toast_error_whitelist_empty">Auto-Kill aborted: Whitelist is empty</string>
     
     <!-- ADB helper for Root --> 
-    <string name="adb_banner_title">ADB Service Required</string>
-    <string name="adb_banner_description">On Android 10+, the ps command does not work correctly with root. Start the ADB service to properly detect background processes.</string>
-    <string name="adb_banner_btn_start">Start service</string>
-    <string name="adb_banner_btn_start_loading">Starting…</string>
+    <string name="adb_banner_title">ADB Connection Required</string>
+    <string name="adb_banner_description">On Android 10+, the "ps" command is restricted via root due to SELinux. Enable Wireless debugging in Developer options—the app will connect automatically.</string>
+    <string name="adb_banner_btn_start">Enable Debugging</string>
+    <string name="adb_banner_btn_start_loading">Connecting…</string>
     <string name="adb_banner_btn_info">What is this?</string>
-    
-    <string name="adb_info_title">Why is ADB service needed?</string>
-    <string name="adb_info_message">On Android 10 and newer, the ps command with root permissions fails to return the process list due to SELinux restrictions.\n\nReAppzuku bypasses this by running the ADB daemon in TCP mode on port 5555 — similar to how Shizuku works. Commands are executed in the shell context, where ps functions correctly.\n\nWhat happens when you click "Start service":\n• adbd is started on 127.0.0.1:5555 via root\n• A persistent notification will appear\n\n⚠ The service resets on reboot — the button will reappear then.</string>
+
+    <string name="adb_info_title">Why Wireless Debugging?</string>
+    <string name="adb_info_message">On Android 10 and newer, SELinux restricts the "ps" command when run via root, preventing the process list from being returned.\n\nIn the ADB shell context (Wireless debugging), the same command works correctly.\n\nWhat happens when you tap "Enable Debugging":\n• Wireless debugging settings will open\n• Once enabled, the app connects automatically\n• Your key is added to trusted via root—no pairing code required\n\n⚠ Wireless debugging turns off after a reboot—the button will reappear if needed.</string>
     <string name="adb_info_btn_ok">Got it</string>
-    
-    <string name="adb_service_started">ADB service started</string>
-    <string name="adb_service_failed">Failed to start: %s</string>
-    
-    <string name="adb_notification_channel_name">ADB WiFi Service</string>
-    <string name="adb_notification_channel_desc">Status of ADB debugging over WiFi</string>
-    <string name="adb_notification_title">ADB WiFi Service Active</string>
-    <string name="adb_notification_text">Used to read the process list on Android 10+</string>
-    
+
+    <string name="adb_service_started">ADB Connected</string>
+    <string name="adb_service_failed">Error: %s</string>
+    <string name="adb_error_wd_not_enabled">Please enable Wireless debugging in Developer options</string>
+    <string name="adb_error_connection_failed">Connection failed. Try toggling Wireless debugging off and on again.</string>
+
+    <string name="adb_notification_channel_name">ADB Connection</string>
+    <string name="adb_notification_channel_desc">Status of the Wireless debugging connection</string>
+    <string name="adb_notification_title">ADB Connected</string>
+    <string name="adb_notification_text">Wireless debugging active — process list available</string>
 </resources>
