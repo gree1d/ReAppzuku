@@ -56,11 +56,12 @@ public class LocalAdbClient {
 
     public LocalAdbClient(Context context) {
         this.context = context.getApplicationContext();
-        // libadb-android uses Conscrypt.exportKeyingMaterial via reflection,
-        // which is blocked on Android 9+ without this exemption.
+        // libadb-android accesses Conscrypt internals via reflection for both
+        // SPAKE2 pairing and TLS connection. Exempt the entire conscrypt package.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             HiddenApiBypass.addHiddenApiExemptions(
-                    "Lcom/android/org/conscrypt/Conscrypt;"
+                    "Lcom/android/org/conscrypt/",
+                    "Landroid/net/ssl/"
             );
         }
     }
