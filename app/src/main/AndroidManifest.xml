@@ -89,7 +89,6 @@
         <receiver 
             android:name=".AdbPairingReceiver"
             android:exported="false" />
-        </receiver>
 
         <receiver android:name=".AppzukuWidget" android:exported="true">
             <intent-filter>
