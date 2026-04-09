@@ -188,7 +188,12 @@ public class RootHelper {
             return;
         }
 
-        // 4. Success
+        // 4. Switch adbd to legacy TCP/IP mode on port 5555.
+        //    After this adbd listens on 127.0.0.1:5555 independently of Wi-Fi.
+        //    The TLS/Wireless Debugging port is no longer needed.
+        switchToTcpIpMode();
+
+        // 5. Success
         AdbPairingService.stop(context);
         prefs.edit()
                 .putBoolean(KEY_ADB_WIFI_RUNNING, true)
@@ -330,6 +335,52 @@ public class RootHelper {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Переключает adbd в legacy TCP/IP режим на порту 5555.
+     *
+     * <p>Выполняет через активное ADB-соединение команду {@code tcpip 5555},
+     * которая перезапускает adbd так, что он слушает {@code 127.0.0.1:5555}
+     * независимо от Wi-Fi и Wireless Debugging. После этого переподключается
+     * на новый порт и сохраняет его в prefs.</p>
+     *
+     * <p>Вызывается однократно сразу после первого успешного TLS-соединения.</p>
+     */
+    private void switchToTcpIpMode() {
+        Log.d(TAG, "Switching adbd to TCP/IP mode on port 5555");
+        // "tcpip 5555" — стандартная ADB-служба, эквивалент `adb tcpip 5555`
+        String result = adbClient.runShellCommand("setprop service.adb.tcp.port 5555");
+        Log.d(TAG, "setprop result: " + result);
+
+        // Даём adbd ~1.5 с на перезапуск
+        try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
+
+        // Переподключаемся уже на порт 5555 (loopback, не зависит от Wi-Fi)
+        boolean reconnected = adbClient.connect("127.0.0.1", 5555);
+        if (reconnected) {
+            Log.d(TAG, "Reconnected on TCP/IP port 5555 — Wi-Fi no longer required");
+            prefs.edit().putInt(KEY_ADB_TLS_PORT, 5555).apply();
+        } else {
+            Log.w(TAG, "Could not reconnect on 5555, staying on TLS port");
+        }
+    }
+
+    /**
+     * Переподключается к adbd на порту 5555 (после перезагрузки приложения).
+     * Pairing больше не нужен — ключ уже в keystore, порт фиксирован.
+     * Вызывать из фонового потока.
+     */
+    public boolean reconnectTcpIp() {
+        if (adbClient == null) return false;
+        boolean ok = adbClient.connect("127.0.0.1", 5555);
+        if (ok) {
+            Log.d(TAG, "Reconnected to adbd on 127.0.0.1:5555");
+            postConnectedNotification();
+        } else {
+            Log.w(TAG, "reconnectTcpIp failed");
+        }
+        return ok;
+    }
 
     private int getWirelessDebuggingPort() {
         String portStr = shellManager.runShellCommandAndGetFullOutput(
