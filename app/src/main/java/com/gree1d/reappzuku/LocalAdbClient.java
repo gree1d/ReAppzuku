@@ -1,12 +1,19 @@
 package com.gree1d.reappzuku;
 
 import android.content.Context;
-import android.security.keystore.KeyGenParameterSpec;
-import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import android.util.Log;
 
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -14,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -26,22 +34,24 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * ADB client supporting both classic TCP and TLS (Wireless Debugging, Android 11+).
  *
- * <p>Key management uses Android KeyStore — a self-signed X.509 certificate is
- * generated automatically alongside the RSA-2048 key. The public key is registered
- * in {@code /data/misc/adb/adb_keys} via root, bypassing the pairing flow entirely.
- * adbd verifies TLS connections by extracting the RSA public key from the client
- * certificate and checking it against {@code adb_keys}.</p>
+ * <p>Key management uses a file-based PKCS12 keystore stored in the app's private
+ * filesDir. This avoids AndroidKeyStore hardware attestation issues present on some
+ * devices. The RSA public key is registered in {@code /data/misc/adb/adb_keys} via
+ * root, bypassing the pairing flow entirely. adbd verifies TLS connections by
+ * extracting the RSA public key from the client certificate and checking it against
+ * {@code adb_keys}.</p>
  */
 public class LocalAdbClient {
 
     private static final String TAG = "LocalAdbClient";
 
-    private static final String KEYSTORE_ALIAS = "reappzuku_adb";
+    private static final String KEYSTORE_FILE     = "reappzuku_adb.p12";
+    private static final String KEYSTORE_ALIAS    = "reappzuku_adb";
+    private static final char[] KEYSTORE_PASSWORD = "reappzuku".toCharArray();
 
     // ADB protocol constants
     private static final int A_CNXN = 0x4e584e43;
@@ -120,8 +130,6 @@ public class LocalAdbClient {
                 Log.d(TAG, "testTlsConnection: adbd CNXN received — connected");
                 return true;
             } else if (h[0] == A_AUTH && h[1] == AUTH_TOKEN) {
-                // Key not yet trusted — shouldn't happen after ensureKeyRegistered,
-                // but treat as "not yet ready"
                 Log.w(TAG, "testTlsConnection: adbd sent AUTH_TOKEN — key not trusted yet");
                 return false;
             } else {
@@ -162,34 +170,63 @@ public class LocalAdbClient {
         }
     }
 
-    // ── Key management (Android KeyStore) ────────────────────────────────────
+    // ── Key management (file-based PKCS12) ───────────────────────────────────
 
-    private void ensureKeyGenerated() throws Exception {
-        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
-        ks.load(null);
-        if (ks.containsAlias(KEYSTORE_ALIAS)) return;
+    /**
+     * Loads the PKCS12 keystore from filesDir, creating it if absent.
+     * Uses standard Java crypto — no AndroidKeyStore hardware dependency.
+     */
+    private KeyStore loadOrCreateKeyStore() throws Exception {
+        File ksFile = new File(context.getFilesDir(), KEYSTORE_FILE);
+        KeyStore ks = KeyStore.getInstance("PKCS12");
 
-        Log.d(TAG, "Generating RSA-2048 key in AndroidKeyStore");
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(
-                KeyProperties.KEY_ALGORITHM_RSA, "AndroidKeyStore");
-        kpg.initialize(new KeyGenParameterSpec.Builder(
-                KEYSTORE_ALIAS,
-                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
-                .setKeySize(2048)
-                .setSignaturePaddings(KeyProperties.SIGNATURE_PADDING_RSA_PKCS1)
-                .setDigests(KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256)
-                .setCertificateSubject(new X500Principal("CN=ReAppzuku"))
-                .setCertificateSerialNumber(BigInteger.ONE)
-                .setCertificateNotBefore(new Date(0))
-                .setCertificateNotAfter(new Date(Long.MAX_VALUE / 2))
-                .build());
-        kpg.generateKeyPair();
+        if (ksFile.exists()) {
+            try (FileInputStream fis = new FileInputStream(ksFile)) {
+                ks.load(fis, KEYSTORE_PASSWORD);
+                if (ks.containsAlias(KEYSTORE_ALIAS)) {
+                    return ks; // already have a valid key
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Keystore corrupted, regenerating", e);
+            }
+        }
+
+        // Generate new RSA-2048 key pair
+        Log.d(TAG, "Generating RSA-2048 key pair (file-based)");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        KeyPair kp = kpg.generateKeyPair();
+
+        // Build self-signed X.509 certificate with BouncyCastle
+        long now = System.currentTimeMillis();
+        X500Name subject = new X500Name("CN=ReAppzuku");
+        JcaX509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+                subject,
+                BigInteger.ONE,
+                new Date(now),
+                new Date(now + 30L * 365 * 24 * 60 * 60 * 1000), // 30 years
+                subject,
+                kp.getPublic());
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+                .build(kp.getPrivate());
+        X509Certificate cert = new JcaX509CertificateConverter()
+                .getCertificate(certBuilder.build(signer));
+
+        // Store in PKCS12
+        ks.load(null, KEYSTORE_PASSWORD);
+        ks.setKeyEntry(KEYSTORE_ALIAS, kp.getPrivate(), KEYSTORE_PASSWORD,
+                new java.security.cert.Certificate[]{cert});
+
+        try (FileOutputStream fos = new FileOutputStream(ksFile)) {
+            ks.store(fos, KEYSTORE_PASSWORD);
+        }
+
+        Log.d(TAG, "Key pair generated and saved to " + ksFile.getAbsolutePath());
+        return ks;
     }
 
     private String getAdbPublicKeyLine() throws Exception {
-        ensureKeyGenerated();
-        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
-        ks.load(null);
+        KeyStore ks = loadOrCreateKeyStore();
         RSAPublicKey pub = (RSAPublicKey)
                 ks.getCertificate(KEYSTORE_ALIAS).getPublicKey();
         byte[] encoded = encodeAdbPublicKey(pub);
@@ -235,12 +272,10 @@ public class LocalAdbClient {
     // ── TLS connection (Android 11+ Wireless Debugging) ───────────────────────
 
     private SSLContext createSslContext() throws Exception {
-        ensureKeyGenerated();
-        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
-        ks.load(null);
+        KeyStore ks = loadOrCreateKeyStore();
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("X509");
-        kmf.init(ks, null);
+        kmf.init(ks, KEYSTORE_PASSWORD);
 
         // Trust all — adbd trusts us based on adb_keys, not cert chain
         TrustManager[] trustAll = new TrustManager[]{
@@ -332,10 +367,8 @@ public class LocalAdbClient {
 
     private boolean respondToAuthChallenge(DataInputStream in, OutputStream out,
             byte[] token) throws Exception {
-        ensureKeyGenerated();
-        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
-        ks.load(null);
-        PrivateKey priv = (PrivateKey) ks.getKey(KEYSTORE_ALIAS, null);
+        KeyStore ks = loadOrCreateKeyStore();
+        PrivateKey priv = (PrivateKey) ks.getKey(KEYSTORE_ALIAS, KEYSTORE_PASSWORD);
 
         java.security.Signature sig =
                 java.security.Signature.getInstance("SHA1withRSA");
