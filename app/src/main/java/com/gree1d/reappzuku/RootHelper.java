@@ -47,7 +47,7 @@ public class RootHelper {
     private final Context context;
     private final ShellManager shellManager;
     private final SharedPreferences prefs;
-    private final LocalAdbClient adbClient;
+    private LocalAdbClient adbClient;
 
     /** Callback to update MainActivity UI after pairing result. */
     private volatile AdbServiceCallback pendingCallback;
@@ -75,7 +75,13 @@ public class RootHelper {
         this.context = context.getApplicationContext();
         this.shellManager = shellManager;
         this.prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        this.adbClient = new LocalAdbClient(context);
+        LocalAdbClient client = null;
+        try {
+            client = LocalAdbClient.getInstance(context);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to init LocalAdbClient: " + e.getMessage(), e);
+        }
+        this.adbClient = client;
         instance = this;
     }
 
@@ -87,7 +93,8 @@ public class RootHelper {
      */
     public void checkNeedsAdbService(ExecutorService executor, Consumer<Boolean> callback) {
         executor.execute(() -> {
-            boolean needs = shellManager.hasRootAccess()
+            boolean needs = adbClient != null
+                    && shellManager.hasRootAccess()
                     && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
                     && !adbClient.isConnected();
             android.os.Handler main = new android.os.Handler(
@@ -129,6 +136,12 @@ public class RootHelper {
      * Must be called from a background thread.
      */
     public void pairAndConnect(String code) {
+        if (adbClient == null) {
+            Log.e(TAG, "ADB client not initialized");
+            showPairingNotification(context.getString(R.string.adb_error_pair_failed));
+            notifyCallback(false, "ADB client not initialized");
+            return;
+        }
         int pairingPort = discoveredPairingPort;
         if (pairingPort <= 0) {
             Log.e(TAG, "Pairing port not discovered yet");
@@ -194,7 +207,7 @@ public class RootHelper {
      * Must be called from a background thread.
      */
     public String runPsViaAdb() {
-        if (!adbClient.isConnected()) {
+        if (adbClient == null || !adbClient.isConnected()) {
             Log.w(TAG, "runPsViaAdb: not connected");
             return null;
         }
