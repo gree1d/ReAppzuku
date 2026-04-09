@@ -93,13 +93,33 @@ public class RootHelper {
      */
     public void checkNeedsAdbService(ExecutorService executor, Consumer<Boolean> callback) {
         executor.execute(() -> {
+            // Если prefs говорят что мы уже были подключены на порту 5555 —
+            // пробуем переподключиться молча, без показа баннера.
+            if (adbClient != null && !adbClient.isConnected()) {
+                int savedPort = prefs.getInt(KEY_ADB_TLS_PORT, 0);
+                if (savedPort > 0) {
+                    Log.d(TAG, "checkNeedsAdbService: trying silent reconnect on port " + savedPort);
+                    boolean ok = adbClient.connect("127.0.0.1", savedPort);
+                    if (ok) {
+                        Log.d(TAG, "Silent reconnect succeeded on port " + savedPort);
+                        postConnectedNotification();
+                    } else {
+                        Log.w(TAG, "Silent reconnect failed — will show banner");
+                        // Сбрасываем сохранённый порт чтобы не зацикливаться
+                        prefs.edit()
+                                .putInt(KEY_ADB_TLS_PORT, 0)
+                                .putBoolean(KEY_ADB_WIFI_RUNNING, false)
+                                .apply();
+                    }
+                }
+            }
+
             boolean needs = adbClient != null
                     && shellManager.hasRootAccess()
                     && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
                     && !adbClient.isConnected();
-            android.os.Handler main = new android.os.Handler(
-                    android.os.Looper.getMainLooper());
-            main.post(() -> callback.accept(needs));
+            new android.os.Handler(android.os.Looper.getMainLooper())
+                    .post(() -> callback.accept(needs));
         });
     }
 
