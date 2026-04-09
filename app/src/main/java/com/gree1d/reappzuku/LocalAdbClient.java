@@ -92,21 +92,47 @@ public class LocalAdbClient {
     }
 
     /**
-     * Tests whether a TLS connection to the given port succeeds.
+     * Tests whether a TLS connection to the given port succeeds by performing
+     * a full ADB handshake (CNXN exchange). A bare TLS handshake is not enough —
+     * adbd sends A_CNXN immediately after the TLS handshake and closes the
+     * connection if it is not answered, causing startHandshake() to fail.
      * Must be called from a background thread.
      */
     public boolean testTlsConnection(int port) {
+        SSLSocket socket = null;
         try {
             SSLContext ctx = createSslContext();
-            SSLSocket s = (SSLSocket) ctx.getSocketFactory().createSocket();
-            s.connect(new InetSocketAddress("127.0.0.1", port), CONNECT_TIMEOUT_MS);
-            s.setSoTimeout(READ_TIMEOUT_MS);
-            s.startHandshake();
-            s.close();
-            return true;
+            socket = (SSLSocket) ctx.getSocketFactory().createSocket();
+            socket.connect(new InetSocketAddress("127.0.0.1", port), CONNECT_TIMEOUT_MS);
+            socket.setSoTimeout(READ_TIMEOUT_MS);
+            socket.startHandshake();
+
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            OutputStream out = socket.getOutputStream();
+
+            // Send our CNXN and read adbd's response — must complete the handshake
+            sendMessage(out, A_CNXN, A_VERSION, MAX_PAYLOAD,
+                    "host::ReAppzuku".getBytes("UTF-8"));
+            int[] h = readHeader(in);
+
+            if (h[0] == A_CNXN) {
+                readData(in, h[3]); // drain payload
+                Log.d(TAG, "testTlsConnection: adbd CNXN received — connected");
+                return true;
+            } else if (h[0] == A_AUTH && h[1] == AUTH_TOKEN) {
+                // Key not yet trusted — shouldn't happen after ensureKeyRegistered,
+                // but treat as "not yet ready"
+                Log.w(TAG, "testTlsConnection: adbd sent AUTH_TOKEN — key not trusted yet");
+                return false;
+            } else {
+                Log.w(TAG, "testTlsConnection: unexpected response: " + Integer.toHexString(h[0]));
+                return false;
+            }
         } catch (Exception e) {
             Log.d(TAG, "testTlsConnection failed: " + e.getMessage());
             return false;
+        } finally {
+            if (socket != null) try { socket.close(); } catch (IOException ignored) {}
         }
     }
 
