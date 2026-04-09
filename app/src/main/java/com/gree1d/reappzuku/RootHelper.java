@@ -52,6 +52,9 @@ public class RootHelper {
     /** Callback to update MainActivity UI after pairing result. */
     private volatile AdbServiceCallback pendingCallback;
 
+    /** Pairing port discovered via mDNS, -1 if not yet found. */
+    private volatile int discoveredPairingPort = -1;
+
     // ── Callback ──────────────────────────────────────────────────────────────
 
     public interface AdbServiceCallback {
@@ -97,37 +100,53 @@ public class RootHelper {
 
     /**
      * Called when user taps "Запустить сервис" in the banner.
-     * Shows the pairing notification and opens Wireless Debugging settings.
+     * Opens Wireless Debugging settings, discovers pairing port via mDNS,
+     * then shows the code-input notification.
      */
     public void startServiceFlow(Context activityContext,
             ExecutorService executor, AdbServiceCallback callback) {
         this.pendingCallback = callback;
-        showPairingNotification(null); // no error yet
+        this.discoveredPairingPort = -1;
+
+        // Show "Подключение…" spinner while waiting for mDNS
+        showPairingProgressNotification();
+
+        // Open settings so user can tap "Подключить устройство с помощью кода"
         openWirelessDebuggingSettings(activityContext);
+
+        // mDNS discovery — Android announces the pairing port when dialog opens
+        AdbMdnsDiscovery.discover(context, port -> {
+            if (port > 0) {
+                Log.d(TAG, "mDNS: pairing port = " + port);
+                discoveredPairingPort = port;
+                showPairingNotification(null); // ready — show code input
+            } else {
+                Log.e(TAG, "mDNS: pairing port not found");
+                showPairingNotification(
+                        context.getString(R.string.adb_error_wd_not_enabled));
+            }
+        }, 15_000);
     }
 
     // ── Pairing (called from AdbPairingReceiver) ──────────────────────────────
 
     /**
-     * Pairs using the 6-digit code, then connects to the main TLS port.
-     * Pairing port and host are resolved automatically via root.
+     * Pairs using the 6-digit code. Pairing port is read from discoveredPairingPort
+     * (set earlier by mDNS discovery in startServiceFlow).
      * Must be called from a background thread.
      */
     public void pairAndConnect(String code) {
-        // 1. Read pairing port
-        int pairingPort = getPairingPort();
+        int pairingPort = discoveredPairingPort;
         if (pairingPort <= 0) {
-            Log.e(TAG, "Cannot read pairing port");
+            Log.e(TAG, "Pairing port not discovered yet");
             showPairingNotification(
                     context.getString(R.string.adb_error_wd_not_enabled));
             notifyCallback(false,
                     context.getString(R.string.adb_error_wd_not_enabled));
             return;
         }
-
         String host = "127.0.0.1";
-
-        // 2. Pair via SPAKE2
+        // 1. Pair via SPAKE2
         boolean paired = adbClient.pair(host, pairingPort, code);
         if (!paired) {
             Log.e(TAG, "Pairing failed");
@@ -150,7 +169,7 @@ public class RootHelper {
         }
 
         // 3. Connect
-        boolean connected = adbClient.connect("127.0.0.1", tlsPort);
+        boolean connected = adbClient.connect(tlsPort);
         if (!connected) {
             Log.e(TAG, "Connection failed");
             showPairingNotification(
@@ -301,20 +320,6 @@ public class RootHelper {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /**
-     * Reads the current ADB pairing port via root.
-     * Android rotates this port each time the pairing dialog is opened.
-     */
-    private int getPairingPort() {
-        String portStr = shellManager.runShellCommandAndGetFullOutput(
-                "dumpsys adb | grep -i 'mPairingPort\\|pairing_port\\|PairingPort' | grep -oE '[0-9]{4,5}' | head -1");
-        if (portStr == null) return 0;
-        portStr = portStr.trim();
-        if (portStr.isEmpty() || portStr.equals("0")) return 0;
-        try { return Integer.parseInt(portStr); }
-        catch (NumberFormatException e) { return 0; }
-    }
 
     private int getWirelessDebuggingPort() {
         String portStr = shellManager.runShellCommandAndGetFullOutput(
