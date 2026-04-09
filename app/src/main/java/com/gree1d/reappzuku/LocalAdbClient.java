@@ -25,6 +25,8 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import org.lsposed.hiddenapibypass.HiddenApiBypass;
+
 import io.github.muntashirakon.adb.AdbConnection;
 import io.github.muntashirakon.adb.AdbPairingRequiredException;
 import io.github.muntashirakon.adb.AdbStream;
@@ -54,6 +56,13 @@ public class LocalAdbClient {
 
     public LocalAdbClient(Context context) {
         this.context = context.getApplicationContext();
+        // libadb-android uses Conscrypt.exportKeyingMaterial via reflection,
+        // which is blocked on Android 9+ without this exemption.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.addHiddenApiExemptions(
+                    "Lcom/android/org/conscrypt/Conscrypt;"
+            );
+        }
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
