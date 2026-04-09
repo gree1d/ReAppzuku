@@ -340,7 +340,7 @@
 
     <string name="adb_info_title">Why is ADB service needed?</string>
     <string name="adb_info_btn_ok">Got it</string>
-    <string name="adb_info_message">On Android 10 and above, SELinux blocks the \"ps\" command when executed via root.\n\nHowever, the same command works correctly within the ADB shell context (Wireless Debugging) — this is the same method used by Shizuku.\n\nHow to connect:\n1. Tap \"Start Service\"\n2. In the Developer Options, enable \"Wireless Debugging\"\n3. Tap \"Pair device with pairing code\"\n4. Enter PORT:CODE from the dialog into the app\'s notification\n\n⚠ You will need to reconnect after a reboot.</string>
+    <string name="adb_info_message">On Android 10 and above, SELinux blocks the \"ps\" command when executed via root.\n\nHowever, the same command works correctly within the ADB shell context (Wireless Debugging).\n\nHow to connect:\n1. Tap \"Start Service\"\n2. In the Developer Options, enable \"Wireless Debugging\"\n3. Tap \"Pair device with pairing code\"\n4. Enter CODE from the dialog into the app\'s notification\n\n⚠ You will need to reconnect after a reboot.</string>
 
     <string name="adb_service_started">ADB Connected</string>
     <string name="adb_service_failed">Error: %s</string>
@@ -350,8 +350,8 @@
     <string name="adb_error_invalid_format">Invalid format. Enter PORT:CODE, e.g., 37849:123456</string>
 
     <string name="adb_notif_pair_title">ReAppzuku — ADB Pairing</string>
-    <string name="adb_notif_pair_text">Enable Wireless Debugging → "Pair device with pairing code" → enter PORT:CODE here</string>
-    <string name="adb_notif_input_hint">PORT:CODE, e.g., 37849:123456</string>
+    <string name="adb_notif_pair_text">Enable Wireless Debugging → "Pair device with pairing code" → enter the 6-digit code</string>
+    <string name="adb_notif_input_hint">Enter the pairing code</string>
     <string name="adb_notif_btn_connect">Connect</string>
 
     <string name="adb_notification_channel_name">ADB Connection</string>
