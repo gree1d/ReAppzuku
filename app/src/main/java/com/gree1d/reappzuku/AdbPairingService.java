@@ -66,7 +66,7 @@ public class AdbPairingService extends Service {
             return START_NOT_STICKY;
         }
 
-        startForeground(NOTIFICATION_ID_ADB_SERVICE, buildSearchingNotification());
+        startForeground(NOTIFICATION_ID_ADB_PAIRING_SERVICE, buildSearchingNotification());
         startDiscovery();
         scheduleTimeout();
 
@@ -173,15 +173,17 @@ public class AdbPairingService extends Service {
         }
 
         if (port > 0) {
-            Log.d(TAG, "Port found: " + port + " — showing code input notification");
+            // Port found — stay alive so notification persists while user enters code.
+            // Service will be stopped by RootHelper after pairing succeeds or fails.
+            Log.d(TAG, "Port found: " + port + " — waiting for code input");
             rootHelper.onPairingPortDiscovered(port);
+            // DO NOT call stopSelf() here
         } else {
             Log.e(TAG, "Port not found — showing error");
             rootHelper.showPairingNotification(
                     getString(R.string.adb_error_wd_not_enabled));
+            stopSelf();
         }
-
-        stopSelf();
     }
 
     // ── Timeout ───────────────────────────────────────────────────────────────

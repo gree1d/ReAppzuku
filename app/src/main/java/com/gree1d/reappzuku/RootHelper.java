@@ -143,6 +143,7 @@ public class RootHelper {
         boolean paired = adbClient.pair(host, pairingPort, code);
         if (!paired) {
             Log.e(TAG, "Pairing failed");
+            AdbPairingService.stop(context);
             showPairingNotification(
                     context.getString(R.string.adb_error_pair_failed));
             notifyCallback(false,
@@ -154,6 +155,7 @@ public class RootHelper {
         int tlsPort = getWirelessDebuggingPort();
         if (tlsPort <= 0) {
             Log.e(TAG, "Cannot read TLS port");
+            AdbPairingService.stop(context);
             showPairingNotification(
                     context.getString(R.string.adb_error_wd_not_enabled));
             notifyCallback(false,
@@ -165,6 +167,7 @@ public class RootHelper {
         boolean connected = adbClient.connect("127.0.0.1", tlsPort);
         if (!connected) {
             Log.e(TAG, "Connection failed");
+            AdbPairingService.stop(context);
             showPairingNotification(
                     context.getString(R.string.adb_error_connection_failed));
             notifyCallback(false,
@@ -173,6 +176,7 @@ public class RootHelper {
         }
 
         // 4. Success
+        AdbPairingService.stop(context);
         prefs.edit()
                 .putBoolean(KEY_ADB_WIFI_RUNNING, true)
                 .putInt(KEY_ADB_TLS_PORT, tlsPort)
