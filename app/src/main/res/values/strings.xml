@@ -339,7 +339,7 @@
     <string name="adb_banner_btn_info">What is this?</string>
 
     <string name="adb_info_title">Why is ADB service needed?</string>
-    <string name="adb_info_message">On Android 10 and above, SELinux blocks the "ps" command when executed via root.\n\nHowever, the same command works correctly within the ADB shell context (Wireless Debugging) — this is the same method used by Shizuku.\n\nHow to connect:\n1. Tap "Start Service"\n2. In the Developer Options, enable "Wireless Debugging"\n3. Tap "Pair device with pairing code"\n4. Enter PORT:CODE from the dialog into the app's notification\n\n⚠ You will need to reconnect after a reboot.</string>
+    <string name="adb_info_message">On Android 10 and above, SELinux blocks the \"ps\" command when executed via root.\n\nHowever, the same command works correctly within the ADB shell context (Wireless Debugging) — this is the same method used by Shizuku.\n\nHow to connect:\n1. Tap "Start Service"\n2. In the Developer Options, enable "Wireless Debugging"\n3. Tap "Pair device with pairing code"\n4. Enter PORT:CODE from the dialog into the app's notification\n\n⚠ You will need to reconnect after a reboot.</string>
     <string name="adb_info_btn_ok">Got it</string>
 
     <string name="adb_service_started">ADB Connected</string>
