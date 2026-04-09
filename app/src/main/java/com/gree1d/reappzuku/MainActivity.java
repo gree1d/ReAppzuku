@@ -210,30 +210,30 @@ public class MainActivity extends BaseActivity {
         binding.adbBanner.btnStartAdbService.setEnabled(false);
         binding.adbBanner.btnStartAdbService.setText(R.string.adb_banner_btn_start_loading);
 
-        // Открываем настройки чтобы пользователь включил Wireless Debugging
-        RootHelper.openWirelessDebuggingSettings(this);
-
-        // Пробуем подключиться (порт может быть уже активен)
-        rootHelper.tryConnect(executor, new RootHelper.AdbServiceCallback() {
+        rootHelper.startServiceFlow(this, executor, new RootHelper.AdbServiceCallback() {
             @Override
             public void onStarted() {
                 Toast.makeText(MainActivity.this,
                         R.string.adb_service_started, Toast.LENGTH_SHORT).show();
                 binding.adbBanner.getRoot().setVisibility(android.view.View.GONE);
-                binding.adbBanner.btnStartAdbService.setEnabled(true);
-                binding.adbBanner.btnStartAdbService.setText(R.string.adb_banner_btn_start);
+                resetStartButton();
             }
 
             @Override
             public void onFailed(String reason) {
-                // Wireless Debugging может быть ещё не включена —
-                // просто сбрасываем кнопку, пользователь вернётся из настроек
-                binding.adbBanner.btnStartAdbService.setEnabled(true);
-                binding.adbBanner.btnStartAdbService.setText(R.string.adb_banner_btn_start);
+                Toast.makeText(MainActivity.this,
+                        getString(R.string.adb_service_failed, reason),
+                        Toast.LENGTH_LONG).show();
+                resetStartButton();
             }
 
             @Override
-            public void onStopped() {}
+            public void onStopped() { resetStartButton(); }
+
+            private void resetStartButton() {
+                binding.adbBanner.btnStartAdbService.setEnabled(true);
+                binding.adbBanner.btnStartAdbService.setText(R.string.adb_banner_btn_start);
+            }
         });
     }
 
