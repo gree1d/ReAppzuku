@@ -346,8 +346,8 @@
     <string name="adb_service_failed">Error: %s</string>
     <string name="adb_error_wd_not_enabled">Please enable Wireless Debugging in Developer Options</string>
     <string name="adb_error_connection_failed">Connection failed. Please try again.</string>
-    <string name="adb_error_pair_failed">Invalid code or port. Please try again.</string>
-    <string name="adb_error_invalid_format">Invalid format. Enter PORT:CODE, e.g., 37849:123456</string>
+    <string name="adb_error_pair_failed">Invalid pairing code. Please try again.</string>
+    <string name="adb_error_invalid_format">Invalid format. Enter CODE, e.g., 123456</string>
 
     <string name="adb_notif_pair_title">ReAppzuku — ADB Pairing</string>
     <string name="adb_notif_pair_text">Enable Wireless Debugging → "Pair device with pairing code" → enter the 6-digit code</string>
