@@ -43,6 +43,19 @@ android {
             shrinkResources true
         }
     }
+
+    packagingOptions {
+    resources {
+        excludes += [
+            "**/module-info.class",
+            "META-INF/versions/**",
+            "META-INF/*.SF",
+            "META-INF/*.DSA",
+            "META-INF/*.RSA",
+            "META-INF/MANIFEST.MF"
+            ]
+        }
+    }
     
     compileOptions {
         coreLibraryDesugaringEnabled true
