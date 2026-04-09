@@ -76,4 +76,9 @@ dependencies {
     // WorkManager
     def work_version = "2.11.1"
     implementation "androidx.work:work-runtime:$work_version"
+
+    // ==================== ДОБАВЬ ЭТИ ДВЕ СТРОКИ ====================
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    // ============================================================
 }
