@@ -126,6 +126,10 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         }
     }
 
+    /** Порт последнего успешного подключения — для авто-реконнекта. */
+    private volatile int lastConnectedPort = 0;
+    private volatile String lastConnectedHost = "127.0.0.1";
+
     /**
      * Подключение к TLS-порту Wireless Debugging.
      *
@@ -137,8 +141,9 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         try {
             disconnect();
             Log.d(TAG, "Connecting " + host + ":" + tlsPort);
-            // Метод из AbsAdbConnectionManager
             super.connect(host, tlsPort);
+            lastConnectedHost = host;
+            lastConnectedPort = tlsPort;
             Log.d(TAG, "Connected");
             return true;
         } catch (Exception e) {
@@ -149,14 +154,31 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
 
     /**
      * Выполняет команду через ADB shell.
+     * При "Stream closed" (adbd перезапустился после tcpip:5555) автоматически
+     * переподключается и повторяет команду один раз.
      * Вызывать только из фонового потока.
      *
      * @return stdout или null при ошибке
      */
     public String runShellCommand(String command) {
+        String result = runShellCommandOnce(command);
+        if (result != null) return result;
+
+        // Null означает ошибку — пробуем реконнект если знаем порт
+        if (lastConnectedPort > 0) {
+            Log.w(TAG, "Shell failed — attempting reconnect on " + lastConnectedHost + ":" + lastConnectedPort);
+            boolean reconnected = connect(lastConnectedHost, lastConnectedPort);
+            if (reconnected) {
+                Log.d(TAG, "Reconnected — retrying command");
+                return runShellCommandOnce(command);
+            }
+        }
+        return null;
+    }
+
+    private String runShellCommandOnce(String command) {
         AdbStream stream = null;
         try {
-            // openStream — метод AbsAdbConnectionManager
             stream = openStream("shell:" + command);
             StringBuilder sb = new StringBuilder();
             InputStream is = stream.openInputStream();
@@ -210,6 +232,11 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
                 int n = is.read(buf);
                 if (n > 0) Log.d(TAG, "tcpip response: " + new String(buf, 0, n, "UTF-8").trim());
             } catch (Exception ignored) {}
+            // После tcpip:5555 adbd перезапустится и будет слушать на 5555.
+            // Обновляем lastConnectedPort чтобы авто-реконнект в runShellCommand
+            // переподключался именно на 5555, а не на старый TLS-порт.
+            lastConnectedPort = 5555;
+            lastConnectedHost = "127.0.0.1";
             return true;
         } catch (Exception e) {
             Log.e(TAG, "switchToTcpIp failed: " + e.getMessage(), e);

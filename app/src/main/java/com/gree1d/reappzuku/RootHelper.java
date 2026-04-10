@@ -200,8 +200,8 @@ public class RootHelper {
         adbClient.switchToTcpIp();
         try { adbClient.disconnect(); } catch (Exception ignored) {}
 
-        // 5. Даём adbd ~2 с перезапуститься в TCP-режиме
-        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+        // 5. Даём adbd 3 с перезапуститься в TCP-режиме и принять ключ авторизации
+        try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
 
         // 6. Переподключаемся на фиксированный loopback-порт 5555.
         //    Ключ уже авторизован — повторный pairing не нужен никогда.
