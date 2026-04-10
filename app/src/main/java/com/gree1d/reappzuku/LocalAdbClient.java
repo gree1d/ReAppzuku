@@ -22,22 +22,13 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import org.lsposed.hiddenapibypass.HiddenApiBypass;
 
 import io.github.muntashirakon.adb.AbsAdbConnectionManager;
 import io.github.muntashirakon.adb.AdbStream;
 
-/**
- * ADB client using libadb-android (v3.x).
- *
- * <p>Правильный паттерн: наследоваться от {@link AbsAdbConnectionManager},
- * реализовав getPrivateKey() и getCertificate(). Библиотека сама управляет
- * жизненным циклом соединения — pair/connect/openStream.</p>
- *
- * <p>Ключевая пара генерируется один раз через BouncyCastle и хранится в
- * PKCS12-кейсторе в filesDir приложения.</p>
- */
 public class LocalAdbClient extends AbsAdbConnectionManager {
 
     private static final String TAG = "LocalAdbClient";
@@ -52,8 +43,6 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
     private PrivateKey  mPrivateKey;
     private Certificate mCertificate;
 
-    // ── Singleton ─────────────────────────────────────────────────────────────
-
     public static LocalAdbClient getInstance(Context context) throws Exception {
         if (sInstance == null) {
             synchronized (LocalAdbClient.class) {
@@ -65,13 +54,9 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         return sInstance;
     }
 
-    // ── Constructor ───────────────────────────────────────────────────────────
-
     private LocalAdbClient(Context context) throws Exception {
         this.context = context;
 
-        // libadb-android использует Conscrypt через reflection.
-        // На Android 9+ нужно разрешить доступ к скрытому API.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             HiddenApiBypass.addHiddenApiExemptions(
                     "Lcom/android/org/conscrypt/",
@@ -79,14 +64,9 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
             );
         }
 
-        // Указываем версию API устройства (нужно для ADB handshake)
         setApi(Build.VERSION.SDK_INT);
-
-        // Загружаем (или генерируем) ключевую пару
         loadOrGenerateKeyPair();
     }
-
-    // ── AbsAdbConnectionManager — обязательные методы ─────────────────────────
 
     @Override
     protected PrivateKey getPrivateKey() {
@@ -103,20 +83,9 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         return "ReAppzuku";
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
-
-    /**
-     * Паринг с adbd по 6-значному коду из настроек Wireless Debugging.
-     *
-     * @param host        "127.0.0.1"
-     * @param pairingPort порт, показанный рядом с кодом в диалоге Android
-     * @param code        6-значный код сопряжения
-     * @return true при успехе
-     */
     public boolean pair(String host, int pairingPort, String code) {
         try {
             Log.d(TAG, "Pairing " + host + ":" + pairingPort);
-            // Метод из AbsAdbConnectionManager — он создаёт PairingConnectionCtx внутри
             super.pair(host, pairingPort, code);
             Log.d(TAG, "Pairing successful");
             return true;
@@ -126,24 +95,19 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         }
     }
 
-    /** Порт последнего успешного подключения — для авто-реконнекта. */
     private volatile int lastConnectedPort = 0;
     private volatile String lastConnectedHost = "127.0.0.1";
 
-    /**
-     * Подключение к TLS-порту Wireless Debugging (Wireless Debugging, случайный порт).
-     * Использует двухаргументный connect(host, port) — TLS-путь.
-     *
-     * @param host    "127.0.0.1"
-     * @param tlsPort из {@code getprop service.adb.tls.port}
-     * @return true при успехе
-     */
     public boolean connectTls(String host, int tlsPort) {
         try {
             disconnect();
             Log.d(TAG, "Connecting TLS " + host + ":" + tlsPort);
-            // Двухаргументный connect — использует TLS (Wireless Debugging протокол)
+            setTimeout(10, TimeUnit.SECONDS);
             super.connect(host, tlsPort);
+            if (!waitForHandshake(5000)) {
+                Log.e(TAG, "TLS handshake timed out");
+                return false;
+            }
             lastConnectedHost = host;
             lastConnectedPort = tlsPort;
             Log.d(TAG, "Connected TLS");
@@ -154,58 +118,31 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         }
     }
 
-    /**
-     * Подключение к legacy TCP-порту 5555 (plain RSA AUTH, без TLS).
-     * Используется после tcpip:5555.
-     * Как делает PMX: setTimeout + connect(port) без host.
-     *
-     * @param host "127.0.0.1"
-     * @param port 5555
-     * @return true при успехе
-     */
-    public boolean connectLegacyTcp(String host, int port) {
-        try {
-            disconnect();
-            Log.d(TAG, "Connecting legacy TCP " + host + ":" + port);
-            // Одноаргументный connect(port) — legacy TCP путь без TLS
-            // Сначала устанавливаем хост через setHostAddress
-            setHostAddress(host);
-            setTimeout(10, java.util.concurrent.TimeUnit.SECONDS);
-            super.connect(port);
-            lastConnectedHost = host;
-            lastConnectedPort = port;
-            Log.d(TAG, "Connected legacy TCP");
-            return true;
-        } catch (Exception e) {
-            Log.e(TAG, "Legacy TCP connect failed: " + e.getMessage(), e);
-            return false;
-        }
-    }
-
-    /**
-     * Универсальный connect — выбирает TLS или legacy TCP по порту.
-     * Порт 5555 → legacy TCP, любой другой → TLS.
-     */
     public boolean connect(String host, int port) {
-        if (port == 5555) {
-            return connectLegacyTcp(host, port);
-        }
         return connectTls(host, port);
     }
 
-    /**
-     * Выполняет команду через ADB shell.
-     * При "Stream closed" (adbd перезапустился после tcpip:5555) автоматически
-     * переподключается и повторяет команду один раз.
-     * Вызывать только из фонового потока.
-     *
-     * @return stdout или null при ошибке
-     */
+    private boolean waitForHandshake(long timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                AdbStream stream = openStream("shell:echo ok");
+                InputStream is = stream.openInputStream();
+                byte[] buf = new byte[16];
+                int n = is.read(buf);
+                stream.close();
+                if (n > 0) return true;
+            } catch (Exception ignored) {
+            }
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {}
+        }
+        return false;
+    }
+
     public String runShellCommand(String command) {
         String result = runShellCommandOnce(command);
         if (result != null) return result;
 
-        // Null означает ошибку — пробуем реконнект если знаем порт
         if (lastConnectedPort > 0) {
             Log.w(TAG, "Shell failed — attempting reconnect on " + lastConnectedHost + ":" + lastConnectedPort);
             boolean reconnected = connect(lastConnectedHost, lastConnectedPort);
@@ -239,55 +176,10 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         }
     }
 
-    /**
-     * Стандартная ps-команда для получения списка процессов.
-     * Вызывать только из фонового потока.
-     */
     public String runPsCommand() {
         return runShellCommand(
                 "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
     }
-
-    /**
-     * Отправляет transport-команду "tcpip:5555" на adbd.
-     * Это переводит adbd из TLS/Wireless Debugging режима в классический TCP-режим
-     * на порту 5555 — он начинает слушать 127.0.0.1:5555 независимо от Wi-Fi.
-     *
-     * Это НЕ shell-команда, а host-transport-сервис ADB-протокола.
-     * После вызова adbd перезапускается — текущее соединение закроется.
-     * Нужно переподключиться на 127.0.0.1:5555.
-     *
-     * Вызывать из фонового потока.
-     *
-     * @return true если команда отправлена успешно
-     */
-    public boolean switchToTcpIp() {
-        AdbStream stream = null;
-        try {
-            stream = openStream("tcpip:5555");
-            Log.d(TAG, "tcpip:5555 sent — adbd restarting in TCP mode");
-            // Читаем ответ (обычно "restarting in TCP mode port: 5555")
-            try {
-                java.io.InputStream is = stream.openInputStream();
-                byte[] buf = new byte[256];
-                int n = is.read(buf);
-                if (n > 0) Log.d(TAG, "tcpip response: " + new String(buf, 0, n, "UTF-8").trim());
-            } catch (Exception ignored) {}
-            // После tcpip:5555 adbd перезапустится и будет слушать на 5555.
-            // Обновляем lastConnectedPort чтобы авто-реконнект в runShellCommand
-            // переподключался именно на 5555, а не на старый TLS-порт.
-            lastConnectedPort = 5555;
-            lastConnectedHost = "127.0.0.1";
-            return true;
-        } catch (Exception e) {
-            Log.e(TAG, "switchToTcpIp failed: " + e.getMessage(), e);
-            return false;
-        } finally {
-            if (stream != null) try { stream.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    // ── Генерация / загрузка ключей ───────────────────────────────────────────
 
     private synchronized void loadOrGenerateKeyPair() throws Exception {
         File ksFile = new File(context.getFilesDir(), KEYSTORE_FILE);
@@ -307,20 +199,18 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
             }
         }
 
-        // Генерируем RSA-2048
         Log.d(TAG, "Generating new RSA-2048 key pair");
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         kpg.initialize(2048);
         KeyPair kp = kpg.generateKeyPair();
 
-        // Self-signed X.509 через BouncyCastle
         long now = System.currentTimeMillis();
         X500Name subject = new X500Name("CN=ReAppzuku");
         JcaX509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
                 subject,
                 BigInteger.ONE,
                 new Date(now),
-                new Date(now + 10L * 365 * 24 * 60 * 60 * 1000), // 10 лет
+                new Date(now + 10L * 365 * 24 * 60 * 60 * 1000),
                 subject,
                 kp.getPublic());
         ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
@@ -328,7 +218,6 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         X509Certificate cert = new JcaX509CertificateConverter()
                 .getCertificate(certBuilder.build(signer));
 
-        // Сохраняем в PKCS12
         ks.load(null, KEYSTORE_PASSWORD);
         ks.setKeyEntry(KEYSTORE_ALIAS, kp.getPrivate(), KEYSTORE_PASSWORD,
                 new Certificate[]{cert});
