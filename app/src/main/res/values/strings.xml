@@ -358,4 +358,5 @@
     <string name="adb_notification_channel_desc">Wireless Debugging connection status</string>
     <string name="adb_notification_title">ADB Connected</string>
     <string name="adb_notification_text">Wireless Debugging active — process list is available</string>
+    <string name="bg_manager_kill_failed">Failed to kill selected apps</string>
 </resources>
