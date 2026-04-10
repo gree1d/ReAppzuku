@@ -41,6 +41,7 @@ public class ShappkyService extends Service {
 
     private ShellManager shellManager;
     private BackgroundAppManager appManager;
+    private RootServiceManager rootServiceManager;
     private KillTriggerReceiver screenOffReceiver;
 
     // True if background restricted apps are currently frozen
@@ -74,7 +75,13 @@ public class ShappkyService extends Service {
     public void onCreate() {
         super.onCreate();
         shellManager = new ShellManager(this, handler, executor);
-        appManager = new BackgroundAppManager(this, handler, executor, shellManager, null);
+        rootServiceManager = new RootServiceManager(this);
+        appManager = new BackgroundAppManager(this, handler, executor, shellManager, rootServiceManager);
+        executor.execute(() -> {
+            if (shellManager.hasRootAccess()) {
+                rootServiceManager.start();
+            }
+        });
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID_SERVICE)
@@ -334,6 +341,9 @@ public class ShappkyService extends Service {
         cancelShizukuLostNotification();
         if (screenOffReceiver != null) {
             unregisterReceiver(screenOffReceiver);
+        }
+        if (rootServiceManager != null) {
+            executor.execute(() -> rootServiceManager.stop());
         }
         handler.removeCallbacksAndMessages(null);
         super.onDestroy();

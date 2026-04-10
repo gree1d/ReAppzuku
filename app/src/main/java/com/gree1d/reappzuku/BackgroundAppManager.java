@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
+import com.gree1d.reappzuku.server.PsClient;
+
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 import static com.gree1d.reappzuku.AppConstants.*;
 
@@ -44,19 +46,19 @@ public class BackgroundAppManager {
     private final Handler handler;
     private final ExecutorService executor;
     private final ShellManager shellManager;
-    private final RootHelper rootHelper;
+    private final RootServiceManager rootServiceManager;
     private final List<AppModel> currentAppsList = new ArrayList<>();
     private boolean showSystemApps = false;
     private boolean showPersistentApps = false;
     private SharedPreferences sharedpreferences;
 
     public BackgroundAppManager(Context context, Handler handler, ExecutorService executor,
-            ShellManager shellManager, RootHelper rootHelper) {
+            ShellManager shellManager, RootServiceManager rootServiceManager) {
         this.context = context;
         this.handler = handler;
         this.executor = executor;
         this.shellManager = shellManager;
-        this.rootHelper = rootHelper;
+        this.rootServiceManager = rootServiceManager;
         this.sharedpreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 
@@ -69,11 +71,12 @@ public class BackgroundAppManager {
      *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
      */
     private String runPs(String psCommand) {
-        if (rootHelper != null
-                && rootHelper.isAdbConnected()
-                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return rootHelper.runPsViaAdb(psCommand);
+        if (rootServiceManager != null && shellManager.hasRootAccess()) {
+            Log.d(TAG, "runPs: via RootServiceManager");
+            rootServiceManager.ensureRunning();
+            return PsClient.execute();
         }
+        Log.d(TAG, "runPs: via ShellManager");
         return shellManager.runShellCommandAndGetFullOutput(psCommand);
     }
 
