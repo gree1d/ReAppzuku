@@ -70,9 +70,9 @@ public class BackgroundAppManager {
      */
     private String runPs(String psCommand) {
         if (rootHelper != null
-                && shellManager.hasRootAccess()
+                && rootHelper.isAdbConnected()
                 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return rootHelper.runPsViaAdb();
+            return rootHelper.runPsViaAdb(psCommand);
         }
         return shellManager.runShellCommandAndGetFullOutput(psCommand);
     }
@@ -1105,7 +1105,7 @@ public class BackgroundAppManager {
                 onComplete.run();
             }
         }, () -> {
-            Toast.makeText(context, "Failed to kill selected apps", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.bg_manager_kill_failed), Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 onComplete.run();
             }

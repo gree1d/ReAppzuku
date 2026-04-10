@@ -227,12 +227,22 @@ public class RootHelper {
 
     // ── ps via ADB shell ──────────────────────────────────────────────────────
 
-    public String runPsViaAdb() {
+    public boolean isAdbConnected() {
+        return adbClient != null && adbClient.isConnected();
+    }
+
+    /**
+     * Runs an arbitrary shell command via ADB (UID 2000 / shell).
+     * Use this instead of root shell on Android 10+ where su SELinux context
+     * blocks ps -A output.
+     * Must be called from a background thread.
+     */
+    public String runPsViaAdb(String command) {
         if (adbClient == null || !adbClient.isConnected()) {
             Log.w(TAG, "runPsViaAdb: not connected");
             return null;
         }
-        return adbClient.runPsCommand();
+        return adbClient.runShellCommand(command);
     }
 
     // ── Settings shortcut ─────────────────────────────────────────────────────
