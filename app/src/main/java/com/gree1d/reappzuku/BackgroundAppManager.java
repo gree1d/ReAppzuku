@@ -130,6 +130,7 @@ public class BackgroundAppManager {
             int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
 
             String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
+            Log.d(TAG, "dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
             if (dumpOutput == null) {
                 if (onComplete != null)
                     handler.post(onComplete);
@@ -137,7 +138,8 @@ public class BackgroundAppManager {
             }
 
             String psOutput = runPs(
-                    "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
+                    "ps -A");
+            Log.d(TAG, "ps output: " + (psOutput == null ? "null" : psOutput.trim().substring(0, Math.min(psOutput.trim().length(), 200))));
             if (psOutput == null || psOutput.trim().isEmpty()) {
                 if (onComplete != null)
                     handler.post(onComplete);

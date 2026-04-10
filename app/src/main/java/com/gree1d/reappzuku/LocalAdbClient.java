@@ -181,11 +181,6 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
         }
     }
 
-    public String runPsCommand() {
-        return runShellCommand(
-                "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
-    }
-
     private synchronized void loadOrGenerateKeyPair() throws Exception {
         File ksFile = new File(context.getFilesDir(), KEYSTORE_FILE);
         KeyStore ks = KeyStore.getInstance("PKCS12");
