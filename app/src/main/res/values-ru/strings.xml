@@ -353,4 +353,5 @@
     <string name="adb_notification_channel_desc">Статус подключения к Беспроводной отладке</string>
     <string name="adb_notification_title">ADB подключён</string>
     <string name="adb_notification_text">Беспроводная отладка активна — список процессов доступен</string>
+    <string name="bg_manager_kill_failed">Не удалось убить выбранные приложения</string>
 </resources>
