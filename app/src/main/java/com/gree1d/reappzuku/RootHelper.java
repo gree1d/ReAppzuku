@@ -142,9 +142,10 @@ public class RootHelper {
             return;
         }
 
+        discoveredPairingPort = -1;
         boolean paired = adbClient.pair("127.0.0.1", pairingPort, code);
+        AdbPairingService.stop(context);
         if (!paired) {
-            AdbPairingService.stop(context);
             showPairingNotification(context.getString(R.string.adb_error_pair_failed));
             notifyCallback(false, context.getString(R.string.adb_error_pair_failed));
             return;
@@ -152,7 +153,6 @@ public class RootHelper {
 
         int tlsPort = getWirelessDebuggingPort();
         if (tlsPort <= 0) {
-            AdbPairingService.stop(context);
             showPairingNotification(context.getString(R.string.adb_error_wd_not_enabled));
             notifyCallback(false, context.getString(R.string.adb_error_wd_not_enabled));
             return;
@@ -160,13 +160,11 @@ public class RootHelper {
 
         boolean connected = adbClient.connect("127.0.0.1", tlsPort);
         if (!connected) {
-            AdbPairingService.stop(context);
             showPairingNotification(context.getString(R.string.adb_error_connection_failed));
             notifyCallback(false, context.getString(R.string.adb_error_connection_failed));
             return;
         }
 
-        AdbPairingService.stop(context);
         prefs.edit()
                 .putBoolean(KEY_ADB_WIFI_RUNNING, true)
                 .putInt(KEY_ADB_TLS_PORT, tlsPort)

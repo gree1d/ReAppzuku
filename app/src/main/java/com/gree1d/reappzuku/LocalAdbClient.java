@@ -131,11 +131,16 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
                 byte[] buf = new byte[16];
                 int n = is.read(buf);
                 stream.close();
-                if (n > 0) return true;
-            } catch (Exception ignored) {
+                if (n > 0) {
+                    Log.d(TAG, "waitForHandshake: success");
+                    return true;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "waitForHandshake: " + e.getMessage());
             }
             try { Thread.sleep(200); } catch (InterruptedException ignored) {}
         }
+        Log.e(TAG, "waitForHandshake: timed out — shell:echo ok never succeeded");
         return false;
     }
 
