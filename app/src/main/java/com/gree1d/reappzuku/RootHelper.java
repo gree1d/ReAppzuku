@@ -98,13 +98,17 @@ public class RootHelper {
                 connected = true;
             } else if (adbClient != null) {
                 int savedPort = prefs.getInt(KEY_ADB_TLS_PORT, 0);
-                if (savedPort > 0 && hasWriteSecureSettings()) {
-                    Log.d(TAG, "Has WRITE_SECURE_SETTINGS + saved port " + savedPort
-                            + " — silent reconnect");
-                    connected = silentReconnect(savedPort);
-                    if (!connected) {
-                        // Порт устарел (перезагрузка) — сбрасываем, покажем баннер
-                        Log.w(TAG, "Silent reconnect failed — likely rebooted, clearing prefs");
+                if (savedPort > 0) {
+                    // adbd уже в TCP-режиме на порту 5555 — просто подключаемся.
+                    // Pairing не нужен — ключ уже авторизован в keystore.
+                    Log.d(TAG, "Reconnecting to adbd on 127.0.0.1:" + savedPort);
+                    connected = adbClient.connect("127.0.0.1", savedPort);
+                    if (connected) {
+                        Log.d(TAG, "Reconnected successfully");
+                        postConnectedNotification();
+                    } else {
+                        // Скорее всего телефон перезагрузился — adbd сбросился в USB-режим
+                        Log.w(TAG, "Reconnect failed — device likely rebooted");
                         prefs.edit()
                                 .putInt(KEY_ADB_TLS_PORT, 0)
                                 .putBoolean(KEY_ADB_WIFI_RUNNING, false)
@@ -115,7 +119,7 @@ public class RootHelper {
 
             boolean needs = !connected
                     && adbClient != null
-                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R; // WD только Android 11+
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
 
             new android.os.Handler(android.os.Looper.getMainLooper())
                     .post(() -> callback.accept(needs));
@@ -130,32 +134,6 @@ public class RootHelper {
      * 2. connect() — ключ уже в keystore, pairing не нужен
      * 3. Сразу выключаем Wireless Debugging — соединение не рвётся
      */
-    private boolean silentReconnect(int tlsPort) {
-        try {
-            // 1. Включаем WD
-            Settings.Global.putInt(context.getContentResolver(), "adb_wifi_enabled", 1);
-            // Даём adbd ~1 с подняться на порту
-            Thread.sleep(1000);
-
-            // 2. Подключаемся (ключ в keystore, повторный pairing не нужен)
-            boolean ok = adbClient.connect("127.0.0.1", tlsPort);
-
-            // 3. Сразу выключаем WD — уже установленное соединение не рвётся
-            Settings.Global.putInt(context.getContentResolver(), "adb_wifi_enabled", 0);
-
-            if (ok) {
-                Log.d(TAG, "Silent reconnect OK on port " + tlsPort);
-                postConnectedNotification();
-            } else {
-                Log.w(TAG, "Silent reconnect failed on port " + tlsPort);
-            }
-            return ok;
-        } catch (Exception e) {
-            Log.e(TAG, "silentReconnect exception: " + e.getMessage(), e);
-            return false;
-        }
-    }
-
     // ── Entry point from MainActivity ─────────────────────────────────────────
 
     public void startServiceFlow(Context activityContext,
@@ -197,7 +175,7 @@ public class RootHelper {
             return;
         }
 
-        // 2. Читаем TLS-порт
+        // 2. Читаем TLS-порт Wireless Debugging
         int tlsPort = getWirelessDebuggingPort();
         if (tlsPort <= 0) {
             AdbPairingService.stop(context);
@@ -206,7 +184,7 @@ public class RootHelper {
             return;
         }
 
-        // 3. Connect
+        // 3. Подключаемся по TLS-порту Wireless Debugging
         boolean connected = adbClient.connect("127.0.0.1", tlsPort);
         if (!connected) {
             AdbPairingService.stop(context);
@@ -215,28 +193,35 @@ public class RootHelper {
             return;
         }
 
-        // 4. Ключевой шаг: выдаём себе WRITE_SECURE_SETTINGS через ADB shell.
-        //    После этого при каждом запуске сможем включать WD программно.
-        grantWriteSecureSettingsViaAdb();
+        // 4. КЛЮЧЕВОЙ ШАГ: отправляем transport-команду "tcpip:5555".
+        //    adbd перезапускается и начинает слушать 127.0.0.1:5555 независимо от Wi-Fi.
+        //    После этого Wireless Debugging больше не нужен.
+        Log.d(TAG, "Sending tcpip:5555 transport command");
+        adbClient.switchToTcpIp();
+        adbClient.disconnect();
 
-        // 5. Сразу выключаем WD — соединение остаётся живым
-        try {
-            Settings.Global.putInt(context.getContentResolver(), "adb_wifi_enabled", 0);
-            Log.d(TAG, "Wireless Debugging disabled after connect — connection stays alive");
-        } catch (SecurityException e) {
-            // WRITE_SECURE_SETTINGS могло не выдаться мгновенно — не критично
-            Log.w(TAG, "Could not disable WD: " + e.getMessage());
+        // 5. Даём adbd ~2 с перезапуститься в TCP-режиме
+        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+
+        // 6. Переподключаемся на фиксированный loopback-порт 5555.
+        //    Ключ уже авторизован — повторный pairing не нужен никогда.
+        boolean reconnected = adbClient.connect("127.0.0.1", 5555);
+        if (!reconnected) {
+            AdbPairingService.stop(context);
+            showPairingNotification(context.getString(R.string.adb_error_connection_failed));
+            notifyCallback(false, context.getString(R.string.adb_error_connection_failed));
+            return;
         }
 
-        // 6. Сохраняем порт для следующих запусков
+        // 7. Успех. Сохраняем порт 5555 — при следующих запусках просто connect(5555)
         AdbPairingService.stop(context);
         prefs.edit()
                 .putBoolean(KEY_ADB_WIFI_RUNNING, true)
-                .putInt(KEY_ADB_TLS_PORT, tlsPort)
+                .putInt(KEY_ADB_TLS_PORT, 5555)
                 .apply();
         cancelPairingNotification();
         postConnectedNotification();
-        Log.d(TAG, "Connected. TLS port saved: " + tlsPort);
+        Log.d(TAG, "Connected on loopback 127.0.0.1:5555 — survives Wi-Fi off and app restart");
         notifyCallback(true, null);
     }
 
@@ -354,46 +339,9 @@ public class RootHelper {
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /**
-     * Выдаём себе WRITE_SECURE_SETTINGS через активное ADB-соединение.
-     * Однократная операция после первого pairing.
-     */
-    private void grantWriteSecureSettingsViaAdb() {
-        String pkg = context.getPackageName();
-        String result = adbClient.runShellCommand(
-                "pm grant " + pkg + " android.permission.WRITE_SECURE_SETTINGS");
-        Log.d(TAG, "Grant WRITE_SECURE_SETTINGS: " + result);
-    }
-
-    /**
-     * Проверяем наличие WRITE_SECURE_SETTINGS — пробуем записать в Settings.Global.
-     */
-    private boolean hasWriteSecureSettings() {
-        try {
-            Settings.Global.putInt(context.getContentResolver(),
-                    "reappzuku_probe", 1);
-            Settings.Global.putInt(context.getContentResolver(),
-                    "reappzuku_probe", 0);
-            return true;
-        } catch (SecurityException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Читает текущий TLS-порт Wireless Debugging.
-     * Сначала через Settings.Global (не требует root), потом через shell fallback.
+     * Читает текущий TLS-порт Wireless Debugging через shell (getprop).
      */
     private int getWirelessDebuggingPort() {
-        try {
-            int port = Settings.Global.getInt(context.getContentResolver(),
-                    "adb_wifi_port", 0);
-            if (port > 0) {
-                Log.d(TAG, "TLS port from Settings.Global: " + port);
-                return port;
-            }
-        } catch (Exception ignored) {}
-
-        // Fallback через shell
         String portStr = shellManager.runShellCommandAndGetFullOutput(
                 "getprop service.adb.tls.port");
         if (portStr == null) return 0;

@@ -185,6 +185,40 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
                 "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
     }
 
+    /**
+     * Отправляет transport-команду "tcpip:5555" на adbd.
+     * Это переводит adbd из TLS/Wireless Debugging режима в классический TCP-режим
+     * на порту 5555 — он начинает слушать 127.0.0.1:5555 независимо от Wi-Fi.
+     *
+     * Это НЕ shell-команда, а host-transport-сервис ADB-протокола.
+     * После вызова adbd перезапускается — текущее соединение закроется.
+     * Нужно переподключиться на 127.0.0.1:5555.
+     *
+     * Вызывать из фонового потока.
+     *
+     * @return true если команда отправлена успешно
+     */
+    public boolean switchToTcpIp() {
+        AdbStream stream = null;
+        try {
+            stream = openStream("tcpip:5555");
+            Log.d(TAG, "tcpip:5555 sent — adbd restarting in TCP mode");
+            // Читаем ответ (обычно "restarting in TCP mode port: 5555")
+            try {
+                java.io.InputStream is = stream.openInputStream();
+                byte[] buf = new byte[256];
+                int n = is.read(buf);
+                if (n > 0) Log.d(TAG, "tcpip response: " + new String(buf, 0, n, "UTF-8").trim());
+            } catch (Exception ignored) {}
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "switchToTcpIp failed: " + e.getMessage(), e);
+            return false;
+        } finally {
+            if (stream != null) try { stream.close(); } catch (Exception ignored) {}
+        }
+    }
+
     // ── Генерация / загрузка ключей ───────────────────────────────────────────
 
     private synchronized void loadOrGenerateKeyPair() throws Exception {
