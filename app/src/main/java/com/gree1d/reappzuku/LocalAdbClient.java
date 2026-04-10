@@ -131,25 +131,66 @@ public class LocalAdbClient extends AbsAdbConnectionManager {
     private volatile String lastConnectedHost = "127.0.0.1";
 
     /**
-     * Подключение к TLS-порту Wireless Debugging.
+     * Подключение к TLS-порту Wireless Debugging (Wireless Debugging, случайный порт).
+     * Использует двухаргументный connect(host, port) — TLS-путь.
      *
      * @param host    "127.0.0.1"
      * @param tlsPort из {@code getprop service.adb.tls.port}
      * @return true при успехе
      */
-    public boolean connect(String host, int tlsPort) {
+    public boolean connectTls(String host, int tlsPort) {
         try {
             disconnect();
-            Log.d(TAG, "Connecting " + host + ":" + tlsPort);
+            Log.d(TAG, "Connecting TLS " + host + ":" + tlsPort);
+            // Двухаргументный connect — использует TLS (Wireless Debugging протокол)
             super.connect(host, tlsPort);
             lastConnectedHost = host;
             lastConnectedPort = tlsPort;
-            Log.d(TAG, "Connected");
+            Log.d(TAG, "Connected TLS");
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Connect failed: " + e.getMessage(), e);
+            Log.e(TAG, "TLS connect failed: " + e.getMessage(), e);
             return false;
         }
+    }
+
+    /**
+     * Подключение к legacy TCP-порту 5555 (plain RSA AUTH, без TLS).
+     * Используется после tcpip:5555.
+     * Как делает PMX: setTimeout + connect(port) без host.
+     *
+     * @param host "127.0.0.1"
+     * @param port 5555
+     * @return true при успехе
+     */
+    public boolean connectLegacyTcp(String host, int port) {
+        try {
+            disconnect();
+            Log.d(TAG, "Connecting legacy TCP " + host + ":" + port);
+            // Одноаргументный connect(port) — legacy TCP путь без TLS
+            // Сначала устанавливаем хост через setHostAddress
+            setHostAddress(host);
+            setTimeout(10, java.util.concurrent.TimeUnit.SECONDS);
+            super.connect(port);
+            lastConnectedHost = host;
+            lastConnectedPort = port;
+            Log.d(TAG, "Connected legacy TCP");
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Legacy TCP connect failed: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Универсальный connect — выбирает TLS или legacy TCP по порту.
+     * Порт 5555 → legacy TCP, любой другой → TLS.
+     */
+    public boolean connect(String host, int port) {
+        if (port == 5555) {
+            return connectLegacyTcp(host, port);
+        }
+        return connectTls(host, port);
     }
 
     /**
