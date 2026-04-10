@@ -198,7 +198,7 @@ public class RootHelper {
         //    После этого Wireless Debugging больше не нужен.
         Log.d(TAG, "Sending tcpip:5555 transport command");
         adbClient.switchToTcpIp();
-        adbClient.disconnect();
+        try { adbClient.disconnect(); } catch (Exception ignored) {}
 
         // 5. Даём adbd ~2 с перезапуститься в TCP-режиме
         try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
