@@ -25,7 +25,7 @@ public class RootServiceManager {
         String apkPath = context.getPackageCodePath();
         String cmd = "CLASSPATH=" + apkPath +
                 " app_process /system/bin " + SERVER_CLASS +
-                " >/dev/null 2>&1 & echo $!";
+                " 2>&1 | logwrapper -t PsServer &\necho $!";
         try {
             Process su = Runtime.getRuntime().exec("su");
             DataOutputStream os = new DataOutputStream(su.getOutputStream());

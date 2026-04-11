@@ -2,13 +2,13 @@ package com.gree1d.reappzuku.server;
 
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
-import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintStream;
 
 public class PsServer {
 
@@ -16,17 +16,22 @@ public class PsServer {
     public static final String SOCKET_NAME = "reappzuku_ps";
     public static final String END_MARKER = "__END__";
 
+    private static void log(String msg) {
+        System.err.println(TAG + ": " + msg);
+    }
+
     public static void main(String[] args) {
-        Log.i(TAG, "PsServer starting");
+        log("starting");
         try {
             LocalServerSocket serverSocket = new LocalServerSocket(SOCKET_NAME);
-            Log.i(TAG, "Listening on " + SOCKET_NAME);
+            log("listening on " + SOCKET_NAME);
             while (true) {
                 LocalSocket client = serverSocket.accept();
                 handleClient(client);
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Server error: " + e.getMessage(), e);
+        } catch (Throwable e) {
+            log("fatal: " + e);
+            e.printStackTrace(System.err);
             System.exit(1);
         }
     }
@@ -45,7 +50,7 @@ public class PsServer {
             os.write((END_MARKER + "\n").getBytes("UTF-8"));
             os.flush();
         } catch (IOException e) {
-            Log.e(TAG, "Client error: " + e.getMessage());
+            log("client error: " + e.getMessage());
         } finally {
             try { client.close(); } catch (IOException ignored) {}
         }
@@ -64,10 +69,11 @@ public class PsServer {
             }
             process.waitFor();
         } catch (IOException | InterruptedException e) {
-            Log.e(TAG, "ps failed: " + e.getMessage());
+            log("ps failed: " + e.getMessage());
         } finally {
             if (process != null) process.destroy();
         }
         return sb.toString();
     }
 }
+
