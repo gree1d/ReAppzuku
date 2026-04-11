@@ -147,7 +147,6 @@
     <string name="settings_theme_amoled">AMOLED (чёрный)</string>
     <string name="settings_accent_title">Цветовой акцент</string>
     <string name="settings_accent_subtitle">Основной цвет интерфейса</string>
-    <string name="settings_section_automation">Автоматизация</string>
     <string name="settings_background_service_title">Фоновый сервис</string>
     <string name="settings_background_service_subtitle">Необходим для работы Auto-Kill по интервалу и при выключении экрана</string>
     <string name="settings_periodic_kill_title">Периодический Auto-Kill</string>
@@ -159,7 +158,7 @@
     <string name="settings_ram_threshold_title">Лимит ОЗУ</string>
     <string name="settings_ram_threshold_default">Auto-Kill только при загруженности ОЗУ 80%%</string>
     <string name="settings_ram_threshold_summary">Auto-Kill только при загруженности ОЗУ %1$d%%</string>
-    <string name="settings_section_kill_rules">Настройки Auto-Kill</string>
+    <string name="settings_section_kill_rules">Управление Auto-Kill</string>
     <string name="settings_mode_title">Режим работы Auto-Kill</string>
     <string name="settings_mode_whitelist">Белый список</string>
     <string name="settings_mode_blacklist">Черный список</string>
