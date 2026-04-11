@@ -321,37 +321,5 @@
     <string name="dialog_unsafe_whitelist_message">Вы выбрали режим Белый список, но ваш список пуст. В режиме Root это приведет к попытке завершения всех системных процессов, что вызовет перезагрузку устройства (Kernel/System panic). Сначала добавьте важные приложения в белый список.</string>
     <string name="dialog_unsafe_whitelist_ok">Понятно</string>
     <string name="toast_error_whitelist_empty">Auto-Kill отменен: Белый список пуст</string>
-
-    <!-- ADB banner -->
-    <string name="adb_banner_title">Требуется ADB подключение</string>
-    <string name="adb_banner_description">На Android 10+ ps недоступен через root из-за SELinux. Нажмите кнопку, включите Беспроводную отладку и введите код из уведомления.</string>
-    <string name="adb_banner_btn_start">Запустить сервис</string>
-    <string name="adb_banner_btn_start_loading">Подключение…</string>
-    <string name="adb_banner_btn_info">Что это?</string>
-
-    <!-- Info dialog -->
-    <string name="adb_info_title">Зачем нужен ADB-сервис?</string>
-    <string name="adb_info_btn_ok">Понятно</string>
-    <string name="adb_info_message">На Android 10+ SELinux блокирует команду \"ps\" при запуске через root.\n\nВ контексте ADB shell (Беспроводная отладка) та же команда работает корректно — именно так работает Shizuku.\n\nКак подключиться:\n1. Нажмите \"Запустить сервис\"\n2. В открывшихся настройках включите \"Беспроводная отладка\"\n3. Нажмите \"Подключить устройство с помощью ввода кода\"\n4. Введите 6-ти значный КОД из диалога в уведомление приложения\n\n⚠ При перезагрузке потребуется повторное подключение.</string>
-    
-    <!-- Toasts / errors -->
-    <string name="adb_service_started">ADB подключён</string>
-    <string name="adb_service_failed">Ошибка: %s</string>
-    <string name="adb_error_wd_not_enabled">Включите Беспроводную отладку в настройках разработчика</string>
-    <string name="adb_error_connection_failed">Не удалось подключиться. Попробуйте снова.</string>
-    <string name="adb_error_pair_failed">Неверный код или порт. Попробуйте снова.</string>
-    <string name="adb_error_invalid_format">Неверный формат. Введите КОД, например 123456</string>
-
-    <!-- Notification: pairing -->
-    <string name="adb_notif_pair_title">ReAppzuku — подключение ADB</string>
-    <string name="adb_notif_pair_text">Включите Беспроводную отладку → «Подключить устройство с помощью ввода кода» → введите 6-ти значный код сюда</string>
-    <string name="adb_notif_input_hint">КОД, например 123456</string>
-    <string name="adb_notif_btn_connect">Подключить</string>
-
-    <!-- Notification: connected -->
-    <string name="adb_notification_channel_name">ADB подключение</string>
-    <string name="adb_notification_channel_desc">Статус подключения к Беспроводной отладке</string>
-    <string name="adb_notification_title">ADB подключён</string>
-    <string name="adb_notification_text">Беспроводная отладка активна — список процессов доступен</string>
     <string name="bg_manager_kill_failed">Не удалось убить выбранные приложения</string>
 </resources>
