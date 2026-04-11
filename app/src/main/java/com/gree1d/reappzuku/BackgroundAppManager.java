@@ -69,8 +69,7 @@ public class BackgroundAppManager {
      *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
      */
     private String runPs(String psCommand) {
-        Log.d(TAG, "runPs: via ShellManager (Shizuku or Root)");
-        return shellManager.runShellCommandAndGetFullOutput(psCommand);
+        return shellManager.runShizukuCommandAndGetFullOutput(psCommand);
     }
 
     public boolean supportsBackgroundRestriction() {
@@ -125,8 +124,7 @@ public class BackgroundAppManager {
             Set<String> blacklistedApps = getBlacklistedApps();
             int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
 
-            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
-            Log.d(TAG, "dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
+            String dumpOutput = shellManager.runShizukuCommandAndGetFullOutput("dumpsys activity activities");
             if (dumpOutput == null) {
                 if (onComplete != null)
                     handler.post(onComplete);

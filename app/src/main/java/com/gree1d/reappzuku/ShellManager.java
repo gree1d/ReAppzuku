@@ -277,6 +277,22 @@ public class ShellManager {
     }
 
     /**
+     * Run a shell command via Shizuku only, even if Root is available.
+     * Use for commands blocked by SELinux in root context (e.g. ps -A, dumpsys).
+     * This method is blocking and should be called from a background thread.
+     */
+    public String runShizukuCommandAndGetFullOutput(String command) {
+        if (hasShizukuPermission()) {
+            return executeShizukuCommandAndGetFullOutput(command);
+        }
+        Log.w(TAG, "runShizukuCommandAndGetFullOutput: Shizuku not available, falling back to root");
+        if (hasRootAccess()) {
+            return executeRootCommandAndGetFullOutput(command);
+        }
+        return null;
+    }
+
+    /**
      * Freeze a package via Shizuku Binder API using reflection.
      * Sets COMPONENT_ENABLED_STATE_DISABLED_USER so the app cannot restart until unfrozen.
      * Should only be called from a background thread.
