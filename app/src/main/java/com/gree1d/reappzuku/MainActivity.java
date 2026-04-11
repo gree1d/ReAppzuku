@@ -49,7 +49,6 @@ public class MainActivity extends BaseActivity {
     private ShellManager shellManager;
     private BackgroundAppManager appManager;
     private RamMonitor ramMonitor;
-    private RootHelper rootHelper;
     private BackgroundAppsRecyclerViewAdapter listAdapter;
     private final List<AppModel> appsDataList = new ArrayList<>();
     private final List<AppModel> fullAppsList = new ArrayList<>();
@@ -100,8 +99,7 @@ public class MainActivity extends BaseActivity {
 
         // Initialize components
         shellManager = new ShellManager(this, handler, executor);
-        rootHelper = new RootHelper(this, handler, shellManager);
-        appManager = new BackgroundAppManager(this, handler, executor, shellManager, rootHelper);
+        appManager = new BackgroundAppManager(this, handler, executor, shellManager, null);
         ramMonitor = new RamMonitor(this, handler, binding.ramUsage, binding.ramUsageText);
 
         listAdapter = new BackgroundAppsRecyclerViewAdapter(this);
@@ -119,7 +117,6 @@ public class MainActivity extends BaseActivity {
         shellManager.checkShellPermissions();
         loadBackgroundApps();
         ramMonitor.startMonitoring();
-        setupAdbBanner();
     }
 
     @Override
@@ -135,7 +132,6 @@ public class MainActivity extends BaseActivity {
         // Reload settings in case they changed in SettingsActivity
         loadSettingsAndApplyToManager();
         loadBackgroundApps();
-        refreshAdbBannerVisibility();
     }
 
     private void loadSettingsAndApplyToManager() {
@@ -184,66 +180,6 @@ public class MainActivity extends BaseActivity {
                 showAppOptionsMenu(app, anchor);
             }
         });
-    }
-
-    /**
-     * One-time setup: wires button listeners for the root ADB banner.
-     * Call once from onCreate().
-     */
-    private void setupAdbBanner() {
-        binding.adbBanner.btnStartAdbService.setOnClickListener(v -> startAdbService());
-        binding.adbBanner.btnAdbServiceInfo.setOnClickListener(v -> showAdbServiceInfoDialog());
-        refreshAdbBannerVisibility();
-    }
-
-    /**
-     * Checks (off main thread) whether the banner should be visible and updates UI.
-     */
-    private void refreshAdbBannerVisibility() {
-        rootHelper.checkNeedsAdbService(executor, needs ->
-                binding.adbBanner.getRoot().setVisibility(
-                        needs ? android.view.View.VISIBLE : android.view.View.GONE));
-    }
-
-    /** Starts ADB WiFi service and reacts to success / failure. */
-    private void startAdbService() {
-        binding.adbBanner.btnStartAdbService.setEnabled(false);
-        binding.adbBanner.btnStartAdbService.setText(R.string.adb_banner_btn_start_loading);
-
-        rootHelper.startServiceFlow(this, executor, new RootHelper.AdbServiceCallback() {
-            @Override
-            public void onStarted() {
-                Toast.makeText(MainActivity.this,
-                        R.string.adb_service_started, Toast.LENGTH_SHORT).show();
-                binding.adbBanner.getRoot().setVisibility(android.view.View.GONE);
-                resetStartButton();
-            }
-
-            @Override
-            public void onFailed(String reason) {
-                Toast.makeText(MainActivity.this,
-                        getString(R.string.adb_service_failed, reason),
-                        Toast.LENGTH_LONG).show();
-                resetStartButton();
-            }
-
-            @Override
-            public void onStopped() { resetStartButton(); }
-
-            private void resetStartButton() {
-                binding.adbBanner.btnStartAdbService.setEnabled(true);
-                binding.adbBanner.btnStartAdbService.setText(R.string.adb_banner_btn_start);
-            }
-        });
-    }
-
-    /** Shows the "What is it?" explanation dialog. */
-    private void showAdbServiceInfoDialog() {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(R.string.adb_info_title)
-                .setMessage(R.string.adb_info_message)
-                .setPositiveButton(R.string.adb_info_btn_ok, null)
-                .show();
     }
 
     private void showAppOptionsMenu(AppModel app, View anchor) {

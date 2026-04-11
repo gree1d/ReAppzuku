@@ -37,12 +37,6 @@ public final class AppConstants {
         public static final String CHANNEL_ID_SERVICE = "AppzukuChannel";
         public static final String CHANNEL_ID_ACTIONS = "AppzukuActions";
 
-        // ADB WiFi service
-        public static final int    NOTIFICATION_ID_ADB_SERVICE   = 4;
-    public static final int    NOTIFICATION_ID_ADB_CONNECTED = 5;
-    public static final String CHANNEL_ID_ADB_SERVICE        = "AdbServiceChannel";
-    public static final int    ADB_WIFI_PORT                 = 5555;
-
         // Sort Modes
         public static final int SORT_MODE_DEFAULT = 0;
         public static final int SORT_MODE_RAM_DESC = 1;

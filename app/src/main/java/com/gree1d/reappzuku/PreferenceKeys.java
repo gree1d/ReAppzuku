@@ -51,7 +51,4 @@ public final class PreferenceKeys {
     public static final String KEY_SLEEP_MODE_APPS = "sleepModeApps";
     public static final String KEY_SLEEP_MODE_DELAY = "sleepModeDelay";
 
-    // ADB WiFi service state
-    public static final String KEY_ADB_WIFI_RUNNING = "adb_wifi_running";
-    public static final String KEY_ADB_TLS_PORT = "adb_tls_port";
 }
