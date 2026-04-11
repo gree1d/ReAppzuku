@@ -46,6 +46,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?android:attr/colorBackground"
+            android:paddingBottom="6dp"
             android:orientation="horizontal">
 
             <TextView
@@ -61,7 +62,7 @@
             <ProgressBar
                 android:id="@+id/ram_usage"
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
+                android:layout_height="7dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="2dp"
                 android:layout_marginEnd="5dp"
