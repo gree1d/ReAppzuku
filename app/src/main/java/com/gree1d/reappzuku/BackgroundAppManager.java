@@ -124,8 +124,16 @@ public class BackgroundAppManager {
             Set<String> blacklistedApps = getBlacklistedApps();
             int killMode = getKillMode(); // 0 = Whitelist, 1 = Blacklist
 
+            Log.d(TAG, "=== performAutoKill start ===");
+            Log.d(TAG, "killMode=" + (killMode == 1 ? "BLACKLIST" : "WHITELIST"));
+            Log.d(TAG, "whitelistedApps=" + whitelistedApps);
+            Log.d(TAG, "blacklistedApps=" + blacklistedApps);
+            Log.d(TAG, "hiddenApps=" + hiddenApps);
+
             String dumpOutput = shellManager.runShizukuCommandAndGetFullOutput("dumpsys activity activities");
+            Log.d(TAG, "dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
             if (dumpOutput == null) {
+                Log.w(TAG, "dumpsys returned null — aborting kill");
                 if (onComplete != null)
                     handler.post(onComplete);
                 return;
@@ -133,8 +141,9 @@ public class BackgroundAppManager {
 
             String psOutput = runPs(
                     "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
-            Log.d(TAG, "ps output: " + (psOutput == null ? "null" : psOutput.trim().substring(0, Math.min(psOutput.trim().length(), 200))));
+            Log.d(TAG, "ps output length: " + (psOutput == null ? "null" : psOutput.trim().length()));
             if (psOutput == null || psOutput.trim().isEmpty()) {
+                Log.w(TAG, "ps returned null/empty — aborting kill");
                 if (onComplete != null)
                     handler.post(onComplete);
                 return;
@@ -160,24 +169,40 @@ public class BackgroundAppManager {
             List<String> toKill = runningPackages.stream()
                     .filter(pkg -> {
                         try {
-                            if (hiddenApps.contains(pkg) || ProtectedApps.isProtected(context, pkg)
-                                    || containsPackage(dumpOutput, pkg)) {
+                            if (hiddenApps.contains(pkg)) {
+                                Log.d(TAG, "SKIP (hidden): " + pkg);
                                 return false;
                             }
-
+                            if (ProtectedApps.isProtected(context, pkg)) {
+                                Log.d(TAG, "SKIP (protected): " + pkg);
+                                return false;
+                            }
+                            if (containsPackage(dumpOutput, pkg)) {
+                                Log.d(TAG, "SKIP (foreground): " + pkg);
+                                return false;
+                            }
                             if (killMode == 1) { // Blacklist Mode (Default)
-                                return blacklistedApps.contains(pkg);
+                                boolean inBlacklist = blacklistedApps.contains(pkg);
+                                Log.d(TAG, (inBlacklist ? "KILL (blacklist): " : "SKIP (not in blacklist): ") + pkg);
+                                return inBlacklist;
                             } else { // Whitelist Mode
-                                if (whitelistedApps.contains(pkg))
+                                if (whitelistedApps.contains(pkg)) {
+                                    Log.d(TAG, "SKIP (whitelisted): " + pkg);
                                     return false;
+                                }
                                 ApplicationInfo appInfo = pm.getApplicationInfo(pkg, 0);
-                                return (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) == 0;
+                                boolean persistent = (appInfo.flags & ApplicationInfo.FLAG_PERSISTENT) != 0;
+                                Log.d(TAG, (persistent ? "SKIP (persistent): " : "KILL (whitelist mode): ") + pkg);
+                                return !persistent;
                             }
                         } catch (PackageManager.NameNotFoundException e) {
+                            Log.d(TAG, "SKIP (not found): " + pkg);
                             return false;
                         }
                     })
                     .collect(Collectors.toList());
+
+            Log.d(TAG, "toKill list (" + toKill.size() + "): " + toKill);
 
             if (!toKill.isEmpty()) {
                 Map<String, Long> recoveredKbByPackage = new HashMap<>();
