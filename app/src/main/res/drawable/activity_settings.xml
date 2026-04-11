@@ -233,7 +233,7 @@
                 android:background="@color/divider_color"
                 android:layout_marginVertical="16dp" />
 
-            <!-- 2. Automation -->
+            <!-- 2. Kill Rules -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -242,7 +242,7 @@
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
-
+            
             <!-- Background Service Master Toggle -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -250,20 +250,20 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp">
-
+            
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-
+            
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_background_service_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-
+            
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -271,13 +271,13 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-
+            
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_auto_kill"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-
+            
             <!-- Periodic Auto-Kill Toggle -->
             <LinearLayout
                 android:id="@+id/layout_periodic_kill"
@@ -287,20 +287,20 @@
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp"
                 android:paddingStart="16dp">
-
+            
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-
+            
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_periodic_kill_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-
+            
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -308,13 +308,13 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-
+            
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_periodic_kill"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-
+            
             <!-- Kill Interval Selector -->
             <LinearLayout
                 android:id="@+id/layout_kill_interval"
@@ -324,14 +324,14 @@
                 android:paddingVertical="12dp"
                 android:paddingStart="32dp"
                 android:background="?attr/selectableItemBackground">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_check_frequency_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-
+            
                 <TextView
                     android:id="@+id/text_kill_interval"
                     android:layout_width="wrap_content"
@@ -340,7 +340,7 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-
+            
             <!-- Kill on Screen Lock -->
             <LinearLayout
                 android:id="@+id/layout_screen_lock"
@@ -350,20 +350,20 @@
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp"
                 android:paddingStart="16dp">
-
+            
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-
+            
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_screen_lock_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-
+            
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -371,13 +371,13 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-
+            
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_kill_screen_off"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-
+            
             <!-- Smart RAM Threshold -->
             <LinearLayout
                 android:id="@+id/layout_ram_threshold_toggle"
@@ -387,20 +387,20 @@
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp"
                 android:paddingStart="16dp">
-
+            
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-
+            
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_ram_threshold_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-
+            
                     <TextView
                         android:id="@+id/text_ram_threshold"
                         android:layout_width="wrap_content"
@@ -409,23 +409,14 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-
+            
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_ram_threshold"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-
-            <!-- Mode Auto-Kill -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_section_kill_rules"
-                android:textColor="?attr/colorSecondary"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-
+            
+            <!-- Kill Mode -->
             <LinearLayout
                 android:id="@+id/layout_kill_mode"
                 android:layout_width="match_parent"
@@ -433,14 +424,14 @@
                 android:orientation="vertical"
                 android:paddingVertical="12dp"
                 android:background="?attr/selectableItemBackground">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_mode_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-
+            
                 <TextView
                     android:id="@+id/text_kill_mode"
                     android:layout_width="wrap_content"
@@ -449,7 +440,8 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-
+            
+            <!-- Whitelist -->
             <LinearLayout
                 android:id="@+id/layout_whitelist"
                 android:layout_width="match_parent"
@@ -457,14 +449,14 @@
                 android:orientation="vertical"
                 android:paddingVertical="12dp"
                 android:background="?attr/selectableItemBackground">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_whitelist_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -472,7 +464,8 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-
+            
+            <!-- Blacklist -->
             <LinearLayout
                 android:id="@+id/layout_blacklist"
                 android:layout_width="match_parent"
@@ -481,14 +474,14 @@
                 android:paddingVertical="12dp"
                 android:background="?attr/selectableItemBackground"
                 android:visibility="gone">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_blacklist_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -496,12 +489,6 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider_color"
-                android:layout_marginVertical="16dp" />
 
             <!-- 4. Advanced & Tools -->
             <TextView
