@@ -58,14 +58,16 @@
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
-            <com.google.android.material.progressindicator.LinearProgressIndicator
+            <ProgressBar
                 android:id="@+id/ram_usage"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
+                android:layout_height="8dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="2dp"
                 android:layout_marginEnd="5dp"
                 android:indeterminate="false"
-                app:trackCornerRadius="8dp" />
+                android:progressDrawable="@drawable/progress_bar"
+                style="?android:progressBarStyleHorizontal" />
         </LinearLayout>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
