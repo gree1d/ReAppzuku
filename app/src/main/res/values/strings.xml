@@ -147,7 +147,6 @@
     <string name="settings_theme_amoled">AMOLED (black)</string>
     <string name="settings_accent_title">Accent color</string>
     <string name="settings_accent_subtitle">Primary interface color</string>
-    <string name="settings_section_automation">Automation</string>
     <string name="settings_background_service_title">Background service</string>
     <string name="settings_background_service_subtitle">Required for interval-based Auto-Kill and screen-off Auto-Kill</string>
     <string name="settings_periodic_kill_title">Periodic Auto-Kill</string>
@@ -159,7 +158,7 @@
     <string name="settings_ram_threshold_title">RAM limit</string>
     <string name="settings_ram_threshold_default">Auto-Kill only when RAM usage exceeds 80%%</string>
     <string name="settings_ram_threshold_summary">Auto-Kill only when RAM usage exceeds %1$d%%</string>
-    <string name="settings_section_kill_rules">Auto-Kill settings</string>
+    <string name="settings_section_kill_rules">Auto-Kill management</string>
     <string name="settings_mode_title">Auto-Kill mode</string>
     <string name="settings_mode_whitelist">Whitelist</string>
     <string name="settings_mode_blacklist">Blacklist</string>
