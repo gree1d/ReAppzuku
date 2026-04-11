@@ -71,11 +71,6 @@
                 android:name="android.service.quicksettings.ACTIVE_TILE"
                 android:value="true" />
         </service>
-        
-        <service
-    android:name=".AdbPairingService"
-    android:foregroundServiceType="connectedDevice"
-    android:exported="false" />
 
         <service 
             android:name=".ShappkyService" 
@@ -94,10 +89,6 @@
             </intent-filter>
         </receiver>
         
-        <receiver 
-            android:name=".AdbPairingReceiver"
-            android:exported="false" />
-
         <receiver android:name=".AppzukuWidget" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
