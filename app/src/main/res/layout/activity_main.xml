@@ -62,10 +62,10 @@
             <ProgressBar
                 android:id="@+id/ram_usage"
                 android:layout_width="match_parent"
-                android:layout_height="7dp"
+                android:layout_height="6dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="5dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="7dp"
                 android:indeterminate="false"
                 android:progressDrawable="@drawable/progress_bar"
                 style="?android:progressBarStyleHorizontal" />
