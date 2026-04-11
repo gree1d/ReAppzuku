@@ -141,7 +141,7 @@ public class BackgroundAppManager {
             }
 
             String psOutput = runPs(
-                    "ps -A");
+                    "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
             Log.d(TAG, "ps output: " + (psOutput == null ? "null" : psOutput.trim().substring(0, Math.min(psOutput.trim().length(), 200))));
             if (psOutput == null || psOutput.trim().isEmpty()) {
                 if (onComplete != null)
