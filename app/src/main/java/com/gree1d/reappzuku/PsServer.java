@@ -5,103 +5,103 @@ import android.net.LocalSocket;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 public class PsServer {
 
-    private static final String TAG = "PsServer";
     public static final String SOCKET_NAME = "reappzuku_ps";
     public static final String END_MARKER = "__END__";
+    public static final String LOG_FILENAME = "psserver.log";
 
-    // Файл лога — читается RootServiceManager и ретранслируется в logcat
-    public static final String LOG_FILE = "/data/local/tmp/psserver_debug.log";
+    private static FileOutputStream logOut;
 
-    private static FileWriter logWriter;
-    private static final SimpleDateFormat DATE_FMT =
-            new SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US);
-
-    private static synchronized void log(char level, String msg) {
-        String line = DATE_FMT.format(new Date()) + " " + level + "/" + TAG + ": " + msg;
-        // stderr — подхватывается при ручном запуске
-        System.err.println(line);
-        // файл — основной канал для RootServiceManager
-        try {
-            if (logWriter == null) {
-                logWriter = new FileWriter(LOG_FILE, /*append=*/true);
-            }
-            logWriter.write(line + "\n");
-            logWriter.flush();
-        } catch (IOException e) {
-            System.err.println("LOG_WRITE_FAILED: " + e.getMessage());
+    // Самое примитивное логирование — просто байты в файл.
+    // Никаких BufferedWriter, никакого SimpleDateFormat до открытия файла.
+    private static void log(String msg) {
+        String line = msg + "\n";
+        if (logOut != null) {
+            try {
+                logOut.write(line.getBytes("UTF-8"));
+                logOut.flush();
+            } catch (IOException ignored) {}
         }
+        // Дублируем в stderr на случай ручного запуска
+        System.err.print(line);
     }
 
-    private static void logV(String msg) { log('V', msg); }
-    private static void logD(String msg) { log('D', msg); }
-    private static void logW(String msg) { log('W', msg); }
-    private static void logE(String msg) { log('E', msg); }
-    private static void logE(String msg, Throwable t) {
+    private static void log(String msg, Throwable t) {
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
-        log('E', msg + "\n" + sw);
+        log(msg + "\n" + sw.toString());
     }
 
     // ----------------------------------------------------------------
 
     public static void main(String[] args) {
-        // Очищаем старый лог при каждом старте
-        try { new File(LOG_FILE).delete(); } catch (Exception ignored) {}
-
-        logD("main() entered, pid=" + getPid() + " uid=" + getUid());
-        logD("java.version=" + System.getProperty("java.version"));
-
+        // args[0] — путь к files/ папке приложения, передаётся из RootServiceManager
+        // Открываем файл как самое первое действие, до любой другой логики
         if (args != null && args.length > 0) {
-            StringBuilder sb = new StringBuilder("args:");
-            for (String a : args) sb.append(" [").append(a).append("]");
-            logV(sb.toString());
+            try {
+                File logFile = new File(args[0], LOG_FILENAME);
+                // Создаём папку если вдруг нет
+                logFile.getParentFile().mkdirs();
+                // Перезаписываем при каждом старте
+                logOut = new FileOutputStream(logFile, false);
+            } catch (Exception e) {
+                System.err.println("FATAL: cannot open log file: " + e);
+            }
         } else {
-            logV("no args");
+            System.err.println("WARN: no log dir arg, file logging disabled");
         }
+
+        log("=== PsServer start ===");
+        log("args.length=" + (args == null ? "null" : args.length));
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                log("args[" + i + "]=" + args[i]);
+            }
+        }
+
+        // pid без android.os.Process
+        log("pid=" + getPid());
 
         LocalServerSocket serverSocket = null;
         try {
-            logD("creating LocalServerSocket(\"" + SOCKET_NAME + "\")");
+            log("creating LocalServerSocket(\"" + SOCKET_NAME + "\")...");
             serverSocket = new LocalServerSocket(SOCKET_NAME);
-            logD("socket bound OK — entering accept loop");
+            log("socket bound OK");
 
             int n = 0;
             while (true) {
-                logV("accept() waiting (served=" + n + ")");
+                log("accept() waiting (served=" + n + ")");
                 LocalSocket client = serverSocket.accept();
                 n++;
-                logD("client #" + n + " connected");
+                log("client #" + n + " accepted");
                 handleClient(client, n);
             }
+
         } catch (Throwable e) {
-            logE("fatal: " + e.getMessage(), e);
+            log("FATAL: " + e.getMessage(), e);
             System.exit(1);
         } finally {
             if (serverSocket != null) {
                 try { serverSocket.close(); } catch (IOException ignored) {}
-                logD("serverSocket closed");
+                log("serverSocket closed");
             }
-            if (logWriter != null) {
-                try { logWriter.close(); } catch (IOException ignored) {}
+            if (logOut != null) {
+                try { logOut.close(); } catch (IOException ignored) {}
             }
         }
     }
 
     private static void handleClient(LocalSocket client, int id) {
-        logV("[#" + id + "] handleClient start");
+        log("[#" + id + "] handleClient");
         try {
             InputStream is = client.getInputStream();
             OutputStream os = client.getOutputStream();
@@ -109,52 +109,50 @@ public class PsServer {
 
             String command = reader.readLine();
             if (command == null) {
-                logW("[#" + id + "] null command — dropping");
+                log("[#" + id + "] null command — drop");
                 return;
             }
-            logD("[#" + id + "] command=\"" + command + "\"");
+            log("[#" + id + "] command=\"" + command + "\"");
 
             long t0 = System.currentTimeMillis();
             String psOutput = runPs();
-            long ms = System.currentTimeMillis() - t0;
             int lines = psOutput.isEmpty() ? 0 : psOutput.split("\n").length;
-            logD("[#" + id + "] ps done in " + ms + "ms, lines=" + lines);
+            log("[#" + id + "] ps done in " + (System.currentTimeMillis() - t0) + "ms, lines=" + lines);
 
-            byte[] data = psOutput.getBytes("UTF-8");
-            byte[] marker = (END_MARKER + "\n").getBytes("UTF-8");
-            os.write(data);
-            os.write(marker);
+            os.write(psOutput.getBytes("UTF-8"));
+            os.write((END_MARKER + "\n").getBytes("UTF-8"));
             os.flush();
-            logV("[#" + id + "] sent " + data.length + " bytes + END_MARKER");
+            log("[#" + id + "] response sent");
 
         } catch (IOException e) {
-            logE("[#" + id + "] IOException: " + e.getMessage(), e);
+            log("[#" + id + "] IOException: " + e.getMessage(), e);
         } finally {
             try { client.close(); } catch (IOException ignored) {}
-            logV("[#" + id + "] socket closed");
+            log("[#" + id + "] closed");
         }
     }
 
     private static String runPs() {
-        logV("runPs() exec [ps, -A]");
+        log("runPs() start");
         StringBuilder sb = new StringBuilder();
         Process process = null;
         try {
             process = Runtime.getRuntime().exec(new String[]{"ps", "-A"});
 
+            // Дренируем stderr ps
             final Process pRef = process;
-            Thread stderrDrain = new Thread(() -> {
+            Thread drain = new Thread(() -> {
                 try {
                     BufferedReader err = new BufferedReader(
                             new InputStreamReader(pRef.getErrorStream(), "UTF-8"));
                     String line;
                     while ((line = err.readLine()) != null) {
-                        logW("runPs stderr: " + line);
+                        log("ps stderr: " + line);
                     }
                 } catch (IOException ignored) {}
-            }, "ps-stderr");
-            stderrDrain.setDaemon(true);
-            stderrDrain.start();
+            });
+            drain.setDaemon(true);
+            drain.start();
 
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), "UTF-8"));
@@ -165,13 +163,10 @@ public class PsServer {
                 n++;
             }
             int exit = process.waitFor();
-            logD("runPs() exit=" + exit + " lines=" + n);
+            log("runPs() exit=" + exit + " lines=" + n);
 
-        } catch (IOException e) {
-            logE("runPs() IOException: " + e.getMessage(), e);
-        } catch (InterruptedException e) {
-            logE("runPs() interrupted", e);
-            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            log("runPs() error: " + e.getMessage(), e);
         } finally {
             if (process != null) process.destroy();
         }
@@ -179,15 +174,10 @@ public class PsServer {
     }
 
     private static int getPid() {
-        try { return Integer.parseInt(new File("/proc/self").getCanonicalFile().getName()); }
-        catch (Exception e) { return -1; }
-    }
-
-    private static int getUid() {
         try {
-            Process p = Runtime.getRuntime().exec("id -u");
-            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            return Integer.parseInt(r.readLine().trim());
-        } catch (Exception e) { return -1; }
+            return Integer.parseInt(new File("/proc/self").getCanonicalFile().getName());
+        } catch (Exception e) {
+            return -1;
+        }
     }
 }
