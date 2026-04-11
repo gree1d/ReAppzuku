@@ -30,8 +30,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
-import com.gree1d.reappzuku.server.PsClient;
-
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 import static com.gree1d.reappzuku.AppConstants.*;
 
@@ -71,12 +69,7 @@ public class BackgroundAppManager {
      *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
      */
     private String runPs(String psCommand) {
-        if (rootServiceManager != null && shellManager.hasRootAccess()) {
-            Log.d(TAG, "runPs: via RootServiceManager");
-            rootServiceManager.ensureRunning();
-            return PsClient.execute();
-        }
-        Log.d(TAG, "runPs: via ShellManager");
+        Log.d(TAG, "runPs: via ShellManager (Shizuku or Root)");
         return shellManager.runShellCommandAndGetFullOutput(psCommand);
     }
 
