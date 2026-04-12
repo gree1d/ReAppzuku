@@ -233,7 +233,7 @@ public class BackgroundAppManager {
                 String killCommand = toKill.stream()
                         .map(pkg -> "am force-stop " + pkg)
                         .collect(Collectors.joining("; "));
-                String finalCommand = killCommand + "; am kill-all";
+                String finalCommand = killCommand;
                 Log.d(TAG, "performAutoKill: executing kill command: " + finalCommand);
                 shellManager.runShellCommandAndGetFullOutput(finalCommand);
 
