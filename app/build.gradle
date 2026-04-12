@@ -45,18 +45,18 @@ android {
     }
 
     packagingOptions {
-    resources {
-        excludes += [
-            "**/module-info.class",
-            "META-INF/versions/**",
-            "META-INF/*.SF",
-            "META-INF/*.DSA",
-            "META-INF/*.RSA",
-            "META-INF/MANIFEST.MF"
+        resources {
+            excludes += [
+                "**/module-info.class",
+                "META-INF/versions/**",
+                "META-INF/*.SF",
+                "META-INF/*.DSA",
+                "META-INF/*.RSA",
+                "META-INF/MANIFEST.MF"
             ]
         }
     }
-    
+
     compileOptions {
         coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
@@ -65,7 +65,6 @@ android {
 
     buildFeatures {
         aidl true
-        dataBinding true
         viewBinding true
     }
     lint {
@@ -78,8 +77,8 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("com.google.android.material:material:1.13.0")
-    implementation("dev.rikka.shizuku:api:12.1.0")
-    implementation("dev.rikka.shizuku:provider:12.1.0")
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0")
 
@@ -88,14 +87,7 @@ dependencies {
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
-    def libsuVersion = "6.0.0"
-    implementation "com.github.topjohnwu.libsu:core:${libsuVersion}"
-    implementation "com.github.topjohnwu.libsu:service:${libsuVersion}"
-    
     // WorkManager
     def work_version = "2.11.1"
     implementation "androidx.work:work-runtime:$work_version"
-  
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
 }
