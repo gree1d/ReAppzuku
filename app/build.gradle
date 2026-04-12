@@ -86,10 +86,14 @@ dependencies {
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
+    def libsuVersion = "6.0.0"
+    implementation "com.github.topjohnwu.libsu:core:${libsuVersion}"
+    implementation "com.github.topjohnwu.libsu:service:${libsuVersion}"
+    
     // WorkManager
     def work_version = "2.11.1"
     implementation "androidx.work:work-runtime:$work_version"
-
+  
     implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
 }
