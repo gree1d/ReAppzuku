@@ -335,7 +335,6 @@ public class ShappkyService extends Service {
         if (screenOffReceiver != null) {
             unregisterReceiver(screenOffReceiver);
         }
-        shellManager.unbindRootService();
         handler.removeCallbacksAndMessages(null);
         super.onDestroy();
         executor.shutdownNow();
