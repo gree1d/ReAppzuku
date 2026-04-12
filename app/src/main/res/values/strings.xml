@@ -325,9 +325,14 @@
     <string name="restriction_status_external">Restricted, but not by ReAppzuku</string>
     <string name="restriction_status_not_applied">Saved in ReAppzuku, but not applied</string>
     
+    <!-- Whitelist mode warning -->
     <string name="dialog_unsafe_whitelist_title">Unsafe Configuration</string>
     <string name="dialog_unsafe_whitelist_message">You have selected Whitelist mode, but your list is empty. In Root mode, this will attempt to terminate all system processes, causing a device reboot (Kernel/System panic). Please add essential apps to the whitelist first.</string>
     <string name="dialog_unsafe_whitelist_ok">Got it</string>
     <string name="toast_error_whitelist_empty">Auto-Kill aborted: Whitelist is empty</string>
     <string name="bg_manager_kill_failed">Failed to kill selected apps</string>
+    
+    <!-- Root only banner -->
+    <string name="banner_root_only_warning">Due to SELinux restrictions, root access is limited. Please install Shizuku and grant permissions for full functionality.</string>
+    
 </resources>
