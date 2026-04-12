@@ -62,7 +62,7 @@ public class AutoKillWorker extends Worker {
         try {
             ShellManager shellManager = new ShellManager(getApplicationContext(), handler, executor);
             BackgroundAppManager appManager = new BackgroundAppManager(
-                    getApplicationContext(), handler, executor, shellManager, null);
+                    getApplicationContext(), handler, executor, shellManager);
 
             if (!shellManager.hasAnyShellPermission()) {
                 try { Thread.sleep(ROOT_CHECK_TIMEOUT_MS); }

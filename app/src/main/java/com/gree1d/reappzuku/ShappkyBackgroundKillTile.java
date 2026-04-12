@@ -57,7 +57,7 @@ public class ShappkyBackgroundKillTile extends TileService {
             shellManager = new ShellManager(this, handler, executor);
         }
         if (backgroundAppManager == null) {
-            backgroundAppManager = new BackgroundAppManager(this, handler, executor, shellManager, null);
+            backgroundAppManager = new BackgroundAppManager(this, handler, executor, shellManager);
         }
 
         executor.execute(() -> {

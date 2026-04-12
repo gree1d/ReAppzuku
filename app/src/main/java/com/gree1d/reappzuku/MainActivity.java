@@ -99,7 +99,7 @@ public class MainActivity extends BaseActivity {
 
         // Initialize components
         shellManager = new ShellManager(this, handler, executor);
-        appManager = new BackgroundAppManager(this, handler, executor, shellManager, null);
+        appManager = new BackgroundAppManager(this, handler, executor, shellManager);
         ramMonitor = new RamMonitor(this, handler, binding.ramUsage, binding.ramUsageText);
 
         listAdapter = new BackgroundAppsRecyclerViewAdapter(this);
