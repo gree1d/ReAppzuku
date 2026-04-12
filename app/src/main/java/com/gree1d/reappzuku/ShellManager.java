@@ -119,6 +119,15 @@ public class ShellManager {
     }
 
     /**
+     * Returns true if the app has root access but Shizuku is NOT available/granted.
+     * In this mode SELinux restrictions limit full functionality, so the UI should
+     * show a warning banner prompting the user to install and grant Shizuku.
+     */
+    public boolean hasRootOnlyMode() {
+        return hasRootAccess() && !hasShizukuPermission();
+    }
+
+    /**
      * Check if the device has root access.
      * Returns cached result if available, otherwise returns false (check may still
      * be in progress).
@@ -152,7 +161,8 @@ public class ShellManager {
 
     /**
      * Check for shell permissions and request Shizuku if needed.
-     * Only requests Shizuku permission if root access is not available.
+     * Shizuku permission is requested for all users, including root,
+     * because SELinux restrictions prevent full functionality with root alone.
      */
     public void checkShellPermissions() {
         try {

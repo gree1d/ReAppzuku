@@ -385,6 +385,10 @@ public class MainActivity extends BaseActivity {
             filterApps(currentSearchQuery);
             binding.runningApps.setText(getString(R.string.main_active_apps_count, fullAppsList.size()));
             binding.swiperefreshlayout1.setRefreshing(false);
+
+            // Show SELinux warning banner only when running in root-only mode (no Shizuku)
+            boolean rootOnly = shellManager.hasRootOnlyMode();
+            binding.bannerRootOnly.setVisibility(rootOnly ? View.VISIBLE : View.GONE);
         });
     }
 
