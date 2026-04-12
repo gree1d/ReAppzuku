@@ -44,22 +44,19 @@ public class BackgroundAppManager {
     private final Handler handler;
     private final ExecutorService executor;
     private final ShellManager shellManager;
+    private final RootServiceManager rootServiceManager;
     private final List<AppModel> currentAppsList = new ArrayList<>();
     private boolean showSystemApps = false;
     private boolean showPersistentApps = false;
     private SharedPreferences sharedpreferences;
 
     public BackgroundAppManager(Context context, Handler handler, ExecutorService executor,
-            ShellManager shellManager, Object ignored) {
-        this(context, handler, executor, shellManager);
-    }
-
-    public BackgroundAppManager(Context context, Handler handler, ExecutorService executor,
-            ShellManager shellManager) {
+            ShellManager shellManager, RootServiceManager rootServiceManager) {
         this.context = context;
         this.handler = handler;
         this.executor = executor;
         this.shellManager = shellManager;
+        this.rootServiceManager = rootServiceManager;
         this.sharedpreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 
@@ -72,18 +69,7 @@ public class BackgroundAppManager {
      *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
      */
     private String runPs(String psCommand) {
-        Log.d(TAG, "runPs: cmd: " + psCommand);
-        String output = shellManager.runShellCommandAndGetFullOutput(psCommand);
-        if (output == null) {
-            Log.w(TAG, "runPs: output is NULL");
-        } else if (output.trim().isEmpty()) {
-            Log.w(TAG, "runPs: output is EMPTY");
-        } else {
-            int lines = output.split("\n").length;
-            Log.d(TAG, "runPs: got " + lines + " lines, first: "
-                    + output.split("\n")[0].trim());
-        }
-        return output;
+        return shellManager.runShizukuCommandAndGetFullOutput(psCommand);
     }
 
     public boolean supportsBackgroundRestriction() {
@@ -144,9 +130,8 @@ public class BackgroundAppManager {
             Log.d(TAG, "blacklistedApps=" + blacklistedApps);
             Log.d(TAG, "hiddenApps=" + hiddenApps);
 
-            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
-            Log.d(TAG, "performAutoKill: dumpsys output "
-                    + (dumpOutput == null ? "NULL" : "len=" + dumpOutput.length()));
+            String dumpOutput = shellManager.runShizukuCommandAndGetFullOutput("dumpsys activity activities");
+            Log.d(TAG, "dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
             if (dumpOutput == null) {
                 Log.w(TAG, "dumpsys returned null — aborting kill");
                 if (onComplete != null)
@@ -156,10 +141,9 @@ public class BackgroundAppManager {
 
             String psOutput = runPs(
                     "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
-            Log.d(TAG, "performAutoKill: ps output "
-                    + (psOutput == null ? "NULL" : "len=" + psOutput.trim().length()));
+            Log.d(TAG, "ps output length: " + (psOutput == null ? "null" : psOutput.trim().length()));
             if (psOutput == null || psOutput.trim().isEmpty()) {
-                Log.w(TAG, "performAutoKill: ps returned null/empty — aborting kill");
+                Log.w(TAG, "ps returned null/empty — aborting kill");
                 if (onComplete != null)
                     handler.post(onComplete);
                 return;
@@ -182,9 +166,6 @@ public class BackgroundAppManager {
             } catch (IOException ignored) {
             }
 
-            Log.d(TAG, "performAutoKill: runningPackages count=" + runningPackages.size()
-                    + " packages=" + runningPackages);
-
             List<String> toKill = runningPackages.stream()
                     .filter(pkg -> {
                         try {
@@ -197,7 +178,7 @@ public class BackgroundAppManager {
                                 return false;
                             }
                             if (containsPackage(dumpOutput, pkg)) {
-                                Log.d(TAG, "performAutoKill: SKIP foreground pkg=" + pkg);
+                                Log.d(TAG, "SKIP (foreground): " + pkg);
                                 return false;
                             }
                             if (killMode == 1) { // Blacklist Mode (Default)
@@ -221,7 +202,7 @@ public class BackgroundAppManager {
                     })
                     .collect(Collectors.toList());
 
-            Log.d(TAG, "performAutoKill: toKill count=" + toKill.size() + " list=" + toKill);
+            Log.d(TAG, "toKill list (" + toKill.size() + "): " + toKill);
 
             if (!toKill.isEmpty()) {
                 Map<String, Long> recoveredKbByPackage = new HashMap<>();
@@ -234,7 +215,7 @@ public class BackgroundAppManager {
                         .map(pkg -> "am force-stop " + pkg)
                         .collect(Collectors.joining("; "));
                 String finalCommand = killCommand;
-                Log.d(TAG, "performAutoKill: executing kill command: " + finalCommand);
+
                 shellManager.runShellCommandAndGetFullOutput(finalCommand);
 
                 sendKillNotification(toKill.size());
