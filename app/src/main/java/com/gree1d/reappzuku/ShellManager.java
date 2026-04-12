@@ -299,8 +299,9 @@ public class ShellManager {
                 + " shizuku=" + hasShizukuPermission()
                 + " cmd: " + command);
 
+        ShellResult rootResult = null;
         if (hasRootAccess()) {
-            ShellResult rootResult = executeRootCommandForResult(command);
+            rootResult = executeRootCommandForResult(command);
             Log.d(TAG, "runShellCommandForResult: su result — succeeded=" + rootResult.succeeded()
                     + " exit=" + rootResult.exitCode()
                     + " outputLen=" + rootResult.output().length());
@@ -322,17 +323,21 @@ public class ShellManager {
                 }
                 Log.w(TAG, "runShellCommandForResult: RootService also failed for: " + command);
             } else {
-                Log.w(TAG, "runShellCommandForResult: RootService unavailable, no fallback");
+                Log.w(TAG, "runShellCommandForResult: RootService unavailable");
             }
-
-            return rootResult;
         }
 
+        // Shizuku — как основной путь (нет root) или фолбэк (root есть но не сработал)
         if (hasShizukuPermission()) {
-            Log.d(TAG, "runShellCommandForResult: using Shizuku for: " + command);
-            return executeShizukuCommandForResult(command);
+            Log.d(TAG, "runShellCommandForResult: trying Shizuku for: " + command);
+            ShellResult shizukuResult = executeShizukuCommandForResult(command);
+            if (shizukuResult.succeeded() || rootResult == null) {
+                return shizukuResult;
+            }
+            Log.w(TAG, "runShellCommandForResult: Shizuku also failed for: " + command);
         }
 
+        if (rootResult != null) return rootResult;
         Log.e(TAG, "runShellCommandForResult: NO permission available for: " + command);
         return new ShellResult(false, -1, "No Root or Shizuku permission available");
     }
@@ -358,13 +363,14 @@ public class ShellManager {
 
     public String runShellCommandAndGetFullOutput(String command) {
         Log.d(TAG, "runShellCommandAndGetFullOutput: cmd: " + command);
+        String rootOutput = null;
         if (hasRootAccess()) {
-            String output = executeRootCommandAndGetFullOutput(command);
+            rootOutput = executeRootCommandAndGetFullOutput(command);
             Log.d(TAG, "runShellCommandAndGetFullOutput: su output "
-                    + (output == null ? "NULL" : "len=" + output.length()
-                    + (output.startsWith("ERROR:") ? " [starts with ERROR]" : "")));
-            if (output != null && !output.startsWith("ERROR:")) {
-                return output;
+                    + (rootOutput == null ? "NULL" : "len=" + rootOutput.length()
+                    + (rootOutput.startsWith("ERROR:") ? " [starts with ERROR]" : "")));
+            if (rootOutput != null && !rootOutput.startsWith("ERROR:")) {
+                return rootOutput;
             }
             Log.w(TAG, "runShellCommandAndGetFullOutput: su failed, trying RootService for: " + command);
             IPrivilegedService service = awaitRootService();
@@ -373,19 +379,22 @@ public class ShellManager {
                     String rsOutput = service.executeForOutput(command);
                     Log.d(TAG, "runShellCommandAndGetFullOutput: RootService output "
                             + (rsOutput == null ? "NULL" : "len=" + rsOutput.length()));
-                    return rsOutput;
+                    if (rsOutput != null) return rsOutput;
                 } catch (RemoteException e) {
                     Log.w(TAG, "runShellCommandAndGetFullOutput: RootService failed", e);
                 }
             } else {
                 Log.w(TAG, "runShellCommandAndGetFullOutput: RootService unavailable");
             }
-            return output;
         }
+
+        // Shizuku — как основной путь (нет root) или фолбэк
         if (hasShizukuPermission()) {
-            Log.d(TAG, "runShellCommandAndGetFullOutput: using Shizuku");
+            Log.d(TAG, "runShellCommandAndGetFullOutput: trying Shizuku for: " + command);
             return executeShizukuCommandAndGetFullOutput(command);
         }
+
+        if (rootOutput != null) return rootOutput;
         Log.e(TAG, "runShellCommandAndGetFullOutput: NO permission for: " + command);
         return null;
     }
