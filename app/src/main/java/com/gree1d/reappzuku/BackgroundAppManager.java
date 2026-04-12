@@ -50,6 +50,11 @@ public class BackgroundAppManager {
     private SharedPreferences sharedpreferences;
 
     public BackgroundAppManager(Context context, Handler handler, ExecutorService executor,
+            ShellManager shellManager, Object ignored) {
+        this(context, handler, executor, shellManager);
+    }
+
+    public BackgroundAppManager(Context context, Handler handler, ExecutorService executor,
             ShellManager shellManager) {
         this.context = context;
         this.handler = handler;
