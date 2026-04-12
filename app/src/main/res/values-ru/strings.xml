@@ -321,4 +321,6 @@
     <string name="dialog_unsafe_whitelist_ok">Понятно</string>
     <string name="toast_error_whitelist_empty">Auto-Kill отменен: Белый список пуст</string>
     <string name="bg_manager_kill_failed">Не удалось убить выбранные приложения</string>
+    
+    <string name="banner_root_only_warning">Из-за ограничений SELinux приложение не может полноценно работать с правами root. Пожалуйста установите Shizuku и выдайте доступ приложению.</string>
 </resources>
