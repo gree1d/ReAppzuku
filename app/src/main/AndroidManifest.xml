@@ -69,10 +69,6 @@
                 android:value="true" />
         </service>
 
-        <service
-            android:name=".PrivilegedService"
-            android:exported="false" />
-        
         <service 
             android:name=".ShappkyService" 
             android:foregroundServiceType="dataSync"
