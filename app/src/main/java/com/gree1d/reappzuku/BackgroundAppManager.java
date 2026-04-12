@@ -44,19 +44,17 @@ public class BackgroundAppManager {
     private final Handler handler;
     private final ExecutorService executor;
     private final ShellManager shellManager;
-    private final RootServiceManager rootServiceManager;
     private final List<AppModel> currentAppsList = new ArrayList<>();
     private boolean showSystemApps = false;
     private boolean showPersistentApps = false;
     private SharedPreferences sharedpreferences;
 
     public BackgroundAppManager(Context context, Handler handler, ExecutorService executor,
-            ShellManager shellManager, RootServiceManager rootServiceManager) {
+            ShellManager shellManager) {
         this.context = context;
         this.handler = handler;
         this.executor = executor;
         this.shellManager = shellManager;
-        this.rootServiceManager = rootServiceManager;
         this.sharedpreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 
@@ -69,7 +67,7 @@ public class BackgroundAppManager {
      *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
      */
     private String runPs(String psCommand) {
-        return shellManager.runShizukuCommandAndGetFullOutput(psCommand);
+        return shellManager.runShellCommandAndGetFullOutput(psCommand);
     }
 
     public boolean supportsBackgroundRestriction() {
@@ -130,7 +128,7 @@ public class BackgroundAppManager {
             Log.d(TAG, "blacklistedApps=" + blacklistedApps);
             Log.d(TAG, "hiddenApps=" + hiddenApps);
 
-            String dumpOutput = shellManager.runShizukuCommandAndGetFullOutput("dumpsys activity activities");
+            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
             Log.d(TAG, "dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
             if (dumpOutput == null) {
                 Log.w(TAG, "dumpsys returned null — aborting kill");
