@@ -84,6 +84,7 @@ public class ShellManager {
     }
 
     private boolean checkRootAccessBlocking() {
+        Log.d(TAG, "checkRootAccessBlocking: starting su check");
         Process process = null;
         DataOutputStream os = null;
         try {
@@ -96,11 +97,12 @@ public class ShellManager {
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream()));
             String output = reader.readLine();
-            process.waitFor();
-
-            return "0".equals(output != null ? output.trim() : "");
+            int exitCode = process.waitFor();
+            boolean result = "0".equals(output != null ? output.trim() : "");
+            Log.d(TAG, "checkRootAccessBlocking: output='" + output + "' exitCode=" + exitCode + " result=" + result);
+            return result;
         } catch (IOException | InterruptedException e) {
-            Log.d(TAG, "Root not available: " + e.getMessage());
+            Log.d(TAG, "checkRootAccessBlocking: exception — " + e.getMessage());
             return false;
         } finally {
             try {
@@ -119,10 +121,17 @@ public class ShellManager {
      * Повторный вызов игнорируется если сервис уже привязан или в процессе.
      */
     public void bindRootService() {
-        if (privilegedService != null) return;
-        if (!rootServiceBindInProgress.compareAndSet(false, true)) return;
-
+        if (privilegedService != null) {
+            Log.d(TAG, "bindRootService: already connected, skip");
+            return;
+        }
+        if (!rootServiceBindInProgress.compareAndSet(false, true)) {
+            Log.d(TAG, "bindRootService: bind already in progress, skip");
+            return;
+        }
+        Log.d(TAG, "bindRootService: posting bind to main thread");
         handler.post(() -> {
+            Log.d(TAG, "bindRootService: calling RootService.bind()");
             Intent intent = new Intent(context, PrivilegedService.class);
             RootService.bind(intent, rootServiceConnection);
         });
@@ -133,9 +142,12 @@ public class ShellManager {
      */
     public void unbindRootService() {
         if (privilegedService != null) {
+            Log.d(TAG, "unbindRootService: unbinding");
             Intent intent = new Intent(context, PrivilegedService.class);
             RootService.unbind(rootServiceConnection);
             privilegedService = null;
+        } else {
+            Log.d(TAG, "unbindRootService: was not connected");
         }
     }
 
@@ -160,14 +172,18 @@ public class ShellManager {
      * Используется когда нужен сервис прямо сейчас из фонового потока.
      */
     private IPrivilegedService awaitRootService() {
-        if (privilegedService != null) return privilegedService;
-        if (!hasRootAccess()) return null;
+        if (privilegedService != null) {
+            Log.d(TAG, "awaitRootService: already available");
+            return privilegedService;
+        }
+        if (!hasRootAccess()) {
+            Log.d(TAG, "awaitRootService: no root, skip");
+            return null;
+        }
 
-        // Если ещё не начали bind — начинаем
         bindRootService();
 
-        // Ждём подключения
-        CountDownLatch latch = new CountDownLatch(1);
+        Log.d(TAG, "awaitRootService: waiting up to 5s for RootService...");
         long deadline = System.currentTimeMillis() + 5000;
         while (privilegedService == null && System.currentTimeMillis() < deadline) {
             try {
@@ -175,8 +191,14 @@ public class ShellManager {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                Log.w(TAG, "awaitRootService: interrupted while waiting");
                 return null;
             }
+        }
+        if (privilegedService != null) {
+            Log.d(TAG, "awaitRootService: connected after " + (5000 - (deadline - System.currentTimeMillis())) + "ms");
+        } else {
+            Log.w(TAG, "awaitRootService: TIMEOUT — RootService did not connect within 5s");
         }
         return privilegedService;
     }
@@ -272,31 +294,46 @@ public class ShellManager {
      * 3. Shizuku — если root вообще недоступен
      */
     public ShellResult runShellCommandForResult(String command) {
+        Log.d(TAG, "runShellCommandForResult: hasRoot=" + hasRoot
+                + " rootServiceAvail=" + (privilegedService != null)
+                + " shizuku=" + hasShizukuPermission()
+                + " cmd: " + command);
+
         if (hasRootAccess()) {
             ShellResult rootResult = executeRootCommandForResult(command);
+            Log.d(TAG, "runShellCommandForResult: su result — succeeded=" + rootResult.succeeded()
+                    + " exit=" + rootResult.exitCode()
+                    + " outputLen=" + rootResult.output().length());
+
             if (rootResult.succeeded()) {
                 return rootResult;
             }
 
-            // Root не сработал — пробуем RootService (обход SELinux)
+            Log.w(TAG, "runShellCommandForResult: su failed (SELinux?), trying RootService for: " + command);
             IPrivilegedService service = awaitRootService();
             if (service != null) {
                 ShellResult rsResult = executeRootServiceCommandForResult(service, command);
+                Log.d(TAG, "runShellCommandForResult: RootService result — succeeded=" + rsResult.succeeded()
+                        + " exit=" + rsResult.exitCode()
+                        + " outputLen=" + rsResult.output().length());
                 if (rsResult.succeeded()) {
-                    Log.d(TAG, "RootService bypassed SELinux for: " + command);
+                    Log.i(TAG, "runShellCommandForResult: RootService bypassed SELinux for: " + command);
                     return rsResult;
                 }
+                Log.w(TAG, "runShellCommandForResult: RootService also failed for: " + command);
+            } else {
+                Log.w(TAG, "runShellCommandForResult: RootService unavailable, no fallback");
             }
 
-            // Оба root-метода не сработали — возвращаем ошибку root
-            // (Shizuku не трогаем если root в принципе есть)
             return rootResult;
         }
 
         if (hasShizukuPermission()) {
+            Log.d(TAG, "runShellCommandForResult: using Shizuku for: " + command);
             return executeShizukuCommandForResult(command);
         }
 
+        Log.e(TAG, "runShellCommandForResult: NO permission available for: " + command);
         return new ShellResult(false, -1, "No Root or Shizuku permission available");
     }
 
@@ -320,25 +357,36 @@ public class ShellManager {
     }
 
     public String runShellCommandAndGetFullOutput(String command) {
+        Log.d(TAG, "runShellCommandAndGetFullOutput: cmd: " + command);
         if (hasRootAccess()) {
             String output = executeRootCommandAndGetFullOutput(command);
+            Log.d(TAG, "runShellCommandAndGetFullOutput: su output "
+                    + (output == null ? "NULL" : "len=" + output.length()
+                    + (output.startsWith("ERROR:") ? " [starts with ERROR]" : "")));
             if (output != null && !output.startsWith("ERROR:")) {
                 return output;
             }
-            // Пробуем RootService
+            Log.w(TAG, "runShellCommandAndGetFullOutput: su failed, trying RootService for: " + command);
             IPrivilegedService service = awaitRootService();
             if (service != null) {
                 try {
-                    return service.executeForOutput(command);
+                    String rsOutput = service.executeForOutput(command);
+                    Log.d(TAG, "runShellCommandAndGetFullOutput: RootService output "
+                            + (rsOutput == null ? "NULL" : "len=" + rsOutput.length()));
+                    return rsOutput;
                 } catch (RemoteException e) {
-                    Log.w(TAG, "RootService executeForOutput failed", e);
+                    Log.w(TAG, "runShellCommandAndGetFullOutput: RootService failed", e);
                 }
+            } else {
+                Log.w(TAG, "runShellCommandAndGetFullOutput: RootService unavailable");
             }
             return output;
         }
         if (hasShizukuPermission()) {
+            Log.d(TAG, "runShellCommandAndGetFullOutput: using Shizuku");
             return executeShizukuCommandAndGetFullOutput(command);
         }
+        Log.e(TAG, "runShellCommandAndGetFullOutput: NO permission for: " + command);
         return null;
     }
 

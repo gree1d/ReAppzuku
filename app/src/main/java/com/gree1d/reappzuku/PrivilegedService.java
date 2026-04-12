@@ -21,31 +21,51 @@ public class PrivilegedService extends RootService {
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(TAG, "onBind: PrivilegedService starting in root process");
+        logSelinuxContext();
         return new ServiceImpl();
+    }
+
+    /** Логируем SELinux контекст процесса — ключевая информация для отладки */
+    private void logSelinuxContext() {
+        try {
+            Process p = Runtime.getRuntime().exec("cat /proc/self/attr/current");
+            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String ctx = r.readLine();
+            p.waitFor();
+            Log.i(TAG, "SELinux context: " + ctx);
+        } catch (Exception e) {
+            Log.w(TAG, "Could not read SELinux context: " + e.getMessage());
+        }
     }
 
     static class ServiceImpl extends IPrivilegedService.Stub {
 
         @Override
         public int execute(String command) {
+            Log.d(TAG, "execute() cmd: " + command);
+            long t = System.currentTimeMillis();
             try {
-                // Здесь мы уже в Magisk-процессе — su не нужен
                 Process process = Runtime.getRuntime().exec(
                         new String[]{"sh", "-c", command}
                 );
-                // Дочитываем stdout/stderr чтобы не блокировать процесс
                 drain(process.getInputStream());
                 drain(process.getErrorStream());
-                return process.waitFor();
+                int exit = process.waitFor();
+                Log.d(TAG, "execute() exit=" + exit + " (" + (System.currentTimeMillis() - t) + "ms) cmd: " + command);
+                return exit;
             } catch (IOException | InterruptedException e) {
-                Log.e(TAG, "execute failed: " + command, e);
+                Log.e(TAG, "execute() FAILED cmd: " + command, e);
                 return -1;
             }
         }
 
         @Override
         public String executeForOutput(String command) {
+            Log.d(TAG, "executeForOutput() cmd: " + command);
+            long t = System.currentTimeMillis();
             StringBuilder output = new StringBuilder();
+            StringBuilder errors = new StringBuilder();
             try {
                 Process process = Runtime.getRuntime().exec(
                         new String[]{"sh", "-c", command}
@@ -55,16 +75,30 @@ public class PrivilegedService extends RootService {
                      BufferedReader stderr = new BufferedReader(
                              new InputStreamReader(process.getErrorStream()))) {
                     String line;
+                    int lines = 0;
                     while ((line = stdout.readLine()) != null) {
                         output.append(line).append("\n");
+                        lines++;
                     }
                     while ((line = stderr.readLine()) != null) {
+                        errors.append(line).append("\n");
                         output.append("ERROR: ").append(line).append("\n");
                     }
+                    Log.d(TAG, "executeForOutput() stdout_lines=" + lines
+                            + " stderr_empty=" + (errors.length() == 0)
+                            + " (" + (System.currentTimeMillis() - t) + "ms)"
+                            + " cmd: " + command);
+                    if (errors.length() > 0) {
+                        Log.w(TAG, "executeForOutput() stderr: " + errors.toString().trim());
+                    }
                 }
-                process.waitFor();
+                int exit = process.waitFor();
+                Log.d(TAG, "executeForOutput() exit=" + exit);
+                if (output.length() == 0) {
+                    Log.w(TAG, "executeForOutput() output is EMPTY for cmd: " + command);
+                }
             } catch (IOException | InterruptedException e) {
-                Log.e(TAG, "executeForOutput failed: " + command, e);
+                Log.e(TAG, "executeForOutput() FAILED cmd: " + command, e);
                 return null;
             }
             return output.toString();

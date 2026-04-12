@@ -72,7 +72,18 @@ public class BackgroundAppManager {
      *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
      */
     private String runPs(String psCommand) {
-        return shellManager.runShellCommandAndGetFullOutput(psCommand);
+        Log.d(TAG, "runPs: cmd: " + psCommand);
+        String output = shellManager.runShellCommandAndGetFullOutput(psCommand);
+        if (output == null) {
+            Log.w(TAG, "runPs: output is NULL");
+        } else if (output.trim().isEmpty()) {
+            Log.w(TAG, "runPs: output is EMPTY");
+        } else {
+            int lines = output.split("\n").length;
+            Log.d(TAG, "runPs: got " + lines + " lines, first: "
+                    + output.split("\n")[0].trim());
+        }
+        return output;
     }
 
     public boolean supportsBackgroundRestriction() {
@@ -134,7 +145,8 @@ public class BackgroundAppManager {
             Log.d(TAG, "hiddenApps=" + hiddenApps);
 
             String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
-            Log.d(TAG, "dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
+            Log.d(TAG, "performAutoKill: dumpsys output "
+                    + (dumpOutput == null ? "NULL" : "len=" + dumpOutput.length()));
             if (dumpOutput == null) {
                 Log.w(TAG, "dumpsys returned null — aborting kill");
                 if (onComplete != null)
@@ -144,9 +156,10 @@ public class BackgroundAppManager {
 
             String psOutput = runPs(
                     "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]' | awk '{print $2}'");
-            Log.d(TAG, "ps output length: " + (psOutput == null ? "null" : psOutput.trim().length()));
+            Log.d(TAG, "performAutoKill: ps output "
+                    + (psOutput == null ? "NULL" : "len=" + psOutput.trim().length()));
             if (psOutput == null || psOutput.trim().isEmpty()) {
-                Log.w(TAG, "ps returned null/empty — aborting kill");
+                Log.w(TAG, "performAutoKill: ps returned null/empty — aborting kill");
                 if (onComplete != null)
                     handler.post(onComplete);
                 return;
@@ -169,7 +182,8 @@ public class BackgroundAppManager {
             } catch (IOException ignored) {
             }
 
-            List<String> toKill = runningPackages.stream()
+            Log.d(TAG, "performAutoKill: runningPackages count=" + runningPackages.size()
+                    + " packages=" + runningPackages);
                     .filter(pkg -> {
                         try {
                             if (hiddenApps.contains(pkg)) {
@@ -181,7 +195,7 @@ public class BackgroundAppManager {
                                 return false;
                             }
                             if (containsPackage(dumpOutput, pkg)) {
-                                Log.d(TAG, "SKIP (foreground): " + pkg);
+                                Log.d(TAG, "performAutoKill: SKIP foreground pkg=" + pkg);
                                 return false;
                             }
                             if (killMode == 1) { // Blacklist Mode (Default)
@@ -205,7 +219,7 @@ public class BackgroundAppManager {
                     })
                     .collect(Collectors.toList());
 
-            Log.d(TAG, "toKill list (" + toKill.size() + "): " + toKill);
+            Log.d(TAG, "performAutoKill: toKill count=" + toKill.size() + " list=" + toKill);
 
             if (!toKill.isEmpty()) {
                 Map<String, Long> recoveredKbByPackage = new HashMap<>();
@@ -218,7 +232,7 @@ public class BackgroundAppManager {
                         .map(pkg -> "am force-stop " + pkg)
                         .collect(Collectors.joining("; "));
                 String finalCommand = killCommand + "; am kill-all";
-
+                Log.d(TAG, "performAutoKill: executing kill command: " + finalCommand);
                 shellManager.runShellCommandAndGetFullOutput(finalCommand);
 
                 sendKillNotification(toKill.size());
