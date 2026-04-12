@@ -184,6 +184,8 @@ public class BackgroundAppManager {
 
             Log.d(TAG, "performAutoKill: runningPackages count=" + runningPackages.size()
                     + " packages=" + runningPackages);
+
+            List<String> toKill = runningPackages.stream()
                     .filter(pkg -> {
                         try {
                             if (hiddenApps.contains(pkg)) {
