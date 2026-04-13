@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="2dp"
     android:orientation="vertical"
     android:descendantFocusability="blocksDescendants">
 
@@ -14,7 +15,7 @@
         android:layout_height="60dp"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
-                android:background="@drawable/list_item_background"
+        android:background="@drawable/list_item_background"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -72,6 +73,7 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
                 android:focusable="false" />
+
             <TextView
                 android:id="@+id/app_ram"
                 android:layout_width="match_parent"
@@ -80,7 +82,8 @@
                 android:maxLines="1"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
-                android:focusable="false" />           
+                android:focusable="false" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -98,10 +101,27 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_more_vert"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="More options"
-                android:focusable="false" />
+                android:contentDescription="@string/action_more"
+                android:focusable="false"
+                app:tint="?attr/colorControlNormal" />
+
         </LinearLayout>
 
+        <!--
+            Правая кнопка — двойное назначение:
+              • обычное приложение  → ic_force_stop  (кликабельно)
+              • защищённое          → ic_protected   (некликабельно, индикатор)
+
+            В адаптере (onBindViewHolder):
+                if (isProtected) {
+                    holder.btnAppAction.setImageResource(R.drawable.ic_protected);
+                    holder.btnAppAction.setClickable(false);
+                } else {
+                    holder.btnAppAction.setImageResource(R.drawable.ic_force_stop);
+                    holder.btnAppAction.setClickable(true);
+                    holder.btnAppAction.setOnClickListener(v -> killApp(app));
+                }
+        -->
         <LinearLayout
             android:id="@+id/linear3"
             android:layout_width="48dp"
@@ -111,12 +131,16 @@
             android:padding="10dp">
 
             <ImageView
-                android:id="@+id/imageview2"
+                android:id="@+id/btn_app_action"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_force_stop_themed"
-                android:focusable="false" />
+                android:src="@drawable/ic_force_stop"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/action_force_stop"
+                android:focusable="false"
+                app:tint="?attr/colorControlNormal" />
+
         </LinearLayout>
 
     </LinearLayout>
