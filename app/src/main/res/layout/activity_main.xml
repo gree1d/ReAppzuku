@@ -23,7 +23,9 @@
             android:elevation="4dp"
             android:theme="@style/AppTheme.AppBarOverlay"
             app:titleTextColor="@android:color/white"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
+            app:popupTheme="@style/AppTheme.PopupOverlay"
+            app:menu="@menu/menu_main" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <LinearLayout
@@ -81,7 +83,10 @@
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scrollbars="vertical" />
+                android:scrollbars="vertical"
+                android:clipToPadding="false"
+                android:paddingTop="2dp" />
+
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
 

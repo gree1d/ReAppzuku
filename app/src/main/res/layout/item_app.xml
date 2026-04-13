@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Корневой layout — marginBottom="2dp" даёт видимый зазор между элементами,
+    через который просвечивает фон RecyclerView/SwipeRefreshLayout.
+    Фон самого item — colorSurface, чтобы отличался от фона списка.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="2dp"
+    android:background="?attr/colorSurface"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingEnd="4dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp"
+    android:gravity="center_vertical">
+
+    <!-- Иконка приложения -->
+    <ImageView
+        android:id="@+id/app_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center_vertical"
+        android:contentDescription="@null"
+        tools:src="@mipmap/ic_launcher" />
+
+    <!-- Название + пакет (занимает всё свободное место) -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="4dp">
+
+        <TextView
+            android:id="@+id/app_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="Telegram" />
+
+        <TextView
+            android:id="@+id/package_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            tools:text="org.telegram.messenger" />
+
+    </LinearLayout>
+
+    <!--
+        Правая кнопка — двойное назначение:
+          • обычное приложение  → ic_force_stop  (кликабельно, убивает процесс)
+          • защищённое (ProtectedApps) → ic_protected (некликабельно, просто индикатор)
+        В адаптере:
+            if (isProtected) {
+                holder.btnAppAction.setImageResource(R.drawable.ic_protected);
+                holder.btnAppAction.setClickable(false);
+                holder.btnAppAction.setContentDescription(getString(R.string.label_protected));
+            } else {
+                holder.btnAppAction.setImageResource(R.drawable.ic_force_stop);
+                holder.btnAppAction.setClickable(true);
+                holder.btnAppAction.setContentDescription(getString(R.string.action_force_stop));
+                holder.btnAppAction.setOnClickListener(...);
+            }
+    -->
+    <ImageButton
+        android:id="@+id/btn_app_action"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center_vertical"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/action_force_stop"
+        android:padding="8dp"
+        android:src="@drawable/ic_force_stop"
+        app:tint="?attr/colorControlNormal" />
+
+</LinearLayout>
