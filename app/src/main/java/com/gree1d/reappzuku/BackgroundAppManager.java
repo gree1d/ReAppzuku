@@ -39,7 +39,7 @@ public class BackgroundAppManager {
     private static final String FOREGROUND_RESTRICTION_OP = "START_FOREGROUND";
     private static final String BOOT_RESTRICTION_OP = "RECEIVE_BOOT_COMPLETED";
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+");
-    private static final String FORCE_STOP_COMMAND_PREFIX = "am force-stop ";
+    private static final String KILL_COMMAND_PREFIX = "am kill ";
     private final Context context;
     private final Handler handler;
     private final ExecutorService executor;
@@ -67,7 +67,7 @@ public class BackgroundAppManager {
      *             {@code "ps -A -o rss,name | grep '\\.' | grep -v '[-:@]'"}
      */
     private String runPs(String psCommand) {
-        return shellManager.runShizukuCommandAndGetFullOutput(psCommand);
+        return shellManager.runShellCommandAndGetFullOutput(psCommand);
     }
 
     public boolean supportsBackgroundRestriction() {
@@ -128,7 +128,7 @@ public class BackgroundAppManager {
             Log.d(TAG, "blacklistedApps=" + blacklistedApps);
             Log.d(TAG, "hiddenApps=" + hiddenApps);
 
-            String dumpOutput = shellManager.runShizukuCommandAndGetFullOutput("dumpsys activity activities");
+            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
             Log.d(TAG, "dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
             if (dumpOutput == null) {
                 Log.w(TAG, "dumpsys returned null — aborting kill");
@@ -210,7 +210,7 @@ public class BackgroundAppManager {
                 recordSuccessfulKills(toKill, recoveredKbByPackage);
 
                 String killCommand = toKill.stream()
-                        .map(pkg -> "am force-stop " + pkg)
+                        .map(pkg -> "am kill " + pkg)
                         .collect(Collectors.joining("; "));
                 String finalCommand = killCommand;
 
@@ -662,7 +662,7 @@ public class BackgroundAppManager {
                     shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
                     applyBatteryWhitelistRemoval(packageName);
                 }
-                ShellManager.ShellResult forceStopResult = shellManager.runShellCommandForResult(FORCE_STOP_COMMAND_PREFIX + packageName);
+                ShellManager.ShellResult forceStopResult = shellManager.runShellCommandForResult(KILL_COMMAND_PREFIX + packageName);
                 if (!forceStopResult.succeeded()) success = false;
                 logRestrictionResult(packageName, isHard ? "restrict-hard" : "restrict-soft", restrictResult, forceStopResult);
             }
@@ -803,8 +803,7 @@ public class BackgroundAppManager {
             boolean success = true;
             for (String packageName : desired) {
                 boolean isHard = hard.contains(packageName);
-
-                // Основная AppOps операция — применяем принудительно без проверки actual
+            
                 ShellManager.ShellResult result = isHard
                         ? shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "ignore"))
                         : shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "ignore"));
@@ -812,12 +811,11 @@ public class BackgroundAppManager {
                 logRestrictionResult(packageName, isHard ? "reapply-hard" : "reapply-soft", result, null);
 
                 if (isHard) {
-                    // Дополнительные операции для жёсткого — прошивка могла их сбросить
+
                     shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
                     applyBatteryWhitelistRemoval(packageName);
                 }
-
-                // Верификация после применения
+                
                 BackgroundRestrictionState actualState = getBackgroundRestrictionState();
                 logRestrictionVerification(packageName, isHard ? "reapply-hard" : "reapply-soft",
                         actualState, true);
@@ -1111,7 +1109,7 @@ public class BackgroundAppManager {
         }
 
         String command = packageNames.stream()
-                .map(pkg -> "am force-stop " + pkg)
+                .map(pkg -> "am kill " + pkg)
                 .collect(Collectors.joining("; "));
         final long finalTotalKb = totalKb;
         final List<String> packagesToLog = new ArrayList<>(packageNames);
@@ -1161,7 +1159,7 @@ public class BackgroundAppManager {
             recoveredKbByPackage.put(packageToKill, appRamBytes);
         }
         final long finalAppRamBytes = appRamBytes;
-        shellManager.runShellCommand("am force-stop " + packageToKill, () -> {
+        shellManager.runShellCommand("am kill " + packageToKill, () -> {
             executor.execute(() -> recordSuccessfulKills(Collections.singletonList(packageToKill), recoveredKbByPackage));
             if (finalAppRamBytes > 0) {
                 String message = "Free up " + formatMemorySize(finalAppRamBytes);
@@ -1288,11 +1286,6 @@ public class BackgroundAppManager {
         return null;
     }
 
-    /**
-     * Точная проверка присутствия packageName в выводе dumpsys.
-     * Избегает ложных срабатываний когда один пакет является подстрокой другого
-     * (например "com.vk" в "com.vkontakte.android").
-     */
     private static boolean containsPackage(String output, String packageName) {
         if (output == null || packageName == null) return false;
 

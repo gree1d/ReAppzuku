@@ -165,6 +165,10 @@ public class ShellManager {
      * because SELinux restrictions prevent full functionality with root alone.
      */
     public void checkShellPermissions() {
+        if (hasRoot != null && hasRoot) {
+            Log.d(TAG, "Root access available, skipping Shizuku permission request");
+            return;
+        }
         try {
             if (Shizuku.pingBinder()) {
                 if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
@@ -276,22 +280,6 @@ public class ShellManager {
             return executeRootCommandAndGetFullOutput(command);
         } else if (hasShizukuPermission()) {
             return executeShizukuCommandAndGetFullOutput(command);
-        }
-        return null;
-    }
-
-    /**
-     * Run a shell command via Shizuku only, even if Root is available.
-     * Use for commands blocked by SELinux in root context (e.g. ps -A, dumpsys).
-     * This method is blocking and should be called from a background thread.
-     */
-    public String runShizukuCommandAndGetFullOutput(String command) {
-        if (hasShizukuPermission()) {
-            return executeShizukuCommandAndGetFullOutput(command);
-        }
-        Log.w(TAG, "runShizukuCommandAndGetFullOutput: Shizuku not available, falling back to root");
-        if (hasRootAccess()) {
-            return executeRootCommandAndGetFullOutput(command);
         }
         return null;
     }
