@@ -23,8 +23,7 @@
             android:elevation="4dp"
             android:theme="@style/AppTheme.AppBarOverlay"
             app:titleTextColor="@android:color/white"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:menu="@menu/menu_main" />
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -97,7 +96,7 @@
         android:layout_margin="16dp"
         android:layout_gravity="right|bottom"
         app:backgroundTint="#0136FF"
-        app:srcCompat="@drawable/ic_force_stop_themed"
+        app:srcCompat="@drawable/ic_force_stop"
         app:tint="@android:color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
