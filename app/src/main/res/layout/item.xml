@@ -102,20 +102,7 @@
                 android:src="@drawable/ic_more_vert"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:focusable="false" />
-            Правая кнопка — двойное назначение:
-              • обычное приложение  → ic_force_stop  (кликабельно)
-              • защищённое          → ic_protected   (некликабельно, индикатор)
-
-            В адаптере (onBindViewHolder):
-                if (isProtected) {
-                    holder.btnAppAction.setImageResource(R.drawable.ic_protected);
-                    holder.btnAppAction.setClickable(false);
-                } else {
-                    holder.btnAppAction.setImageResource(R.drawable.ic_force_stop);
-                    holder.btnAppAction.setClickable(true);
-                    holder.btnAppAction.setOnClickListener(v -> killApp(app));
-                }
-        -->
+            
         <LinearLayout
             android:id="@+id/linear3"
             android:layout_width="48dp"
