@@ -102,7 +102,9 @@
                 android:src="@drawable/ic_more_vert"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:focusable="false" />
-            
+
+        </LinearLayout>
+
         <LinearLayout
             android:id="@+id/linear3"
             android:layout_width="48dp"
