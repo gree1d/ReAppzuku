@@ -101,7 +101,6 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_more_vert"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/action_more"
                 android:focusable="false"
                 app:tint="?attr/colorControlNormal" />
 
@@ -137,7 +136,6 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_force_stop"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/action_force_stop"
                 android:focusable="false"
                 app:tint="?attr/colorControlNormal" />
 
