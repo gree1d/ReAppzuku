@@ -101,12 +101,7 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_more_vert"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:focusable="false"
-                app:tint="?attr/colorControlNormal" />
-
-        </LinearLayout>
-
-        <!--
+                android:focusable="false" />
             Правая кнопка — двойное назначение:
               • обычное приложение  → ic_force_stop  (кликабельно)
               • защищённое          → ic_protected   (некликабельно, индикатор)
@@ -136,8 +131,7 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_force_stop"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:focusable="false"
-                app:tint="?attr/colorControlNormal" />
+                android:focusable="false" />
 
         </LinearLayout>
 
