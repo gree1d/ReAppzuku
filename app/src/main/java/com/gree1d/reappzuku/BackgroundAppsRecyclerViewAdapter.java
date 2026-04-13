@@ -69,15 +69,8 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
             binding.appIcon.setImageDrawable(app.getAppIcon());
 
             binding.whitelistIcon.setVisibility(app.isWhitelisted() ? View.VISIBLE : View.GONE);
-            binding.imageview2.setBackground(createButtonBackground());
-            binding.imageview2.setElevation(density * 2);
-
-            binding.imageview2.setOnClickListener(v -> {
-                int pos = getAdapterPosition();
-                if (actionListener != null && pos != RecyclerView.NO_POSITION) {
-                    actionListener.onKillApp(app, pos);
-                }
-            });
+            binding.btnAppAction.setBackground(createButtonBackground());
+            binding.btnAppAction.setElevation(density * 2);
 
             binding.linear1.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
@@ -106,15 +99,27 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
 
             if (app.isProtected()) {
                 binding.getRoot().setAlpha(0.4f);
-                binding.imageview2.setVisibility(View.GONE);
+                binding.btnAppAction.setImageResource(R.drawable.ic_protected);
+                binding.btnAppAction.setVisibility(View.VISIBLE);
+                binding.btnAppAction.setClickable(false);
                 binding.linearOverflow.setVisibility(View.GONE);
             } else if (app.isWhitelisted()) {
                 binding.getRoot().setAlpha(0.85f);
-                binding.imageview2.setVisibility(View.GONE);
-                binding.linearOverflow.setVisibility(View.VISIBLE);  // Still show menu for whitelisted
+                binding.btnAppAction.setImageResource(R.drawable.ic_force_stop);
+                binding.btnAppAction.setVisibility(View.GONE);
+                binding.btnAppAction.setClickable(false);
+                binding.linearOverflow.setVisibility(View.VISIBLE);
             } else {
                 binding.getRoot().setAlpha(1.0f);
-                binding.imageview2.setVisibility(app.isSelected() ? View.GONE : View.VISIBLE);
+                binding.btnAppAction.setImageResource(R.drawable.ic_force_stop);
+                binding.btnAppAction.setVisibility(app.isSelected() ? View.GONE : View.VISIBLE);
+                binding.btnAppAction.setClickable(true);
+                binding.btnAppAction.setOnClickListener(v -> {
+                    int pos = getAdapterPosition();
+                    if (actionListener != null && pos != RecyclerView.NO_POSITION) {
+                        actionListener.onKillApp(app, pos);
+                    }
+                });
                 binding.linearOverflow.setVisibility(app.isSelected() ? View.GONE : View.VISIBLE);
             }
         }
