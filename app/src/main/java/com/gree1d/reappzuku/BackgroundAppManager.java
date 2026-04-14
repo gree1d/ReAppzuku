@@ -39,7 +39,7 @@ public class BackgroundAppManager {
     private static final String FOREGROUND_RESTRICTION_OP = "START_FOREGROUND";
     private static final String BOOT_RESTRICTION_OP = "RECEIVE_BOOT_COMPLETED";
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+");
-    private static final String KILL_COMMAND_PREFIX = "am kill ";
+    private static final String FORCE_STOP_COMMAND_PREFIX = "am force-stop ";
     private final Context context;
     private final Handler handler;
     private final ExecutorService executor;
@@ -210,8 +210,9 @@ public class BackgroundAppManager {
                 recordSuccessfulKills(toKill, recoveredKbByPackage);
 
                 String killCommand = toKill.stream()
-                        .map(pkg -> "am kill " + pkg)
+                        .map(this::buildKillCommand)
                         .collect(Collectors.joining("; "));
+                        
                 String finalCommand = killCommand;
 
                 shellManager.runShellCommandAndGetFullOutput(finalCommand);
@@ -558,6 +559,18 @@ public class BackgroundAppManager {
     public void setKillMode(int mode) {
         sharedpreferences.edit().putInt(KEY_KILL_MODE, mode).apply();
     }
+    
+    public int getAutoKillType() {
+        return sharedpreferences.getInt(KEY_AUTO_KILL_TYPE, 0);
+    }
+
+    public void setAutoKillType(int type) {
+        sharedpreferences.edit().putInt(KEY_AUTO_KILL_TYPE, type).apply();
+    }
+
+    private String buildKillCommand(String packageName) {
+        return (getAutoKillType() == 1 ? "am kill " : "am force-stop ") + packageName;
+    }
 
     public void setBackgroundRestricted(String packageName, boolean restricted, Runnable onComplete) {
         Set<String> targetPackages = getBackgroundRestrictedApps();
@@ -662,7 +675,7 @@ public class BackgroundAppManager {
                     shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
                     applyBatteryWhitelistRemoval(packageName);
                 }
-                ShellManager.ShellResult forceStopResult = shellManager.runShellCommandForResult(KILL_COMMAND_PREFIX + packageName);
+                ShellManager.ShellResult forceStopResult = shellManager.runShellCommandForResult(FORCE_STOP_COMMAND_PREFIX + packageName);
                 if (!forceStopResult.succeeded()) success = false;
                 logRestrictionResult(packageName, isHard ? "restrict-hard" : "restrict-soft", restrictResult, forceStopResult);
             }
@@ -1109,8 +1122,9 @@ public class BackgroundAppManager {
         }
 
         String command = packageNames.stream()
-                .map(pkg -> "am kill " + pkg)
+                .map(this::buildKillCommand)
                 .collect(Collectors.joining("; "));
+                
         final long finalTotalKb = totalKb;
         final List<String> packagesToLog = new ArrayList<>(packageNames);
         final Map<String, Long> recoveredToLog = new HashMap<>(recoveredKbByPackage);
@@ -1159,7 +1173,7 @@ public class BackgroundAppManager {
             recoveredKbByPackage.put(packageToKill, appRamBytes);
         }
         final long finalAppRamBytes = appRamBytes;
-        shellManager.runShellCommand("am kill " + packageToKill, () -> {
+        shellManager.runShellCommand(buildKillCommand(packageToKill), () -> {
             executor.execute(() -> recordSuccessfulKills(Collections.singletonList(packageToKill), recoveredKbByPackage));
             if (finalAppRamBytes > 0) {
                 String message = "Free up " + formatMemorySize(finalAppRamBytes);

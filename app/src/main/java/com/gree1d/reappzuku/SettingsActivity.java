@@ -151,7 +151,10 @@ public class SettingsActivity extends BaseActivity {
         binding.switchRamThreshold.setChecked(ramThresholdEnabled);
         int ramThreshold = sharedPreferences.getInt(KEY_RAM_THRESHOLD, DEFAULT_RAM_THRESHOLD_PERCENT);
         updateRamThresholdText(ramThreshold);
-
+        
+        // Load auto-kill type
+        updateAutoKillTypeText(appManager.getAutoKillType());
+        
         // Update visibility of automation options
         updateAutomationOptionsVisibility(serviceEnabled, periodicKillEnabled);
 
@@ -288,7 +291,7 @@ public class SettingsActivity extends BaseActivity {
                         .setMessage(getString(R.string.settings_sleep_mode_restart_message))
                         .setPositiveButton(getString(R.string.dialog_ok), (dialog, which) -> {
                             appManager.setSleepModeEnabled(true);
-                            // Небольшая задержка, чтобы SharedPreferences успели сохраниться
+                            
                             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
                                     () -> android.os.Process.killProcess(android.os.Process.myPid()),
                                     300
@@ -309,6 +312,10 @@ public class SettingsActivity extends BaseActivity {
         // Kill Mode
         binding.layoutKillMode.setOnClickListener(v -> showKillModeDialog());
         binding.layoutBlacklist.setOnClickListener(v -> showBlacklistDialog());
+        
+        // Auto-Kill Type
+        binding.layoutAutoKillType.setOnClickListener(v -> showAutoKillTypeDialog());
+        binding.btnAutoKillTypeHelp.setOnClickListener(v -> showAutoKillTypeHelpDialog());
 
         // Help — opens GitHub
         binding.layoutHelp.setOnClickListener(v -> openUrl(getString(R.string.url_help)));
@@ -364,6 +371,31 @@ public class SettingsActivity extends BaseActivity {
             }
             handler.post(() -> binding.textShellMode.setText(text));
         });
+    }
+    
+    private void showAutoKillTypeDialog() {
+        String[] types = {
+                getString(R.string.settings_auto_kill_type_force_stop),
+                getString(R.string.settings_auto_kill_type_kill)
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.settings_auto_kill_type_title))
+                .setSingleChoiceItems(types, appManager.getAutoKillType(), (dialog, which) -> {
+                    appManager.setAutoKillType(which);
+                    updateAutoKillTypeText(which);
+                    dialog.dismiss();
+                })
+                .show();
+    }
+
+    private void showAutoKillTypeHelpDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.settings_auto_kill_type_help_title))
+                .setMessage(getString(R.string.settings_auto_kill_type_help_message))
+                .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> d.dismiss())
+                .create();
+        dialog.show();
+        styleDialogButtons(dialog);
     }
 
     private void showKillModeDialog() {
@@ -1008,6 +1040,13 @@ public class SettingsActivity extends BaseActivity {
             }
         }
         binding.textKillInterval.setText(getString(R.string.settings_interval_fallback, intervalMs / 1000));
+    }
+    
+    private void updateAutoKillTypeText(int type) {
+        binding.textAutoKillType.setText(
+                type == 1
+                        ? getString(R.string.settings_auto_kill_type_kill)
+                        : getString(R.string.settings_auto_kill_type_force_stop));
     }
 
     private void showKillIntervalDialog() {
