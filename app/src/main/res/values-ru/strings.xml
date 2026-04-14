@@ -330,4 +330,30 @@
     <string name="settings_auto_kill_type_help_title">Тип Auto-Kill</string>
     <string name="settings_auto_kill_type_help_message">На некоторых прошивках использование команды am force-stop может расцениваться системой как сигнал к немедленному освобождению ОЗУ. В таком случае каждый раз при выполнении Auto-Kill система будет закрывать самостоятельно все приложения, не зависимо от настроек ReAppzuku.\n\nЕсли вы столкнулись с этим, просто переключите на команду am kill. Это более «мягкая» для системы команда.</string>
     <string name="dialog_ok_got_it">Понятно</string>
+    
+    <string name="settings_auto_kill_type_help_button">В чем разница?</string>
+    <string name="backgroundrest_help_info">
+<b>МЯГКОЕ</b>\n
+Ограничивает фоновую активность, сохраняя базовую функциональность.\n
+• Запрещает запуск стандартных фоновых сервисов.\n
+• Позволяет приложению показывать важные уведомления.\n
+• Подходит для мессенджеров и почты.\n
+\n
+<b>Используемые команды:</b>\n
+cmd appops set RUN_ANY_IN_BACKGROUND ignore \n
+\n
+--- \n
+\n
+<b>ЖЁСТКОЕ</b>\n
+Максимальная изоляция. Приложение полностью «засыпает».\n
+• Запрещает запуск даже приоритетных (Foreground) сервисов.\n
+• Блокирует пробуждение через Wake-locks.\n
+• Полностью исключает автозапуск после перезагрузки устройства.\n
+• Удаляет приложение из белого списка оптимизации батареи.\n
+\n
+<b>Используемые команды:</b>\n
+cmd appops set START_FOREGROUND ignore\n
+cmd appops set RECEIVE_BOOT_COMPLETED ignore\n
+cmd appops set ALARM_WAKEUP ignore\n
+cmd deviceidle whitelist</string>
 </resources>
