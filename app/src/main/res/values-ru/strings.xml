@@ -332,7 +332,8 @@
     <string name="dialog_ok_got_it">Понятно</string>
     
     <string name="settings_bgrest_help_button">В чем разница?</string>
-<string name="backgroundrest_help_info">
+    <string name="dialog_backgroundrest_title">Фоновые ограничения</string>
+    <string name="backgroundrest_help_info">
     <b>МЯГКОЕ</b>\n
     Ограничивает фоновую активность, сохраняя базовую функциональность.\n
     \u2022 Запрещает запуск стандартных фоновых сервисов.\n
