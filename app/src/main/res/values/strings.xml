@@ -348,4 +348,9 @@
     <string name="bgrest_help_soft_body">Limits background activity while maintaining basic functionality.\n\u2022 Prevents standard background services from starting.\n\u2022 Allows the app to show important notifications.\n\u2022 Best for messengers and email clients.\n\nCommands used:\ncmd appops set RUN_ANY_IN_BACKGROUND ignore</string>
     <string name="bgrest_help_hard_title">HARD</string>
     <string name="bgrest_help_hard_body">Maximum isolation. The app completely \u201csleeps\u201d.\n\u2022 Blocks even priority (Foreground) services.\n\u2022 Prevents the device from being woken up via Wake-locks.\n\u2022 Disables automatic startup after device reboot.\n\u2022 Removes the app from the battery optimization whitelist.\n\nCommands used:\ncmd appops set START_FOREGROUND ignore\ncmd appops set RECEIVE_BOOT_COMPLETED ignore\ncmd appops set ALARM_WAKEUP ignore\ncmd deviceidle whitelist</string>
+
+    <!-- Settings: Notification mode (Appearance section) -->
+    <string name="settings_notification_mode_title">Notifications</string>
+    <string name="settings_notification_mode_all">All</string>
+    <string name="settings_notification_mode_important_only">Important only</string>
 </resources>
