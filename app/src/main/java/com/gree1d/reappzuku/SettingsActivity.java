@@ -377,27 +377,39 @@ public class SettingsActivity extends BaseActivity {
                 getString(R.string.settings_auto_kill_type_force_stop),
                 getString(R.string.settings_auto_kill_type_kill)
         };
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.settings_auto_kill_type_title))
+    
+        // Кастомный title с кнопкой "Что это?" справа
+        View titleView = LayoutInflater.from(this).inflate(R.layout.dialog_killtype_info, null);
+        ((TextView) titleView.findViewById(R.id.dialog_title))
+                .setText(R.string.settings_auto_kill_type_title);
+    
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setCustomTitle(titleView)
                 .setSingleChoiceItems(types, appManager.getAutoKillType(), (d, which) -> {
                     appManager.setAutoKillType(which);
                     updateAutoKillTypeText(which);
                     d.dismiss();
-                })
-                .setNeutralButton(R.string.settings_auto_kill_type_help_button, (d, w) -> {
-                    d.dismiss();
-                    showAutoKillTypeHelpDialog();
-                })
-                .create();
+                });
+    
+        AlertDialog dialog = builder.create();
+    
+        titleView.findViewById(R.id.btn_help).setOnClickListener(v -> {
+            dialog.dismiss();
+            showAutoKillTypeHelpDialog(() -> showAutoKillTypeDialog()); // возврат обратно
+        });
+    
         dialog.show();
         styleDialogButtons(dialog);
     }
     
-    private void showAutoKillTypeHelpDialog() {
+    private void showAutoKillTypeHelpDialog(Runnable onBack) {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.settings_auto_kill_type_help_title))
                 .setMessage(getString(R.string.settings_auto_kill_type_help_message))
-                .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> d.dismiss())
+                .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> {
+                    d.dismiss();
+                    if (onBack != null) onBack.run(); // возвращаемся в диалог выбора
+                })
                 .create();
         dialog.show();
         styleDialogButtons(dialog);
