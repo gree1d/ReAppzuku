@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import androidx.core.text.HtmlCompat;
 
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 import static com.gree1d.reappzuku.AppConstants.*;
@@ -1355,7 +1356,7 @@ public class SettingsActivity extends BaseActivity {
     private void showRestrictionTypeHelpDialog(Runnable onBack) {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.dialog_backgroundrest_title))
-                .setMessage(getString(R.string.backgroundrest_help_info))
+                .setMessage(HtmlCompat.fromHtml(getString(R.string.backgroundrest_help_info), HtmlCompat.FROM_HTML_MODE_LEGACY))
                 .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> {
                     d.dismiss();
                     if (onBack != null) onBack.run();
