@@ -1366,7 +1366,7 @@ public class SettingsActivity extends BaseActivity {
         sb.append(getString(R.string.bgrest_help_soft_body));
         sb.append("\n\n");
     
-        sb.append("———");
+        sb.append("- - -");
         sb.append("\n\n");
     
         // HARD
@@ -1385,6 +1385,12 @@ public class SettingsActivity extends BaseActivity {
                 })
                 .create();
         dialog.show();
+        
+        TextView messageView = dialog.findViewById(android.R.id.message);
+        if (messageView != null) {
+            messageView.setText(sb);
+        }
+        
         styleDialogButtons(dialog);
     }
 
