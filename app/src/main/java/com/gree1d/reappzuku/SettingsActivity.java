@@ -315,7 +315,6 @@ public class SettingsActivity extends BaseActivity {
         
         // Auto-Kill Type
         binding.layoutAutoKillType.setOnClickListener(v -> showAutoKillTypeDialog());
-        binding.btnAutoKillTypeHelp.setOnClickListener(v -> showAutoKillTypeHelpDialog());
 
         // Help — opens GitHub
         binding.layoutHelp.setOnClickListener(v -> openUrl(getString(R.string.url_help)));
