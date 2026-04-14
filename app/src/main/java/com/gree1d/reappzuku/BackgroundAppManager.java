@@ -36,8 +36,12 @@ import static com.gree1d.reappzuku.AppConstants.*;
 public class BackgroundAppManager {
     private static final String TAG = "BackgroundAppManager";
     private static final String BACKGROUND_RESTRICTION_OP = "RUN_ANY_IN_BACKGROUND";
+    private static final String BG_RUN_RESTRICTION_OP = "RUN_IN_BACKGROUND";
     private static final String FOREGROUND_RESTRICTION_OP = "START_FOREGROUND";
+    private static final String FGS_FROM_BG_RESTRICTION_OP = "START_FOREGROUND_SERVICES_FROM_BACKGROUND";
     private static final String BOOT_RESTRICTION_OP = "RECEIVE_BOOT_COMPLETED";
+    private static final String WAKE_LOCK_RESTRICTION_OP = "WAKE_LOCK";
+    private static final String ALARM_RESTRICTION_OP = "ALARM_WAKEUP";
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+");
     private static final String FORCE_STOP_COMMAND_PREFIX = "am force-stop ";
     private final Context context;
@@ -651,6 +655,8 @@ public class BackgroundAppManager {
                         .runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "allow"));
                 ShellManager.ShellResult r2 = shellManager
                         .runShellCommandForResult(buildHardRestrictionCommand(packageName, "allow"));
+                // Clear all hard extra ops
+                applyHardExtraOps(packageName, "allow");
                 // Restore boot op to default
                 shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "allow"));
                 // Restore battery whitelist if we removed it
@@ -671,7 +677,8 @@ public class BackgroundAppManager {
                     continue;
                 }
                 if (isHard) {
-                    // Hard: additionally block boot broadcast and remove from battery whitelist
+                    // Hard: apply all extra ops, block boot broadcast, remove from battery whitelist
+                    applyHardExtraOps(packageName, "ignore");
                     shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
                     applyBatteryWhitelistRemoval(packageName);
                 }
@@ -687,11 +694,13 @@ public class BackgroundAppManager {
                     // Ensure soft is cleared, hard is set + extra ops
                     shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "allow"));
                     shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "ignore"));
+                    applyHardExtraOps(packageName, "ignore");
                     shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
                     applyBatteryWhitelistRemoval(packageName);
                 } else {
                     // Ensure hard + extra ops are cleared, soft is set
                     shellManager.runShellCommandForResult(buildHardRestrictionCommand(packageName, "allow"));
+                    applyHardExtraOps(packageName, "allow");
                     shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "allow"));
                     restoreBatteryWhitelist(packageName);
                     shellManager.runShellCommandForResult(buildBackgroundRestrictionCommand(packageName, "ignore"));
@@ -729,6 +738,26 @@ public class BackgroundAppManager {
 
     private String buildBootRestrictionCommand(String packageName, String mode) {
         return "cmd appops set --user current " + packageName + " " + BOOT_RESTRICTION_OP + " " + mode;
+    }
+
+    /**
+     * Applies or clears the full set of HARD restriction ops for a package.
+     * Called in addition to {@link #buildHardRestrictionCommand} (START_FOREGROUND)
+     * and {@link #buildBootRestrictionCommand} (RECEIVE_BOOT_COMPLETED).
+     * Covers: RUN_ANY_IN_BACKGROUND, RUN_IN_BACKGROUND,
+     *         START_FOREGROUND_SERVICES_FROM_BACKGROUND, WAKE_LOCK, ALARM_WAKEUP.
+     */
+    private void applyHardExtraOps(String packageName, String mode) {
+        shellManager.runShellCommandForResult(
+                "cmd appops set --user current " + packageName + " " + BACKGROUND_RESTRICTION_OP + " " + mode);
+        shellManager.runShellCommandForResult(
+                "cmd appops set --user current " + packageName + " " + BG_RUN_RESTRICTION_OP + " " + mode);
+        shellManager.runShellCommandForResult(
+                "cmd appops set --user current " + packageName + " " + FGS_FROM_BG_RESTRICTION_OP + " " + mode);
+        shellManager.runShellCommandForResult(
+                "cmd appops set --user current " + packageName + " " + WAKE_LOCK_RESTRICTION_OP + " " + mode);
+        shellManager.runShellCommandForResult(
+                "cmd appops set --user current " + packageName + " " + ALARM_RESTRICTION_OP + " " + mode);
     }
 
     /**
@@ -824,7 +853,7 @@ public class BackgroundAppManager {
                 logRestrictionResult(packageName, isHard ? "reapply-hard" : "reapply-soft", result, null);
 
                 if (isHard) {
-
+                    applyHardExtraOps(packageName, "ignore");
                     shellManager.runShellCommandForResult(buildBootRestrictionCommand(packageName, "ignore"));
                     applyBatteryWhitelistRemoval(packageName);
                 }
