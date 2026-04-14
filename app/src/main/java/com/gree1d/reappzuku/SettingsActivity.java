@@ -52,6 +52,8 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import androidx.core.text.HtmlCompat;
+import android.text.SpannableStringBuilder;
+import android.text.style.StyleSpan;
 
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 import static com.gree1d.reappzuku.AppConstants.*;
@@ -1354,9 +1356,29 @@ public class SettingsActivity extends BaseActivity {
     }
     
     private void showRestrictionTypeHelpDialog(Runnable onBack) {
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+    
+        // SOFT
+        int start = sb.length();
+        sb.append(getString(R.string.bgrest_help_soft_title));
+        sb.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), start, sb.length(), 0);
+        sb.append("\n");
+        sb.append(getString(R.string.bgrest_help_soft_body));
+        sb.append("\n\n");
+    
+        sb.append("———");
+        sb.append("\n\n");
+    
+        // HARD
+        start = sb.length();
+        sb.append(getString(R.string.bgrest_help_hard_title));
+        sb.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), start, sb.length(), 0);
+        sb.append("\n");
+        sb.append(getString(R.string.bgrest_help_hard_body));
+    
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.dialog_backgroundrest_title))
-                .setMessage(HtmlCompat.fromHtml(getString(R.string.backgroundrest_help_info), HtmlCompat.FROM_HTML_MODE_COMPACT))
+                .setTitle(getString(R.string.dialog_backgroundrest_help))
+                .setMessage(sb)
                 .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> {
                     d.dismiss();
                     if (onBack != null) onBack.run();
