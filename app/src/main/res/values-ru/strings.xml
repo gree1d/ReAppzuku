@@ -332,23 +332,23 @@
     <string name="dialog_ok_got_it">Понятно</string>
     
     <string name="settings_bgrest_help_button">В чем разница?</string>
-    <string name="backgroundrest_help_info"><b>МЯГКОЕ</b><br><br>
-Ограничивает фоновую активность, сохраняя базовую функциональность.<br>
-\u2022 Запрещает запуск стандартных фоновых сервисов.<br>
+    <string name="backgroundrest_help_info"><b>МЯГКОЕ</b>
+<p>Ограничивает фоновую активность, сохраняя базовую функциональность.</p>
+<p>\u2022 Запрещает запуск стандартных фоновых сервисов.<br>
 \u2022 Позволяет приложению показывать важные уведомления.<br>
-\u2022 Подходит для мессенджеров и почты.<br><br>
-<b>Используемые команды:</b><br>
-cmd appops set RUN_ANY_IN_BACKGROUND ignore<br><br>
-———<br><br>
-<b>ЖЁСТКОЕ</b><br><br>
-Максимальная изоляция. Приложение полностью \u00abзасыпает\u00bb.<br>
-\u2022 Запрещает запуск даже приоритетных (Foreground) сервисов.<br>
+\u2022 Подходит для мессенджеров и почты.</p>
+<p><b>Используемые команды:</b><br>
+cmd appops set RUN_ANY_IN_BACKGROUND ignore</p>
+<p>———</p>
+<b>ЖЁСТКОЕ</b>
+<p>Максимальная изоляция. Приложение полностью \u00abзасыпает\u00bb.</p>
+<p>\u2022 Запрещает запуск даже приоритетных (Foreground) сервисов.<br>
 \u2022 Блокирует пробуждение через Wake-locks.<br>
 \u2022 Полностью исключает автозапуск после перезагрузки устройства.<br>
-\u2022 Удаляет приложение из белого списка оптимизации батареи.<br><br>
-<b>Используемые команды:</b><br>
+\u2022 Удаляет приложение из белого списка оптимизации батареи.</p>
+<p><b>Используемые команды:</b><br>
 cmd appops set START_FOREGROUND ignore<br>
 cmd appops set RECEIVE_BOOT_COMPLETED ignore<br>
 cmd appops set ALARM_WAKEUP ignore<br>
-cmd deviceidle whitelist</string>
+cmd deviceidle whitelist</p></string>
 </resources>
