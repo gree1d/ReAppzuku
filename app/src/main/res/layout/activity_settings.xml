@@ -464,7 +464,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingVertical="12dp"
-                android:paddingStart="16dp"
                 android:background="?attr/selectableItemBackground">
             
                 <TextView
