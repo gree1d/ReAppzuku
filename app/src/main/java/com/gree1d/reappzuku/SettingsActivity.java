@@ -134,6 +134,10 @@ public class SettingsActivity extends BaseActivity {
         updateAccentText(accent);
         updateAccentLayoutEnabled(theme);
 
+        // Load notification mode
+        int notificationMode = sharedPreferences.getInt(KEY_NOTIFICATION_MODE, NOTIFICATION_MODE_ALL);
+        updateNotificationModeText(notificationMode);
+
         // Load background service state
         boolean serviceEnabled = sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false);
         binding.switchAutoKill.setChecked(serviceEnabled);
@@ -188,6 +192,9 @@ public class SettingsActivity extends BaseActivity {
             }
             showAccentDialog();
         });
+
+        // Notification mode selector
+        binding.layoutNotificationMode.setOnClickListener(v -> showNotificationModeDialog());
 
         // Background Service toggle
         binding.switchAutoKill.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -1475,6 +1482,30 @@ public class SettingsActivity extends BaseActivity {
                     updateRamThresholdText(RAM_THRESHOLD_VALUES[which]);
                     dialog.dismiss();
                 })
+                .show();
+    }
+
+    private void updateNotificationModeText(int mode) {
+        binding.textNotificationMode.setText(
+                mode == NOTIFICATION_MODE_IMPORTANT_ONLY
+                        ? getString(R.string.settings_notification_mode_important_only)
+                        : getString(R.string.settings_notification_mode_all));
+    }
+
+    private void showNotificationModeDialog() {
+        int current = sharedPreferences.getInt(KEY_NOTIFICATION_MODE, NOTIFICATION_MODE_ALL);
+        String[] options = {
+                getString(R.string.settings_notification_mode_all),
+                getString(R.string.settings_notification_mode_important_only)
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.settings_notification_mode_title))
+                .setSingleChoiceItems(options, current, (dialog, which) -> {
+                    sharedPreferences.edit().putInt(KEY_NOTIFICATION_MODE, which).apply();
+                    updateNotificationModeText(which);
+                    dialog.dismiss();
+                })
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show();
     }
 

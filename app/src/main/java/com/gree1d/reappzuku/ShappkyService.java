@@ -54,10 +54,25 @@ public class ShappkyService extends Service {
     }
 
     /**
+     * Returns true if non-critical (informational) notifications are allowed
+     * based on the user's notification mode preference.
+     */
+    private boolean isAllNotificationsEnabled() {
+        SharedPreferences prefs = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        int mode = prefs.getInt(KEY_NOTIFICATION_MODE, NOTIFICATION_MODE_ALL);
+        return mode == NOTIFICATION_MODE_ALL;
+    }
+
+    /**
      * Updates the persistent foreground notification text.
      * Called after each auto-kill to show how many apps were stopped.
+     * Only updates if the user has enabled all notifications.
      */
     public static void updateNotification(Context context, String title, String text) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        int mode = prefs.getInt(KEY_NOTIFICATION_MODE, NOTIFICATION_MODE_ALL);
+        if (mode != NOTIFICATION_MODE_ALL) return;
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID_SERVICE)
                 .setContentTitle(title)
                 .setContentText(text)
@@ -77,6 +92,7 @@ public class ShappkyService extends Service {
         appManager = new BackgroundAppManager(this, handler, executor, shellManager);
         createNotificationChannel();
 
+        // The foreground service notification is always shown (critical — keeps the service alive).
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID_SERVICE)
                 .setContentTitle(getString(R.string.service_notification_title))
                 .setContentText(getString(R.string.service_notification_text))
@@ -179,7 +195,7 @@ public class ShappkyService extends Service {
 
     /**
      * Periodically checks Shizuku availability.
-     * If Shizuku permission is lost, shows a persistent notification.
+     * If Shizuku permission is lost, shows a persistent notification (always critical — shown in any mode).
      * Cancels the notification once access is restored.
      * Root users are not affected — check is skipped if root is available.
      */
@@ -214,6 +230,7 @@ public class ShappkyService extends Service {
 
     /**
      * Sends a persistent notification informing the user that Shizuku access is lost.
+     * This is a critical notification — always shown regardless of notification mode.
      */
     private void sendShizukuLostNotification() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_ACTIONS)
