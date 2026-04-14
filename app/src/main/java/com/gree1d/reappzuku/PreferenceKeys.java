@@ -27,6 +27,9 @@ public final class PreferenceKeys {
     // Kill Mode
     public static final String KEY_KILL_MODE = "kill_mode"; // 0 = Whitelist (default), 1 = Blacklist
 
+    // Auto-Kill Type: which shell command to use when killing apps
+    public static final String KEY_AUTO_KILL_TYPE = "auto_kill_type"; // 0 = am force-stop (default), 1 = am kill
+
     // Service & Automation
     public static final String KEY_AUTO_KILL_ENABLED = "autoKillEnabled";
     public static final String KEY_PERIODIC_KILL_ENABLED = "periodicKillEnabled";
