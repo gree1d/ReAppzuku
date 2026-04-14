@@ -1356,7 +1356,7 @@ public class SettingsActivity extends BaseActivity {
     private void showRestrictionTypeHelpDialog(Runnable onBack) {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.dialog_backgroundrest_title))
-                .setMessage(HtmlCompat.fromHtml(getString(R.string.backgroundrest_help_info), HtmlCompat.FROM_HTML_MODE_LEGACY))
+                .setMessage(HtmlCompat.fromHtml(getString(R.string.backgroundrest_help_info), HtmlCompat.FROM_HTML_MODE_COMPACT))
                 .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> {
                     d.dismiss();
                     if (onBack != null) onBack.run();
