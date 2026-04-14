@@ -328,6 +328,6 @@
     <string name="settings_auto_kill_type_kill">am kill</string>
     <string name="settings_auto_kill_type_help_button">Что это?</string>
     <string name="settings_auto_kill_type_help_title">Тип Auto-Kill</string>
-    <string name="settings_auto_kill_type_help_message">На некоторых прошивках может быть такое, что использование force-stop расцениваются системой как сигнал к освобождению ОЗУ. В таком случае закрываться будут все приложения, не зависимо от настроек приложения.\n\nЕсли вы столкнулись с этим, просто переключите на режим am kill. Это более «мягкая» для системы команда.</string>
+    <string name="settings_auto_kill_type_help_message">На некоторых прошивках использование команды am force-stop может расцениваться системой как сигнал к немедленному освобождению ОЗУ. В таком случае каждый раз при выполнении Auto-Kill система будет закрывать самостоятельно все приложения, не зависимо от настроек ReAppzuku.\n\nЕсли вы столкнулись с этим, просто переключите на команду am kill. Это более «мягкая» для системы команда.</string>
     <string name="dialog_ok_got_it">Понятно</string>
 </resources>
