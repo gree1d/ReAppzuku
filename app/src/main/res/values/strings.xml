@@ -338,6 +338,6 @@
     <string name="settings_auto_kill_type_kill">am kill</string>
     <string name="settings_auto_kill_type_help_button">What is this?</string>
     <string name="settings_auto_kill_type_help_title">Auto-Kill Type</string>
-    <string name="settings_auto_kill_type_help_message">On some ROMs, using "force-stop" may be interpreted by the system as a signal to clear RAM. In such cases, all applications will be closed regardless of the app settings.\n\nIf you encounter this issue, simply switch to "am kill" mode. This is a \"gentler\" command for the system.</string>
+    <string name="settings_auto_kill_type_help_message">On certain ROMs, using the am force-stop command may be interpreted by the system as a signal to immediately reclaim RAM. In such cases, the system will force-close all apps every time Auto-Kill runs, regardless of ReAppzuku settings.\n\nIf you encounter this issue, simply switch to the am kill command. This is a \"softer\" command that is less aggressive toward the system.</string>
     <string name="dialog_ok_got_it">Got it</string>
 </resources>
