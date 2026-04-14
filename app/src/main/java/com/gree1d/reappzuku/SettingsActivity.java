@@ -1245,49 +1245,57 @@ public class SettingsActivity extends BaseActivity {
         ProgressBar progressBar = dialogView.findViewById(R.id.filter_loading_progress);
         EditText searchBox = dialogView.findViewById(R.id.filter_search);
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
-
+    
+        View titleView = inflater.inflate(R.layout.dialog_title_with_help, null);
+        ((TextView) titleView.findViewById(R.id.dialog_title))
+                .setText(R.string.settings_background_restriction_title);
+    
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.settings_background_restriction_title))
+                .setCustomTitle(titleView)
                 .setView(dialogView);
-
+    
         AlertDialog restrictionDialog = builder.create();
         restrictionDialog.getWindow().setBackgroundDrawable(
                 new ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
-
+    
         restrictionDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_cancel), (dialog, which) -> dialog.dismiss());
         restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> {
         });
-
+    
         progressBar.setVisibility(View.VISIBLE);
         listView.setVisibility(View.GONE);
         searchBox.setVisibility(View.GONE);
         restrictionDialog.show();
-
+    
+        titleView.findViewById(R.id.btn_help).setOnClickListener(v -> {
+            restrictionDialog.dismiss();
+            showRestrictionTypeHelpDialog(() -> showBackgroundRestrictionDialog());
+        });
+    
         restrictionDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
         restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.dialog_button_text));
-
+    
         appManager.loadBackgroundRestrictionApps(allApps -> {
             Set<String> desiredRestrictedApps = appManager.getBackgroundRestrictedApps();
             Set<String> hardRestrictedApps = appManager.getHardRestrictedApps();
-
-            // Restriction-mode constructor — включает чип Мягкое/Жёсткое
+    
             FilterAppsAdapter filterAdapter = new FilterAppsAdapter(
                     this, allApps, desiredRestrictedApps, hardRestrictedApps);
             listView.setAdapter(filterAdapter);
             listView.setOnItemClickListener(null);
-
+    
             progressBar.setVisibility(View.GONE);
             listView.setVisibility(View.VISIBLE);
             searchBox.setVisibility(View.VISIBLE);
             filterOptions.setVisibility(View.VISIBLE);
-
+    
             setupFilterListeners(dialogView, filterAdapter);
-
+    
             appManager.updateRunningState(allApps, () -> {
                 if (!restrictionDialog.isShowing()) return;
                 filterAdapter.notifyDataSetChanged();
             });
-
+    
             searchBox.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                 @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -1295,29 +1303,28 @@ public class SettingsActivity extends BaseActivity {
                 }
                 @Override public void afterTextChanged(Editable s) {}
             });
-
-            // При любом изменении — кнопка становится "Применить"
+    
             filterAdapter.setOnSelectionChangedListener(() -> {
                 restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(getString(R.string.dialog_apply));
                 restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
                         ContextCompat.getColor(this, R.color.dialog_button_text));
             });
-
+    
             Runnable doApply = () -> {
                 Set<String> targetPackages = filterAdapter.getSelectedPackages();
                 Set<String> hardPackages = filterAdapter.getHardRestrictedPackages();
-
+    
                 Set<String> currentDesired = new java.util.HashSet<>(desiredRestrictedApps);
                 Set<String> packagesToRestrict = new java.util.HashSet<>(targetPackages);
                 packagesToRestrict.removeAll(currentDesired);
-
+    
                 int systemAppCount = 0;
                 for (AppModel app : allApps) {
                     if (packagesToRestrict.contains(app.getPackageName()) && app.isSystemApp()) {
                         systemAppCount++;
                     }
                 }
-
+    
                 if (systemAppCount > 0) {
                     new AlertDialog.Builder(SettingsActivity.this)
                             .setTitle(getString(R.string.settings_restriction_system_apps_title))
@@ -1338,11 +1345,24 @@ public class SettingsActivity extends BaseActivity {
                     appManager.applyBackgroundRestriction(targetPackages, hardPackages, null);
                 }
             };
-
+    
             restrictionDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dialog_save), (dialog, which) -> doApply.run());
             restrictionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
                     ContextCompat.getColor(this, R.color.dialog_button_text));
         });
+    }
+    
+    private void showRestrictionTypeHelpDialog(Runnable onBack) {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.dialog_backgroundrest_help))
+                .setMessage(getString(R.string.backgroundrest_help_info))
+                .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> {
+                    d.dismiss();
+                    if (onBack != null) onBack.run();
+                })
+                .create();
+        dialog.show();
+        styleDialogButtons(dialog);
     }
 
     private void updateSleepModeDelayText(long delayMs) {
