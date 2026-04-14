@@ -1,16 +1,11 @@
 package com.gree1d.reappzuku;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.RippleDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,7 +17,6 @@ import java.util.List;
 public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, BackgroundAppsRecyclerViewAdapter.ViewHolder> {
 
     private final Context context;
-    private final int density;
     private OnAppActionListener actionListener;
 
     public interface OnAppActionListener {
@@ -35,7 +29,6 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
     public BackgroundAppsRecyclerViewAdapter(Context context) {
         super(new AppDiffCallback());
         this.context = context;
-        this.density = (int) context.getResources().getDisplayMetrics().density;
     }
 
     public void setOnAppActionListener(OnAppActionListener listener) {
@@ -69,8 +62,6 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
             binding.appIcon.setImageDrawable(app.getAppIcon());
 
             binding.whitelistIcon.setVisibility(app.isWhitelisted() ? View.VISIBLE : View.GONE);
-            binding.btnAppAction.setBackground(createButtonBackground());
-            binding.btnAppAction.setElevation(density * 2);
 
             binding.linear1.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
@@ -123,16 +114,6 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                 binding.linearOverflow.setVisibility(app.isSelected() ? View.GONE : View.VISIBLE);
             }
         }
-    }
-
-    private Drawable createButtonBackground() {
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(ContextCompat.getColor(context, R.color.button_background_color));
-        background.setCornerRadius(density * 360);
-        return new RippleDrawable(
-                new ColorStateList(new int[][]{{}}, new int[]{ContextCompat.getColor(context, R.color.button_ripple_color)}),
-                background, null
-        );
     }
 
     static class AppDiffCallback extends DiffUtil.ItemCallback<AppModel> {
