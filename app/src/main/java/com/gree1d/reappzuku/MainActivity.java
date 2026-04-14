@@ -598,5 +598,6 @@ public class MainActivity extends BaseActivity {
         if (isDarkTheme) {
             sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
             sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+        }
     }
 }
