@@ -332,7 +332,7 @@
     <string name="toast_error_whitelist_empty">Auto-Kill aborted: Whitelist is empty</string>
     <string name="bg_manager_kill_failed">Failed to kill selected apps</string>  
 
-    <! -- Auto-Kill type -->
+    <!-- Auto-Kill type -->
     <string name="settings_auto_kill_type_title">Auto-Kill Type</string>
     <string name="settings_auto_kill_type_force_stop">am force-stop (default)</string>
     <string name="settings_auto_kill_type_kill">am kill</string>
