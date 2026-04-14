@@ -342,10 +342,10 @@
     <string name="dialog_ok_got_it">Got it</string>
 
     <!-- Background Restriction mode -->
-    <string name="settings_bgrest_help_button">What\'s the difference?</string>
-    <string name="dialog_backgroundrest_title">Типы фоновых ограничений</string>
-    <string name="bgrest_help_soft_title">МЯГКОЕ</string>
-    <string name="bgrest_help_soft_body">Ограничивает фоновую активность, сохраняя базовую функциональность.\n\u2022 Запрещает запуск стандартных фоновых сервисов.\n\u2022 Позволяет приложению показывать важные уведомления.\n\u2022 Подходит для мессенджеров и почты.\n\nИспользуемые команды:\ncmd appops set RUN_ANY_IN_BACKGROUND ignore</string>
-    <string name="bgrest_help_hard_title">ЖЕСТКОЕ</string>
-    <string name="bgrest_help_hard_body">Максимальная изоляция. Приложение полностью \u00abзасыпает\u00bb.\n\u2022 Запрещает запуск даже приоритетных (Foreground) сервисов.\n\u2022 Блокирует пробуждение через Wake-locks.\n\u2022 Полностью исключает автозапуск после перезагрузки устройства.\n\u2022 Удаляет приложение из белого списка оптимизации батареи.\n\nИспользуемые команды:\ncmd appops set START_FOREGROUND ignore\ncmd appops set RECEIVE_BOOT_COMPLETED ignore\ncmd appops set ALARM_WAKEUP ignore\ncmd deviceidle whitelist</string>
+    <string name="settings_bgrest_help_button">What is difference?</string>
+    <string name="dialog_backgroundrest_title">Background restriction types</string>
+    <string name="bgrest_help_soft_title">SOFT</string>
+    <string name="bgrest_help_soft_body">Limits background activity while maintaining basic functionality.\n\u2022 Prevents standard background services from starting.\n\u2022 Allows the app to show important notifications.\n\u2022 Best for messengers and email clients.\n\nCommands used:\ncmd appops set RUN_ANY_IN_BACKGROUND ignore</string>
+    <string name="bgrest_help_hard_title">HARD</string>
+    <string name="bgrest_help_hard_body">Maximum isolation. The app completely \u201csleeps\u201d.\n\u2022 Blocks even priority (Foreground) services.\n\u2022 Prevents the device from being woken up via Wake-locks.\n\u2022 Disables automatic startup after device reboot.\n\u2022 Removes the app from the battery optimization whitelist.\n\nCommands used:\ncmd appops set START_FOREGROUND ignore\ncmd appops set RECEIVE_BOOT_COMPLETED ignore\ncmd appops set ALARM_WAKEUP ignore\ncmd deviceidle whitelist</string>
 </resources>
