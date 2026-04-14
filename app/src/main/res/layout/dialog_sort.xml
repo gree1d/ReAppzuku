@@ -54,5 +54,26 @@
             android:padding="8dp" />
 
     </RadioGroup>
+    
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp" />
+
+    <CheckBox
+        android:id="@+id/checkbox_show_system"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_show_system_apps_title"
+        android:padding="8dp" />
+
+    <CheckBox
+        android:id="@+id/checkbox_show_persistent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_show_persistent_apps_title"
+        android:padding="8dp" />
 
 </LinearLayout>
