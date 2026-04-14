@@ -378,16 +378,22 @@ public class SettingsActivity extends BaseActivity {
                 getString(R.string.settings_auto_kill_type_force_stop),
                 getString(R.string.settings_auto_kill_type_kill)
         };
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.settings_auto_kill_type_title))
-                .setSingleChoiceItems(types, appManager.getAutoKillType(), (dialog, which) -> {
+                .setSingleChoiceItems(types, appManager.getAutoKillType(), (d, which) -> {
                     appManager.setAutoKillType(which);
                     updateAutoKillTypeText(which);
-                    dialog.dismiss();
+                    d.dismiss();
                 })
-                .show();
+                .setNeutralButton(R.string.settings_auto_kill_type_help_button, (d, w) -> {
+                    d.dismiss();
+                    showAutoKillTypeHelpDialog();
+                })
+                .create();
+        dialog.show();
+        styleDialogButtons(dialog);
     }
-
+    
     private void showAutoKillTypeHelpDialog() {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.settings_auto_kill_type_help_title))
