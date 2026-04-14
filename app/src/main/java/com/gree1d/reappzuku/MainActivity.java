@@ -53,6 +53,10 @@ public class MainActivity extends BaseActivity {
     private final List<AppModel> fullAppsList = new ArrayList<>();
     private String currentSearchQuery = "";
     private int currentSortMode = AppConstants.SORT_MODE_DEFAULT;
+    private static final int POPUP_SELECT_ALL   = 1;
+    private static final int POPUP_UNSELECT_ALL = 2;
+    private static final int POPUP_SETTINGS     = 3;
+    // Отслеживаем тему/акцент для автоматического recreate при возврате из Settings
     private int appliedAccent;
     private boolean appliedIsAmoled;
 
@@ -83,12 +87,13 @@ public class MainActivity extends BaseActivity {
         // Setup toolbar with colors from resources
         setSupportActionBar(binding.toolbar);
         binding.toolbar.setTitleTextColor(Color.WHITE);
+        // При системном акценте восстанавливаем захардкоженый синий цвет тулбара
         int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         boolean isAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
         if (!isAmoled && accent == ACCENT_SYSTEM) {
             binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
         }
-     
+        // Запоминаем тему/акцент для обнаружения смены при возврате из Settings
         appliedAccent = accent;
         appliedIsAmoled = isAmoled;
 
@@ -117,7 +122,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        
+        // Если акцент или AMOLED изменились в SettingsActivity — пересоздаём Activity
         int newAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         boolean newIsAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
         if (newAccent != appliedAccent || newIsAmoled != appliedIsAmoled) {
@@ -497,20 +502,20 @@ public class MainActivity extends BaseActivity {
         PopupMenu popup = new PopupMenu(this, anchor);
         boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
         if (hasSelection) {
-            popup.getMenu().add(0, R.id.action_unselect_all, 0, getString(R.string.menu_deselect_all));
+            popup.getMenu().add(0, POPUP_UNSELECT_ALL, 0, getString(R.string.menu_deselect_all));
         } else {
-            popup.getMenu().add(0, R.id.action_select_all, 0, getString(R.string.menu_select_all));
+            popup.getMenu().add(0, POPUP_SELECT_ALL, 0, getString(R.string.menu_select_all));
         }
-        popup.getMenu().add(0, R.id.action_settings, 1, getString(R.string.settings_title));
+        popup.getMenu().add(0, POPUP_SETTINGS, 1, getString(R.string.settings_title));
         popup.setOnMenuItemClickListener(popupItem -> {
             int id = popupItem.getItemId();
-            if (id == R.id.action_select_all) {
+            if (id == POPUP_SELECT_ALL) {
                 selectAll();
                 return true;
-            } else if (id == R.id.action_unselect_all) {
+            } else if (id == POPUP_UNSELECT_ALL) {
                 unselectAll();
                 return true;
-            } else if (id == R.id.action_settings) {
+            } else if (id == POPUP_SETTINGS) {
                 startActivity(new Intent(this, SettingsActivity.class));
                 return true;
             }
