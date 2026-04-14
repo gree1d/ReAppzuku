@@ -343,5 +343,29 @@
 
     <!-- Background Restriction mode -->
     <string name="settings_bgrest_help_button">What's the difference?</string>
-    
+    <string name="backgroundrest_help_info">
+<b>SOFT</b>\n
+Limits background activity while maintaining basic functionality.\n
+• Prevents standard background services from starting.\n
+• Allows the app to show important notifications.\n
+• Best for messengers and email clients.\n
+\n
+<b>Commands used:</b>\n
+<tt>cmd appops set RUN_ANY_IN_BACKGROUND ignore</tt>\n
+\n
+--- \n
+\n
+<b>HARD</b>\n
+Maximum isolation. The app "sleeps" completely.\n
+• Blocks even priority (Foreground) services.\n
+• Prevents the device from being woken up via Wake-locks.\n
+• Disables automatic startup after device reboot.\n
+• Removes the app from the battery optimization whitelist.\n
+\n
+<b>Commands used:</b>\n
+<tt>cmd appops set START_FOREGROUND ignore\n
+cmd appops set RECEIVE_BOOT_COMPLETED ignore\n
+cmd appops set ALARM_WAKEUP ignore\n
+cmd deviceidle whitelist</tt>
+</string>
 </resources>
