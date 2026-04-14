@@ -332,6 +332,7 @@
     <string name="dialog_ok_got_it">Понятно</string>
     
     <string name="settings_bgrest_help_button">В чем разница?</string>
+    <string name="dialog_backgroundrest_title">Типы фоновых ограничений</string>
     <string name="bgrest_help_soft_title">МЯГКОЕ</string>
     <string name="bgrest_help_soft_body">Ограничивает фоновую активность, сохраняя базовую функциональность.\n\u2022 Запрещает запуск стандартных фоновых сервисов.\n\u2022 Позволяет приложению показывать важные уведомления.\n\u2022 Подходит для мессенджеров и почты.\n\nИспользуемые команды:\ncmd appops set RUN_ANY_IN_BACKGROUND ignore</string>
     <string name="bgrest_help_hard_title">ЖЕСТКОЕ</string>
