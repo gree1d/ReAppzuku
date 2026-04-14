@@ -342,29 +342,29 @@
     <string name="dialog_ok_got_it">Got it</string>
 
     <!-- Background Restriction mode -->
-    <string name="settings_bgrest_help_button">What's the difference?</string>
-    <string name="backgroundrest_help_info">
-<b>SOFT</b>\n
-Limits background activity while maintaining basic functionality.\n
-• Prevents standard background services from starting.\n
-• Allows the app to show important notifications.\n
-• Best for messengers and email clients.\n
-\n
-<b>Commands used:</b>\n
-cmd appops set RUN_ANY_IN_BACKGROUND ignore \n
-\n
---- \n
-\n
-<b>HARD</b>\n
-Maximum isolation. The app "sleeps" completely.\n
-• Blocks even priority (Foreground) services.\n
-• Prevents the device from being woken up via Wake-locks.\n
-• Disables automatic startup after device reboot.\n
-• Removes the app from the battery optimization whitelist.\n
-\n
-<b>Commands used:</b>\n
-cmd appops set START_FOREGROUND ignore\n
-cmd appops set RECEIVE_BOOT_COMPLETED ignore\n
-cmd appops set ALARM_WAKEUP ignore\n
-cmd deviceidle whitelist</string>
+    <string name="settings_bgrest_help_button">What\'s the difference?</string>
+<string name="backgroundrest_help_info">
+    <b>SOFT</b>\n
+    Limits background activity while maintaining basic functionality.\n
+    \u2022 Prevents standard background services from starting.\n
+    \u2022 Allows the app to show important notifications.\n
+    \u2022 Best for messengers and email clients.\n
+    \n
+    <b>Commands used:</b>\n
+    cmd appops set RUN_ANY_IN_BACKGROUND ignore\n
+    \n
+    ---\n
+    \n
+    <b>HARD</b>\n
+    Maximum isolation. The app \u201csleeps\u201d completely.\n
+    \u2022 Blocks even priority (Foreground) services.\n
+    \u2022 Prevents the device from being woken up via Wake-locks.\n
+    \u2022 Disables automatic startup after device reboot.\n
+    \u2022 Removes the app from the battery optimization whitelist.\n
+    \n
+    <b>Commands used:</b>\n
+    cmd appops set START_FOREGROUND ignore\n
+    cmd appops set RECEIVE_BOOT_COMPLETED ignore\n
+    cmd appops set ALARM_WAKEUP ignore\n
+    cmd deviceidle whitelist</string>
 </resources>
