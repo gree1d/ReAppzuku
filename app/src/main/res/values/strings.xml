@@ -343,7 +343,8 @@
 
     <!-- Background Restriction mode -->
     <string name="settings_bgrest_help_button">What\'s the difference?</string>
-<string name="backgroundrest_help_info">
+    <string name="dialog_backgroundrest_title">Background Restrictions</string>
+    <string name="backgroundrest_help_info">
     <b>SOFT</b>\n
     Limits background activity while maintaining basic functionality.\n
     \u2022 Prevents standard background services from starting.\n
