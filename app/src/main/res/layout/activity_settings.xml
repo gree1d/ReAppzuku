@@ -184,12 +184,6 @@
                     android:textSize="12sp" />
             </LinearLayout>
             
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switch_show_persistent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -497,8 +491,9 @@
                 android:layout_height="1dp"
                 android:background="@color/divider_color"
                 android:layout_marginVertical="16dp" />
+               
 
-            <!-- 5. Advanced & Tools -->
+            <!-- 4. Advanced & Tools -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -729,6 +724,7 @@
                 android:background="@color/divider_color"
                 android:layout_marginVertical="16dp" />
 
+            <!-- 5. Stats -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
