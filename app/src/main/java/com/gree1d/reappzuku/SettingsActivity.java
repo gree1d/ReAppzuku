@@ -1246,7 +1246,7 @@ public class SettingsActivity extends BaseActivity {
         EditText searchBox = dialogView.findViewById(R.id.filter_search);
         LinearLayout filterOptions = dialogView.findViewById(R.id.filter_options_container);
     
-        View titleView = inflater.inflate(R.layout.dialog_title_with_help, null);
+        View titleView = inflater.inflate(R.layout.dialog_backgroundrest_help, null);
         ((TextView) titleView.findViewById(R.id.dialog_title))
                 .setText(R.string.settings_background_restriction_title);
     
@@ -1354,7 +1354,7 @@ public class SettingsActivity extends BaseActivity {
     
     private void showRestrictionTypeHelpDialog(Runnable onBack) {
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.dialog_backgroundrest_help))
+                .setTitle(getString(R.string.dialog_backgroundrest_title))
                 .setMessage(getString(R.string.backgroundrest_help_info))
                 .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> {
                     d.dismiss();
