@@ -331,7 +331,7 @@
     <string name="settings_auto_kill_type_help_message">На некоторых прошивках использование команды am force-stop может расцениваться системой как сигнал к немедленному освобождению ОЗУ. В таком случае каждый раз при выполнении Auto-Kill система будет закрывать самостоятельно все приложения, не зависимо от настроек ReAppzuku.\n\nЕсли вы столкнулись с этим, просто переключите на команду am kill. Это более «мягкая» для системы команда.</string>
     <string name="dialog_ok_got_it">Понятно</string>
     
-    <string name="settings_auto_kill_type_help_button">В чем разница?</string>
+    <string name="settings_bgrest_help_button">В чем разница?</string>
     <string name="backgroundrest_help_info">
 <b>МЯГКОЕ</b>\n
 Ограничивает фоновую активность, сохраняя базовую функциональность.\n
