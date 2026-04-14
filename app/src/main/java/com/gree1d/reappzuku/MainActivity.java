@@ -13,7 +13,6 @@ import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
@@ -54,9 +53,6 @@ public class MainActivity extends BaseActivity {
     private final List<AppModel> fullAppsList = new ArrayList<>();
     private String currentSearchQuery = "";
     private int currentSortMode = AppConstants.SORT_MODE_DEFAULT;
-    private MenuItem selectAllItem;
-    private MenuItem unselectAllItem;
-    // Отслеживаем тему/акцент для автоматического recreate при возврате из Settings
     private int appliedAccent;
     private boolean appliedIsAmoled;
 
@@ -87,13 +83,12 @@ public class MainActivity extends BaseActivity {
         // Setup toolbar with colors from resources
         setSupportActionBar(binding.toolbar);
         binding.toolbar.setTitleTextColor(Color.WHITE);
-        // При системном акценте восстанавливаем захардкоженый синий цвет тулбара
         int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         boolean isAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
         if (!isAmoled && accent == ACCENT_SYSTEM) {
             binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
         }
-        // Запоминаем тему/акцент для обнаружения смены при возврате из Settings
+     
         appliedAccent = accent;
         appliedIsAmoled = isAmoled;
 
@@ -122,7 +117,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Если акцент или AMOLED изменились в SettingsActivity — пересоздаём Activity
+        
         int newAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         boolean newIsAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
         if (newAccent != appliedAccent || newIsAmoled != appliedIsAmoled) {
@@ -441,10 +436,6 @@ public class MainActivity extends BaseActivity {
         } else {
             binding.fab.hide();
         }
-        if (selectAllItem != null && unselectAllItem != null) {
-            selectAllItem.setVisible(!hasSelection);
-            unselectAllItem.setVisible(hasSelection);
-        }
     }
 
     private void selectAll() {
@@ -468,8 +459,6 @@ public class MainActivity extends BaseActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-        selectAllItem = menu.findItem(R.id.action_select_all);
-        unselectAllItem = menu.findItem(R.id.action_unselect_all);
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
@@ -487,20 +476,6 @@ public class MainActivity extends BaseActivity {
                 return true;
             }
         });
-
-        View selectView = selectAllItem.getActionView();
-        View unselectView = unselectAllItem.getActionView();
-        unselectAllItem.setVisible(false);
-
-        if (selectView != null) {
-            ImageButton selectBtn = selectView.findViewById(R.id.select_all_action);
-            selectBtn.setOnClickListener(v -> selectAll());
-        }
-
-        if (unselectView != null) {
-            ImageButton unselectBtn = unselectView.findViewById(R.id.unselect_all_action);
-            unselectBtn.setOnClickListener(v -> unselectAll());
-        }
         return true;
     }
 
@@ -508,19 +483,40 @@ public class MainActivity extends BaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == R.id.action_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
+            View anchor = binding.toolbar.findViewById(R.id.action_settings);
+            showSettingsPopup(anchor);
             return true;
         } else if (itemId == R.id.action_sort) {
             showSortDialog();
             return true;
-        } else if (itemId == R.id.action_select_all) {
-            selectAll();
-            return true;
-        } else if (itemId == R.id.action_unselect_all) {
-            unselectAll();
-            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showSettingsPopup(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
+        if (hasSelection) {
+            popup.getMenu().add(0, R.id.action_unselect_all, 0, getString(R.string.menu_deselect_all));
+        } else {
+            popup.getMenu().add(0, R.id.action_select_all, 0, getString(R.string.menu_select_all));
+        }
+        popup.getMenu().add(0, R.id.action_settings, 1, getString(R.string.settings_title));
+        popup.setOnMenuItemClickListener(popupItem -> {
+            int id = popupItem.getItemId();
+            if (id == R.id.action_select_all) {
+                selectAll();
+                return true;
+            } else if (id == R.id.action_unselect_all) {
+                unselectAll();
+                return true;
+            } else if (id == R.id.action_settings) {
+                startActivity(new Intent(this, SettingsActivity.class));
+                return true;
+            }
+            return false;
+        });
+        popup.show();
     }
 
     private void showSortDialog() {
