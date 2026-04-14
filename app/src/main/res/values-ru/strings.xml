@@ -337,4 +337,9 @@
     <string name="bgrest_help_soft_body">Ограничивает фоновую активность, сохраняя базовую функциональность.\n\u2022 Запрещает запуск стандартных фоновых сервисов.\n\u2022 Позволяет приложению показывать важные уведомления.\n\u2022 Подходит для мессенджеров и почты.\n\nИспользуемые команды:\ncmd appops set RUN_ANY_IN_BACKGROUND ignore</string>
     <string name="bgrest_help_hard_title">ЖЕСТКОЕ</string>
     <string name="bgrest_help_hard_body">Максимальная изоляция. Приложение полностью \u00abзасыпает\u00bb.\n\u2022 Запрещает запуск даже приоритетных (Foreground) сервисов.\n\u2022 Блокирует пробуждение через Wake-locks.\n\u2022 Полностью исключает автозапуск после перезагрузки устройства.\n\u2022 Удаляет приложение из белого списка оптимизации батареи.\n\nИспользуемые команды:\ncmd appops set START_FOREGROUND ignore\ncmd appops set RECEIVE_BOOT_COMPLETED ignore\ncmd appops set ALARM_WAKEUP ignore\ncmd deviceidle whitelist</string>
+
+    <!-- Settings: Notification mode (Appearance section) -->
+    <string name="settings_notification_mode_title">Уведомления</string>
+    <string name="settings_notification_mode_all">Все</string>
+    <string name="settings_notification_mode_important_only">Только важные</string>
 </resources>
