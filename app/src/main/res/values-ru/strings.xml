@@ -332,28 +332,28 @@
     <string name="dialog_ok_got_it">Понятно</string>
     
     <string name="settings_bgrest_help_button">В чем разница?</string>
-    <string name="backgroundrest_help_info">
-<b>МЯГКОЕ</b>\n
-Ограничивает фоновую активность, сохраняя базовую функциональность.\n
-• Запрещает запуск стандартных фоновых сервисов.\n
-• Позволяет приложению показывать важные уведомления.\n
-• Подходит для мессенджеров и почты.\n
-\n
-<b>Используемые команды:</b>\n
-cmd appops set RUN_ANY_IN_BACKGROUND ignore \n
-\n
---- \n
-\n
-<b>ЖЁСТКОЕ</b>\n
-Максимальная изоляция. Приложение полностью «засыпает».\n
-• Запрещает запуск даже приоритетных (Foreground) сервисов.\n
-• Блокирует пробуждение через Wake-locks.\n
-• Полностью исключает автозапуск после перезагрузки устройства.\n
-• Удаляет приложение из белого списка оптимизации батареи.\n
-\n
-<b>Используемые команды:</b>\n
-cmd appops set START_FOREGROUND ignore\n
-cmd appops set RECEIVE_BOOT_COMPLETED ignore\n
-cmd appops set ALARM_WAKEUP ignore\n
-cmd deviceidle whitelist</string>
+<string name="backgroundrest_help_info">
+    <b>МЯГКОЕ</b>\n
+    Ограничивает фоновую активность, сохраняя базовую функциональность.\n
+    \u2022 Запрещает запуск стандартных фоновых сервисов.\n
+    \u2022 Позволяет приложению показывать важные уведомления.\n
+    \u2022 Подходит для мессенджеров и почты.\n
+    \n
+    <b>Используемые команды:</b>\n
+    cmd appops set RUN_ANY_IN_BACKGROUND ignore\n
+    \n
+    ---\n
+    \n
+    <b>ЖЁСТКОЕ</b>\n
+    Максимальная изоляция. Приложение полностью \u00abзасыпает\u00bb.\n
+    \u2022 Запрещает запуск даже приоритетных (Foreground) сервисов.\n
+    \u2022 Блокирует пробуждение через Wake-locks.\n
+    \u2022 Полностью исключает автозапуск после перезагрузки устройства.\n
+    \u2022 Удаляет приложение из белого списка оптимизации батареи.\n
+    \n
+    <b>Используемые команды:</b>\n
+    cmd appops set START_FOREGROUND ignore\n
+    cmd appops set RECEIVE_BOOT_COMPLETED ignore\n
+    cmd appops set ALARM_WAKEUP ignore\n
+    cmd deviceidle whitelist</string>
 </resources>
