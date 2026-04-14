@@ -1377,7 +1377,7 @@ public class SettingsActivity extends BaseActivity {
         sb.append(getString(R.string.bgrest_help_hard_body));
     
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.dialog_backgroundrest_help))
+                .setTitle(getString(R.string.dialog_backgroundrest_title))
                 .setMessage(sb)
                 .setPositiveButton(getString(R.string.dialog_ok_got_it), (d, w) -> {
                     d.dismiss();
