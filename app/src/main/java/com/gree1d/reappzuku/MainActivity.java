@@ -527,74 +527,76 @@ public class MainActivity extends BaseActivity {
     private void showSortDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_sort, null);
         android.widget.RadioGroup radioGroup = dialogView.findViewById(R.id.sort_radio_group);
-
-        // Set current selection
+        android.widget.CheckBox checkboxSystem = dialogView.findViewById(R.id.checkbox_show_system);
+        android.widget.CheckBox checkboxPersistent = dialogView.findViewById(R.id.checkbox_show_persistent);
+    
+        // Set current radio selection
         int selectedRadioId;
         switch (currentSortMode) {
-            case AppConstants.SORT_MODE_RAM_DESC:
-                selectedRadioId = R.id.sort_ram_desc;
-                break;
-            case AppConstants.SORT_MODE_RAM_ASC:
-                selectedRadioId = R.id.sort_ram_asc;
-                break;
-            case AppConstants.SORT_MODE_NAME_ASC:
-                selectedRadioId = R.id.sort_name_asc;
-                break;
-            case AppConstants.SORT_MODE_NAME_DESC:
-                selectedRadioId = R.id.sort_name_desc;
-                break;
+            case AppConstants.SORT_MODE_RAM_DESC:  selectedRadioId = R.id.sort_ram_desc;  break;
+            case AppConstants.SORT_MODE_RAM_ASC:   selectedRadioId = R.id.sort_ram_asc;   break;
+            case AppConstants.SORT_MODE_NAME_ASC:  selectedRadioId = R.id.sort_name_asc;  break;
+            case AppConstants.SORT_MODE_NAME_DESC: selectedRadioId = R.id.sort_name_desc; break;
             case AppConstants.SORT_MODE_DEFAULT:
-            default:
-                selectedRadioId = R.id.sort_default;
-                break;
+            default:                               selectedRadioId = R.id.sort_default;   break;
         }
         radioGroup.check(selectedRadioId);
-
+    
+        // Set current checkbox state
+        checkboxSystem.setChecked(sharedPreferences.getBoolean(KEY_SHOW_SYSTEM_APPS, false));
+        checkboxPersistent.setChecked(sharedPreferences.getBoolean(KEY_SHOW_PERSISTENT_APPS, false));
+        
+        checkboxSystem.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && !sharedPreferences.getBoolean("system_apps_warning_shown", false)) {
+                buttonView.setChecked(false); 
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle(getString(R.string.settings_system_apps_warning_title))
+                        .setMessage(getString(R.string.settings_system_apps_warning_message))
+                        .setPositiveButton(getString(R.string.settings_system_apps_i_understand), (d, w) -> {
+                            sharedPreferences.edit()
+                                    .putBoolean("system_apps_warning_shown", true)
+                                    .apply();
+                            buttonView.setChecked(true);
+                        })
+                        .setNegativeButton(getString(R.string.dialog_cancel), null)
+                        .show();
+            }
+        });
+    
         androidx.appcompat.app.AlertDialog sortDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setPositiveButton(getString(R.string.dialog_apply), (dialog, which) -> {
+                    // Sort mode
                     int checkedId = radioGroup.getCheckedRadioButtonId();
                     int newSortMode = AppConstants.SORT_MODE_DEFAULT;
-
-                    if (checkedId == R.id.sort_ram_desc) {
-                        newSortMode = AppConstants.SORT_MODE_RAM_DESC;
-                    } else if (checkedId == R.id.sort_ram_asc) {
-                        newSortMode = AppConstants.SORT_MODE_RAM_ASC;
-                    } else if (checkedId == R.id.sort_name_asc) {
-                        newSortMode = AppConstants.SORT_MODE_NAME_ASC;
-                    } else if (checkedId == R.id.sort_name_desc) {
-                        newSortMode = AppConstants.SORT_MODE_NAME_DESC;
-                    }
-
+                    if (checkedId == R.id.sort_ram_desc)       newSortMode = AppConstants.SORT_MODE_RAM_DESC;
+                    else if (checkedId == R.id.sort_ram_asc)   newSortMode = AppConstants.SORT_MODE_RAM_ASC;
+                    else if (checkedId == R.id.sort_name_asc)  newSortMode = AppConstants.SORT_MODE_NAME_ASC;
+                    else if (checkedId == R.id.sort_name_desc) newSortMode = AppConstants.SORT_MODE_NAME_DESC;
+    
                     currentSortMode = newSortMode;
-                    sharedPreferences.edit().putInt(KEY_SORT_MODE, newSortMode).apply();
-                    filterApps(currentSearchQuery); // Re-filter and sort
+    
+                    // Save all prefs atomically
+                    sharedPreferences.edit()
+                            .putInt(KEY_SORT_MODE, newSortMode)
+                            .putBoolean(KEY_SHOW_SYSTEM_APPS, checkboxSystem.isChecked())
+                            .putBoolean(KEY_SHOW_PERSISTENT_APPS, checkboxPersistent.isChecked())
+                            .apply();
+    
+                    loadSettingsAndApplyToManager();
+                    loadBackgroundApps();
                 })
                 .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .create();
-
+    
         sortDialog.show();
-
+    
         boolean isDarkTheme = sharedPreferences.getBoolean(KEY_AMOLED, false)
                 || sharedPreferences.getInt(KEY_THEME,
                         androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
                         == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES;
         if (isDarkTheme) {
-            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-                    .setTextColor(Color.WHITE);
-            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
-                    .setTextColor(Color.WHITE);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Clean up resources
-        shellManager.removeShizukuPermissionListener();
-        executor.shutdownNow();
-        handler.removeCallbacksAndMessages(null);
-        ramMonitor.stopMonitoring();
-        binding = null;
+            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
     }
 }

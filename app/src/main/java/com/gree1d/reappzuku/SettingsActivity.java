@@ -159,15 +159,7 @@ public class SettingsActivity extends BaseActivity {
         updateAutoKillTypeText(appManager.getAutoKillType());
         
         // Update visibility of automation options
-        updateAutomationOptionsVisibility(serviceEnabled, periodicKillEnabled);
-
-        // Load show system apps
-        boolean showSystemApps = sharedPreferences.getBoolean(KEY_SHOW_SYSTEM_APPS, false);
-        binding.switchShowSystem.setChecked(showSystemApps);
-
-        // Load show persistent apps
-        boolean showPersistentApps = sharedPreferences.getBoolean(KEY_SHOW_PERSISTENT_APPS, false);
-        binding.switchShowPersistent.setChecked(showPersistentApps);
+        updateAutomationOptionsVisibility(serviceEnabled, periodicKillEnabled);        
 
         // Load Sleep Mode state
         binding.switchSleepMode.setChecked(appManager.isSleepModeEnabled());
@@ -236,33 +228,6 @@ public class SettingsActivity extends BaseActivity {
 
         // Kill interval selector
         binding.layoutKillInterval.setOnClickListener(v -> showKillIntervalDialog());
-
-        // Show system apps toggle with warning
-        binding.switchShowSystem.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked && !sharedPreferences.getBoolean("system_apps_warning_shown", false)) {
-                // Show warning on first enable
-                new AlertDialog.Builder(this)
-                        .setTitle(getString(R.string.settings_system_apps_warning_title))
-                        .setMessage(getString(R.string.settings_system_apps_warning_message))
-                        .setPositiveButton(getString(R.string.settings_system_apps_i_understand), (dialog, which) -> {
-                            sharedPreferences.edit()
-                                    .putBoolean(KEY_SHOW_SYSTEM_APPS, true)
-                                    .putBoolean("system_apps_warning_shown", true)
-                                    .apply();
-                        })
-                        .setNegativeButton(getString(R.string.dialog_cancel), (dialog, which) -> {
-                            buttonView.setChecked(false);
-                        })
-                        .show();
-            } else if (!isChecked) {
-                sharedPreferences.edit().putBoolean(KEY_SHOW_SYSTEM_APPS, false).apply();
-            }
-        });
-
-        // Show persistent apps toggle
-        binding.switchShowPersistent.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            sharedPreferences.edit().putBoolean(KEY_SHOW_PERSISTENT_APPS, isChecked).apply();
-        });
 
         // Whitelist
         binding.layoutWhitelist.setOnClickListener(v -> showWhitelistDialog());
