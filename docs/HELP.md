@@ -309,6 +309,9 @@ Determines **which** apps Auto-Kill affects.
 
 **🎯 Blacklist (default)** — kills **only** apps from the blacklist. Use this to selectively stop specific apps without touching others.
 
+#### Auto-Kill type
+This setting is intended for situations where your firmware conflicts with the app. If you notice strange behavior with your firmware, change the type to 'am kill'.
+
 #### White / Black list
 
 The list of apps for the selected mode. Depending on the mode, one of the two lists is displayed.
