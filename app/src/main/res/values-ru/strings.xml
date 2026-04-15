@@ -8,6 +8,18 @@
     <string name="shortcut_kill_short_label">Остановить приложение</string>
     <string name="shortcut_kill_long_label">Завершить работу приложения в фоновом режиме</string>
     <string name="url_open_failed">Unable to open link</string>
+    
+    <!-- BackgroundAppManager toasts -->
+    <string name="toast_free_up">Освобождено %1$s</string>
+    <string name="toast_failed_get_running_apps">Не удалось получить список запущенных приложений</string>
+    <string name="toast_error_getting_running_apps">Ошибка получения запущенных приложений: %1$s</string>
+    <string name="toast_bg_restriction_requires_android11">Фоновые ограничения требуют Android 11+</string>
+    <string name="toast_bg_restriction_changes_partial">Некоторые фоновые ограничения не удалось применить</string>
+    <string name="toast_failed_stop_app">Не удалось остановить %1$s</string>
+    <string name="toast_uninstall_sent">Команда удаления отправлена для %1$s</string>
+    <string name="toast_failed_uninstall">Не удалось удалить %1$s</string>
+    <string name="toast_caches_cleared">Кэш очищен</string>
+    <string name="toast_failed_clear_caches">Не удалось очистить кэш</string>
 
     <!-- Common dialog buttons -->
     <string name="dialog_cancel">Отмена</string>
