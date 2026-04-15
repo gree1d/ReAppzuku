@@ -573,7 +573,9 @@ public class BackgroundAppManager {
     }
 
     private String buildKillCommand(String packageName) {
-        return (getAutoKillType() == 1 ? "am kill " : "am force-stop ") + packageName;
+        String cmd = (getAutoKillType() == 1 ? "am kill " : "am force-stop ") + packageName;
+        Log.d(TAG, "buildKillCommand: " + cmd + " (type=" + getAutoKillType() + ")");
+        return cmd;
     }
 
     public void setBackgroundRestricted(String packageName, boolean restricted, Runnable onComplete) {
