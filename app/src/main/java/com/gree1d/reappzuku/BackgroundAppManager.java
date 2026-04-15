@@ -311,11 +311,11 @@ public class BackgroundAppManager {
                         }
                     } else {
                         handler.post(() -> Toast
-                                .makeText(context, "Failed to get running apps output", Toast.LENGTH_SHORT).show());
+                                .makeText(context, context.getString(R.string.toast_failed_get_running_apps), Toast.LENGTH_SHORT).show());
                     }
                 } catch (Exception e) {
                     handler.post(() -> Toast
-                            .makeText(context, "Error getting running apps: " + e.getMessage(), Toast.LENGTH_SHORT)
+                            .makeText(context, context.getString(R.string.toast_error_getting_running_apps, e.getMessage()), Toast.LENGTH_SHORT)
                             .show());
                 }
             }
@@ -618,7 +618,7 @@ public class BackgroundAppManager {
 
         if (!supportsBackgroundRestriction()) {
             BackgroundRestrictionLog.log(context, null, "apply", "skipped", "Android 11+ required");
-            Toast.makeText(context, "Background restriction requires Android 11+", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.toast_bg_restriction_requires_android11), Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 handler.post(onComplete);
             }
@@ -721,7 +721,7 @@ public class BackgroundAppManager {
             handler.post(() -> {
                 Toast.makeText(context,
                         finalSuccess ? context.getString(R.string.bg_manager_restriction_applied)
-                                : "Some background restriction changes failed",
+                                : context.getString(R.string.toast_bg_restriction_changes_partial),
                         Toast.LENGTH_SHORT).show();
                 if (onComplete != null) {
                     onComplete.run();
@@ -1161,8 +1161,7 @@ public class BackgroundAppManager {
         final Map<String, Long> recoveredToLog = new HashMap<>(recoveredKbByPackage);
         shellManager.runShellCommand(command, () -> {
             executor.execute(() -> recordSuccessfulKills(packagesToLog, recoveredToLog));
-            String message = "Free up " + formatMemorySize(finalTotalKb);
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            Toast.makeText(context, context.getString(R.string.toast_free_up, formatMemorySize(finalTotalKb)), Toast.LENGTH_LONG).show();
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -1207,14 +1206,13 @@ public class BackgroundAppManager {
         shellManager.runShellCommand(buildKillCommand(packageToKill), () -> {
             executor.execute(() -> recordSuccessfulKills(Collections.singletonList(packageToKill), recoveredKbByPackage));
             if (finalAppRamBytes > 0) {
-                String message = "Free up " + formatMemorySize(finalAppRamBytes);
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                Toast.makeText(context, context.getString(R.string.toast_free_up, formatMemorySize(finalAppRamBytes)), Toast.LENGTH_LONG).show();
             }
             if (onComplete != null) {
                 onComplete.run();
             }
         }, () -> {
-            Toast.makeText(context, "Failed to stop " + packageName, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.toast_failed_stop_app, packageName), Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -1239,12 +1237,12 @@ public class BackgroundAppManager {
 
         String command = "pm uninstall " + packageName;
         shellManager.runShellCommand(command, () -> {
-            Toast.makeText(context, "Uninstall command sent for " + packageName, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.toast_uninstall_sent, packageName), Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 onComplete.run();
             }
         }, () -> {
-            Toast.makeText(context, "Failed to uninstall " + packageName, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.toast_failed_uninstall, packageName), Toast.LENGTH_SHORT).show();
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -1271,11 +1269,11 @@ public class BackgroundAppManager {
         executor.execute(() -> {
             // Standard Android command to trim caches to 0
             shellManager.runShellCommand("pm trim-caches 4096G", () -> {
-                Toast.makeText(context, "Caches cleared", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, context.getString(R.string.toast_caches_cleared), Toast.LENGTH_SHORT).show();
                 if (onComplete != null)
                     onComplete.run();
             }, () -> {
-                Toast.makeText(context, "Failed to clear caches", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, context.getString(R.string.toast_failed_clear_caches), Toast.LENGTH_SHORT).show();
                 if (onComplete != null)
                     onComplete.run();
             });

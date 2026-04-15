@@ -401,6 +401,21 @@ public class SettingsActivity extends BaseActivity {
                     appManager.setKillMode(which);
                     updateKillModeVisibility();
                     dialog.dismiss();
+                    // Переключились на whitelist (0): проверяем условия для предупреждения
+                    if (which == 0) {
+                        boolean autoKillEnabled = sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false);
+                        Set<String> whitelistedApps = sharedPreferences.getStringSet(
+                                KEY_WHITELISTED_APPS, new HashSet<>());
+                        if (autoKillEnabled && whitelistedApps.isEmpty()) {
+                            new AlertDialog.Builder(this)
+                                    .setTitle(R.string.dialog_unsafe_whitelist_title)
+                                    .setMessage(R.string.dialog_unsafe_whitelist_message)
+                                    .setPositiveButton(R.string.dialog_unsafe_whitelist_ok,
+                                            (d, w) -> d.dismiss())
+                                    .setCancelable(false)
+                                    .show();
+                        }
+                    }
                 })
                 .show();
     }

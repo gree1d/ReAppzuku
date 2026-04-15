@@ -47,6 +47,17 @@ public final class ProtectedApps {
             "com.google.android.inputmethod.latin", // Gboard
             "rikka.shizuku.common", // Shizuku
             "moe.shizuku.privileged.api", // Shizuku thedjchi fork
+            "com.android.shell",                          // Service for ADB/Shizuku
+            "com.android.keychain",                       // Keychain. Can break TLS/VPN/Wi-Fi
+            "com.android.packageinstaller",               // AOSP Package Installer
+            "com.android.permissioncontroller",           // AOSP Permission Controller
+            "com.android.providers.settings",            // Android settings
+            "com.android.providers.telephony",           // Provider SMS/MMS
+            "com.android.nfc",                            // NFC
+            "com.android.networkstack",                   // Network Stack
+            "com.android.networkstack.tethering",        // Tethering stack
+            "com.android.net.resolv",                     // DNS resolver
+            "com.android.vpndialogs",                    // VPN dialogs
 
             // --- Xiaomi / Poco / Redmi (MIUI & HyperOS) ---
             "com.miui.securitycenter", // Security App
@@ -54,11 +65,15 @@ public final class ProtectedApps {
             "com.miui.miwallpaper", // MIUI Wallpaper
             "com.android.camera", // Camera
             "com.miui.guardprovider", // Security Guard
+            "com.miui.core",                              // MIUI Core Services
+            "com.miui.powerkeeper",                     // MIUI PowerKeeper - very capricious app 
 
             // --- Samsung (One UI) ---
             "com.samsung.android.lool", // Device Care
             "com.samsung.android.sm.devicesecurity", // Device Security
             "com.sec.android.app.launcher", // One UI Home
+            "com.samsung.android.app.telephonyui",       // Phone UI Samsung
+            "com.samsung.android.server.telecom",   
 
             // --- Oppo / Realme / OnePlus (ColorOS & derivatives) ---
             "com.coloros.safecenter", // Phone Manager
