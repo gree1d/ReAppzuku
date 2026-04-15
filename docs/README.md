@@ -60,6 +60,11 @@ I welcome your translations!\
 If you want to help localize the app in your language, you can:
  * Submit a **Pull Request** with your changes to /values/strings.xml.
  * Open an **Issue** and attach your /values/strings.xml (please pack it into a .zip archive first) or just paste the XML code into the comment.  
+ 
+## 🖼️ Screenshots
+<img src="https://raw.githubusercontent.com/gree1d/ReAppzuku/refs/heads/main/docs/images/screenshot1.jpg" width="100%" alt="Screenshot 1">
+<img src="https://raw.githubusercontent.com/gree1d/ReAppzuku/refs/heads/main/docs/images/screenshot2.jpg" width="100%" alt="Screenshot 2">
+<img src="https://raw.githubusercontent.com/gree1d/ReAppzuku/refs/heads/main/docs/images/screenshot3.jpg" width="100%" alt="Screenshot 3">
 
 ## License
 ReAppzuku is licensed under the [GNU General Public License v3.0](LICENSE).
