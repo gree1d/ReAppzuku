@@ -28,7 +28,7 @@ Root or Shizuku privileges are required to run the app.
  * Deep restrictions (Android 11+):
    * Soft mode: blocks auto-start without your knowledge.
    * Hard mode: immediately terminates a process when minimized, prevents it from being kept in memory.
- * Sleep Mode: Full freeze (`pm disable`) of selected apps after a set inactivity timer (5–60 min), with automatic unfreeze on screen unlock.
+ * Sleep Mode: Full freeze of selected apps after a set inactivity timer (5–60 min), with automatic unfreeze on screen unlock.
  * Analytics & Logs:
    * Detailed Auto-Kill log for the last 12 hours.
    * "Offenders" ranking by RAM consumption and restart frequency.
@@ -49,7 +49,7 @@ Root or Shizuku privileges are required to run the app.
    * Targeted control: Blacklist only for heavy messengers or games.
 
 ## 🛡 Safety
-ReAppzuku automatically protects critical system processes (Google Play Services, System UI, the current keyboard, and the launcher), preventing the risk of a boot loop.
+ReAppzuku automatically protects critical system processes (Google Play Services, System UI, the current keyboard, and the launcher), preventing the risk of a bootloop.
 
 ## 🎨 Customization
  * Support for system, light, dark, and AMOLED themes.
