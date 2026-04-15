@@ -9,6 +9,18 @@
     <string name="shortcut_kill_long_label">Force-stop an app running in the background</string>
     <string name="url_open_failed">Unable to open link</string>
 
+    <!-- BackgroundAppManager toasts -->
+    <string name="toast_free_up">Free up %1$s</string>
+    <string name="toast_failed_get_running_apps">Failed to get running apps output</string>
+    <string name="toast_error_getting_running_apps">Error getting running apps: %1$s</string>
+    <string name="toast_bg_restriction_requires_android11">Background restriction requires Android 11+</string>
+    <string name="toast_bg_restriction_changes_partial">Some background restriction changes failed</string>
+    <string name="toast_failed_stop_app">Failed to stop %1$s</string>
+    <string name="toast_uninstall_sent">Uninstall command sent for %1$s</string>
+    <string name="toast_failed_uninstall">Failed to uninstall %1$s</string>
+    <string name="toast_caches_cleared">Caches cleared</string>
+    <string name="toast_failed_clear_caches">Failed to clear caches</string>
+
     <!-- Common dialog buttons -->
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_apply">Apply</string>
