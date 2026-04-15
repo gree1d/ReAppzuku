@@ -33,6 +33,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         if (isAmoled) {
             // AMOLED — всегда применяем AMOLED тему; акцент по умолчанию = Индиго
             switch (accent) {
+                case ACCENT_INDIGO:    setTheme(R.style.AppTheme_AccentIndigo_Amoled);    break;
                 case ACCENT_CRIMSON:   setTheme(R.style.AppTheme_AccentCrimson_Amoled);   break;
                 case ACCENT_FOREST:    setTheme(R.style.AppTheme_AccentForest_Amoled);    break;
                 case ACCENT_SLATE:     setTheme(R.style.AppTheme_AccentSlate_Amoled);     break;
@@ -43,7 +44,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                 case ACCENT_MOCHA:     setTheme(R.style.AppTheme_AccentMocha_Amoled);     break;
                 case ACCENT_OLIVE:     setTheme(R.style.AppTheme_AccentOlive_Amoled);     break;
                 case ACCENT_STEEL:     setTheme(R.style.AppTheme_AccentSteel_Amoled);     break;
-                default:               setTheme(R.style.AppTheme_AccentIndigo_Amoled);    break;
+                default:               setTheme(R.style.AppTheme_Amoled);                 break; // ← дефолт = базовая AMOLED без акцента
             }
         } else if (isSystemTheme || accent == ACCENT_SYSTEM) {
             // Системная тема — DynamicColors

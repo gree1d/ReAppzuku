@@ -479,8 +479,7 @@ public class SettingsActivity extends BaseActivity {
             int totalKills = 0;
             int totalRelaunches = 0;
             long totalRecoveredKb = 0;
-            java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm",
-                    java.util.Locale.getDefault());
+            java.text.DateFormat timeFormat = android.text.format.DateFormat.getTimeFormat(this);
 
             for (com.gree1d.reappzuku.db.AppStats stats : statsList) {
                 if (stats == null || stats.packageName == null) {
