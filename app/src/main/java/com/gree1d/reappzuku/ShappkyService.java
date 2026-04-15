@@ -111,9 +111,10 @@ public class ShappkyService extends Service {
         registerReceiver(screenOffReceiver, filter);
 
         scheduleNextKill();
+        
+        cancelShizukuLostNotification();
         scheduleShizukuCheck();
 
-        // Восстанавливаем фоновые ограничения после перезагрузки — appops сбрасывается на некоторых устройствах
         appManager.reapplySavedBackgroundRestrictions(null);
     }
 
@@ -135,7 +136,7 @@ public class ShappkyService extends Service {
                         if (getCurrentRamUsagePercent() >= threshold) {
                             appManager.performAutoKill(() -> KillTriggerReceiver.releaseAutoKillWakeLock());
                         } else {
-                            // RAM ниже порога — kill не выполняется, сразу освобождаем WakeLock
+                          
                             KillTriggerReceiver.releaseAutoKillWakeLock();
                         }
                     } else {
@@ -213,19 +214,25 @@ public class ShappkyService extends Service {
 
                 boolean shizukuOk = shellManager.hasShizukuPermission();
 
-                if (!shizukuOk && !shizukuLostNotificationShown) {
-                    Log.w(TAG, "Shizuku permission lost, sending notification");
+                if (!shizukuOk) {
+                    if (!shizukuLostNotificationShown) {
+                        Log.w(TAG, "Shizuku permission lost, sending notification");
+                        shizukuLostNotificationShown = true;
+                    }
+                   
                     sendShizukuLostNotification();
-                    shizukuLostNotificationShown = true;
-                } else if (shizukuOk && shizukuLostNotificationShown) {
-                    Log.d(TAG, "Shizuku permission restored, cancelling notification");
+                } else {
+                    if (shizukuLostNotificationShown) {
+                        Log.d(TAG, "Shizuku permission restored, cancelling notification");
+                        shizukuLostNotificationShown = false;
+                    }
+                    
                     cancelShizukuLostNotification();
-                    shizukuLostNotificationShown = false;
                 }
 
                 handler.postDelayed(this, SHIZUKU_POLL_INTERVAL_MS);
             }
-        }, SHIZUKU_POLL_INTERVAL_MS);
+        }, 0); 
     }
 
     /**
