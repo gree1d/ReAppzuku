@@ -250,13 +250,9 @@ Choose a theme: system, light, dark, or AMOLED.
 
 Choose the app's color accent: indigo, crimson, forest green, amber, and other shades.
 
-#### Show system apps
+#### Notifications
 
-Enables the display of system apps in the main list. A warning appears on first enable — it is best not to touch system apps.
-
-#### Show critical apps
-
-Enables the display of persistent processes (apps with the `persistent` flag) in the main list.
+Customize app notifications. Important notifications include background service notifications and permission error notifications. 
 
 ---
 
