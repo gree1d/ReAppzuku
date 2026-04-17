@@ -210,7 +210,6 @@
     <string name="settings_hidden_apps_subtitle">Hide apps from the main list</string>
     <string name="settings_backup_restore_title">Backup &amp; Restore</string>
     <string name="settings_backup_restore_subtitle">Save and restore ReAppzuku settings</string>
-    <string name="settings_section_stats_history">Statistics &amp; Logs</string>
     <string name="settings_kill_history_title">Auto-Kill log</string>
     <string name="settings_kill_history_subtitle">Auto-Kills, relaunches and freed RAM</string>
     <string name="settings_top_offenders_title">Top offenders</string>
@@ -372,5 +371,5 @@
     <string name="nav_statistics">Statistics</string>
 
     <!-- Statistics screen title -->
-    <string name="stats_tab_title">Statistics</string>
+    <string name="stats_tab_title">Statistics &amp; Logs</string>
 </resources>
