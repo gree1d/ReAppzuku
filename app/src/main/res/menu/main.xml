@@ -10,15 +10,15 @@
         app:showAsAction="ifRoom|collapseActionView" />
 
     <item
-        android:id="@+id/action_select_all"
-        android:icon="@drawable/ic_select_all"
-        android:title="@string/menu_select_all"
+        android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort"
+        android:title="@string/menu_sort"
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/action_sort"
-        android:icon="@drawable/ic_sort"
-        android:title="@string/sort_title"
+        android:id="@+id/action_select_all"
+        android:icon="@drawable/ic_select_all"
+        android:title="@string/menu_select_all"
         app:showAsAction="ifRoom" />
 
 </menu>
