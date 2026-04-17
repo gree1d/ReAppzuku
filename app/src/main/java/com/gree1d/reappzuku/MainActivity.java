@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.gree1d.reappzuku.databinding.ActivityMainBinding;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,14 +54,10 @@ public class MainActivity extends BaseActivity {
     private final List<AppModel> fullAppsList = new ArrayList<>();
     private String currentSearchQuery = "";
     private int currentSortMode = AppConstants.SORT_MODE_DEFAULT;
-    private static final int POPUP_SELECT_ALL   = 1;
-    private static final int POPUP_UNSELECT_ALL = 2;
-    private static final int POPUP_SETTINGS     = 3;
-    // Отслеживаем тему/акцент для автоматического recreate при возврате из Settings
+
     private int appliedAccent;
     private boolean appliedIsAmoled;
 
-    // Handle Shizuku permission results
     private final Shizuku.OnRequestPermissionResultListener shizukuPermissionListener = (requestCode, grantResult) -> {
         if (grantResult == PackageManager.PERMISSION_GRANTED) {
             loadBackgroundApps();
@@ -71,7 +68,6 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Request notification permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this,
                     Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -84,20 +80,16 @@ public class MainActivity extends BaseActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Setup toolbar with colors from resources
         setSupportActionBar(binding.toolbar);
         binding.toolbar.setTitleTextColor(Color.WHITE);
-        // При системном акценте восстанавливаем захардкоженый синий цвет тулбара
         int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         boolean isAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
         if (!isAmoled && accent == ACCENT_SYSTEM) {
             binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
         }
-        // Запоминаем тему/акцент для обнаружения смены при возврате из Settings
         appliedAccent = accent;
         appliedIsAmoled = isAmoled;
 
-        // Initialize components
         shellManager = new ShellManager(this, handler, executor);
         appManager = new BackgroundAppManager(this, handler, executor, shellManager);
         ramMonitor = new RamMonitor(this, handler, binding.ramUsage, binding.ramUsageText);
@@ -106,30 +98,46 @@ public class MainActivity extends BaseActivity {
         binding.recyclerView.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
         binding.recyclerView.setAdapter(listAdapter);
 
-        // Configure listeners
         setupListeners();
-
-        // Initialize SharedPreferences and load settings
+        setupBottomNavigation();
         loadSettingsAndApplyToManager();
 
-        // Initialize Shizuku and load apps
         shellManager.setShizukuPermissionListener(shizukuPermissionListener);
         shellManager.checkShellPermissions();
         loadBackgroundApps();
         ramMonitor.startMonitoring();
     }
 
+    private void setupBottomNavigation() {
+        binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
+        binding.bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_main) {
+                return true;
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(this, SettingsActivity.class));
+                binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
+                return false;
+            } else if (id == R.id.nav_statistics) {
+                startActivity(new Intent(this, StatisticsActivity.class));
+                binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
+                return false;
+            }
+            return false;
+        });
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        // Если акцент или AMOLED изменились в SettingsActivity — пересоздаём Activity
+        binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
+
         int newAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         boolean newIsAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
         if (newAccent != appliedAccent || newIsAmoled != appliedIsAmoled) {
             recreate();
             return;
         }
-        // Reload settings in case they changed in SettingsActivity
         loadSettingsAndApplyToManager();
         loadBackgroundApps();
     }
@@ -142,7 +150,6 @@ public class MainActivity extends BaseActivity {
         appManager.setShowPersistentApps(showPersistentApps);
     }
 
-    // Setup event listeners
     private void setupListeners() {
         binding.swiperefreshlayout1.setOnRefreshListener(this::loadBackgroundApps);
         binding.fab.setOnClickListener(view -> killSelectedApps());
@@ -186,12 +193,10 @@ public class MainActivity extends BaseActivity {
         PopupMenu popup = new PopupMenu(this, anchor);
         popup.getMenuInflater().inflate(R.menu.menu_app_options, popup.getMenu());
 
-        // Hide uninstall for system apps
         if (app.isSystemApp()) {
             popup.getMenu().findItem(R.id.action_uninstall).setVisible(false);
         }
 
-        // Set checkmarks for current list memberships
         String packageName = app.getPackageName();
         popup.getMenu().findItem(R.id.action_whitelist).setChecked(
                 appManager.getWhitelistedApps().contains(packageName));
@@ -284,7 +289,6 @@ public class MainActivity extends BaseActivity {
             currentSet.add(packageName);
         }
 
-        // Save the updated set
         switch (listType) {
             case "whitelist":
                 appManager.saveWhitelistedApps(currentSet);
@@ -361,11 +365,9 @@ public class MainActivity extends BaseActivity {
         return getString(R.string.main_restriction_menu_default);
     }
 
-    // Load background apps with selection preservation
     private void loadBackgroundApps() {
         binding.swiperefreshlayout1.setRefreshing(true);
 
-        // Save currently selected packages before reload
         final Set<String> selectedPackages = fullAppsList.stream()
                 .filter(AppModel::isSelected)
                 .map(AppModel::getPackageName)
@@ -375,7 +377,6 @@ public class MainActivity extends BaseActivity {
             fullAppsList.clear();
             fullAppsList.addAll(result);
 
-            // Restore selection state for apps that are still in the list
             for (AppModel app : fullAppsList) {
                 if (selectedPackages.contains(app.getPackageName()) && !app.isProtected()) {
                     app.setSelected(true);
@@ -385,7 +386,6 @@ public class MainActivity extends BaseActivity {
             filterApps(currentSearchQuery);
             binding.runningApps.setText(getString(R.string.main_active_apps_count, fullAppsList.size()));
             binding.swiperefreshlayout1.setRefreshing(false);
-
         });
     }
 
@@ -403,37 +403,30 @@ public class MainActivity extends BaseActivity {
                 }
             }
         }
-        // Apply current sort mode
         appManager.sortAppList(appsDataList, currentSortMode);
         listAdapter.submitList(new ArrayList<>(appsDataList));
         updateSelectMenuVisibility();
     }
 
-    // Kill selected apps and manage FAB visibility
     private void killSelectedApps() {
         List<String> packagesToKill = fullAppsList.stream()
                 .filter(AppModel::isSelected)
                 .map(AppModel::getPackageName)
                 .collect(Collectors.toList());
 
-        // Hide FAB
         binding.fab.hide();
 
-        // Clear selection
         for (AppModel app : fullAppsList) {
             app.setSelected(false);
         }
         listAdapter.submitList(new ArrayList<>(appsDataList));
 
-        // Kill apps and show FAB on completion
         appManager.killPackages(packagesToKill, () -> {
             loadBackgroundApps();
             binding.fab.show();
         });
     }
 
-    // Toggle between "Select All" and "Unselect All" based on whether any item is
-    // selected
     private void updateSelectMenuVisibility() {
         boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
         if (hasSelection) {
@@ -487,9 +480,13 @@ public class MainActivity extends BaseActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
-        if (itemId == R.id.action_settings) {
-            View anchor = binding.toolbar.findViewById(R.id.action_settings);
-            showSettingsPopup(anchor);
+        if (itemId == R.id.action_select_all) {
+            boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
+            if (hasSelection) {
+                unselectAll();
+            } else {
+                selectAll();
+            }
             return true;
         } else if (itemId == R.id.action_sort) {
             showSortDialog();
@@ -498,39 +495,12 @@ public class MainActivity extends BaseActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void showSettingsPopup(View anchor) {
-        PopupMenu popup = new PopupMenu(this, anchor);
-        boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
-        if (hasSelection) {
-            popup.getMenu().add(0, POPUP_UNSELECT_ALL, 0, getString(R.string.menu_deselect_all));
-        } else {
-            popup.getMenu().add(0, POPUP_SELECT_ALL, 0, getString(R.string.menu_select_all));
-        }
-        popup.getMenu().add(0, POPUP_SETTINGS, 1, getString(R.string.settings_title));
-        popup.setOnMenuItemClickListener(popupItem -> {
-            int id = popupItem.getItemId();
-            if (id == POPUP_SELECT_ALL) {
-                selectAll();
-                return true;
-            } else if (id == POPUP_UNSELECT_ALL) {
-                unselectAll();
-                return true;
-            } else if (id == POPUP_SETTINGS) {
-                startActivity(new Intent(this, SettingsActivity.class));
-                return true;
-            }
-            return false;
-        });
-        popup.show();
-    }
-
     private void showSortDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_sort, null);
         android.widget.RadioGroup radioGroup = dialogView.findViewById(R.id.sort_radio_group);
         android.widget.CheckBox checkboxSystem = dialogView.findViewById(R.id.checkbox_show_system);
         android.widget.CheckBox checkboxPersistent = dialogView.findViewById(R.id.checkbox_show_persistent);
-    
-        // Set current radio selection
+
         int selectedRadioId;
         switch (currentSortMode) {
             case AppConstants.SORT_MODE_RAM_DESC:  selectedRadioId = R.id.sort_ram_desc;  break;
@@ -541,14 +511,13 @@ public class MainActivity extends BaseActivity {
             default:                               selectedRadioId = R.id.sort_default;   break;
         }
         radioGroup.check(selectedRadioId);
-    
-        // Set current checkbox state
+
         checkboxSystem.setChecked(sharedPreferences.getBoolean(KEY_SHOW_SYSTEM_APPS, false));
         checkboxPersistent.setChecked(sharedPreferences.getBoolean(KEY_SHOW_PERSISTENT_APPS, false));
-        
+
         checkboxSystem.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked && !sharedPreferences.getBoolean("system_apps_warning_shown", false)) {
-                buttonView.setChecked(false); 
+                buttonView.setChecked(false);
                 new androidx.appcompat.app.AlertDialog.Builder(this)
                         .setTitle(getString(R.string.settings_system_apps_warning_title))
                         .setMessage(getString(R.string.settings_system_apps_warning_message))
@@ -562,35 +531,33 @@ public class MainActivity extends BaseActivity {
                         .show();
             }
         });
-    
+
         androidx.appcompat.app.AlertDialog sortDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setPositiveButton(getString(R.string.dialog_apply), (dialog, which) -> {
-                    // Sort mode
                     int checkedId = radioGroup.getCheckedRadioButtonId();
                     int newSortMode = AppConstants.SORT_MODE_DEFAULT;
                     if (checkedId == R.id.sort_ram_desc)       newSortMode = AppConstants.SORT_MODE_RAM_DESC;
                     else if (checkedId == R.id.sort_ram_asc)   newSortMode = AppConstants.SORT_MODE_RAM_ASC;
                     else if (checkedId == R.id.sort_name_asc)  newSortMode = AppConstants.SORT_MODE_NAME_ASC;
                     else if (checkedId == R.id.sort_name_desc) newSortMode = AppConstants.SORT_MODE_NAME_DESC;
-    
+
                     currentSortMode = newSortMode;
-    
-                    // Save all prefs atomically
+
                     sharedPreferences.edit()
                             .putInt(KEY_SORT_MODE, newSortMode)
                             .putBoolean(KEY_SHOW_SYSTEM_APPS, checkboxSystem.isChecked())
                             .putBoolean(KEY_SHOW_PERSISTENT_APPS, checkboxPersistent.isChecked())
                             .apply();
-    
+
                     loadSettingsAndApplyToManager();
                     loadBackgroundApps();
                 })
                 .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .create();
-    
+
         sortDialog.show();
-    
+
         boolean isDarkTheme = sharedPreferences.getBoolean(KEY_AMOLED, false)
                 || sharedPreferences.getInt(KEY_THEME,
                         androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
