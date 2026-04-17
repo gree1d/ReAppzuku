@@ -159,7 +159,6 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <!-- Color accent -->
             <LinearLayout
                 android:id="@+id/layout_accent"
                 android:layout_width="match_parent"
@@ -184,7 +183,6 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <!-- Notifications -->
             <LinearLayout
                 android:id="@+id/layout_notification_mode"
                 android:layout_width="match_parent"
@@ -207,7 +205,7 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-            
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -237,28 +235,27 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
-            
-            <!-- Background Service Master Toggle -->
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp">
-            
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-            
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_background_service_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-            
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -266,14 +263,13 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-            
+
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_auto_kill"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-            
-            <!-- Periodic Auto-Kill Toggle -->
+
             <LinearLayout
                 android:id="@+id/layout_periodic_kill"
                 android:layout_width="match_parent"
@@ -282,20 +278,20 @@
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp"
                 android:paddingStart="16dp">
-            
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-            
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_periodic_kill_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-            
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -303,14 +299,13 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-            
+
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_periodic_kill"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-            
-            <!-- Kill Interval Selector -->
+
             <LinearLayout
                 android:id="@+id/layout_kill_interval"
                 android:layout_width="match_parent"
@@ -319,14 +314,14 @@
                 android:paddingVertical="12dp"
                 android:paddingStart="32dp"
                 android:background="?attr/selectableItemBackground">
-            
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_check_frequency_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-            
+
                 <TextView
                     android:id="@+id/text_kill_interval"
                     android:layout_width="wrap_content"
@@ -335,8 +330,7 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-            
-            <!-- Kill on Screen Lock -->
+
             <LinearLayout
                 android:id="@+id/layout_screen_lock"
                 android:layout_width="match_parent"
@@ -345,20 +339,20 @@
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp"
                 android:paddingStart="16dp">
-            
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-            
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_screen_lock_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-            
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -366,14 +360,13 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-            
+
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_kill_screen_off"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-            
-            <!-- Smart RAM Threshold -->
+
             <LinearLayout
                 android:id="@+id/layout_ram_threshold_toggle"
                 android:layout_width="match_parent"
@@ -382,20 +375,20 @@
                 android:gravity="center_vertical"
                 android:paddingVertical="12dp"
                 android:paddingStart="16dp">
-            
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
-            
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_ram_threshold_title"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
-            
+
                     <TextView
                         android:id="@+id/text_ram_threshold"
                         android:layout_width="wrap_content"
@@ -404,14 +397,13 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-            
+
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_ram_threshold"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
-            
-            <!-- Kill type -->
+
             <LinearLayout
                 android:id="@+id/layout_auto_kill_type"
                 android:layout_width="match_parent"
@@ -419,24 +411,23 @@
                 android:orientation="vertical"
                 android:paddingVertical="12dp"
                 android:background="?attr/selectableItemBackground">
-            
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_auto_kill_type_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-            
+
                 <TextView
                     android:id="@+id/text_auto_kill_type"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
-            
+
             </LinearLayout>
-            
-            <!-- Kill Mode -->
+
             <LinearLayout
                 android:id="@+id/layout_kill_mode"
                 android:layout_width="match_parent"
@@ -444,14 +435,14 @@
                 android:orientation="vertical"
                 android:paddingVertical="12dp"
                 android:background="?attr/selectableItemBackground">
-            
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_mode_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-            
+
                 <TextView
                     android:id="@+id/text_kill_mode"
                     android:layout_width="wrap_content"
@@ -460,8 +451,7 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-            
-            <!-- Whitelist -->
+
             <LinearLayout
                 android:id="@+id/layout_whitelist"
                 android:layout_width="match_parent"
@@ -469,14 +459,14 @@
                 android:orientation="vertical"
                 android:paddingVertical="12dp"
                 android:background="?attr/selectableItemBackground">
-            
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_whitelist_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-            
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -484,8 +474,7 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-            
-            <!-- Blacklist -->
+
             <LinearLayout
                 android:id="@+id/layout_blacklist"
                 android:layout_width="match_parent"
@@ -494,14 +483,14 @@
                 android:paddingVertical="12dp"
                 android:background="?attr/selectableItemBackground"
                 android:visibility="gone">
-            
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_blacklist_title"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
-            
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -509,13 +498,12 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-            
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="@color/divider_color"
                 android:layout_marginVertical="16dp" />
-               
 
             <!-- 4. Advanced & Tools -->
             <LinearLayout
@@ -587,7 +575,6 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <!-- Sleep Mode Toggle -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -622,7 +609,6 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <!-- Sleep Mode Apps -->
             <LinearLayout
                 android:id="@+id/layout_sleep_mode_apps"
                 android:layout_width="match_parent"
@@ -647,7 +633,6 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <!-- Sleep Mode Delay -->
             <LinearLayout
                 android:id="@+id/layout_sleep_mode_delay"
                 android:layout_width="match_parent"
@@ -748,106 +733,7 @@
                 android:background="@color/divider_color"
                 android:layout_marginVertical="16dp" />
 
-            <!-- 5. Stats -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="8dp"
-                    android:src="@drawable/ic_stats"
-                    android:contentDescription="@null" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_section_stats_history"
-                    android:textColor="?attr/colorSecondary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_stats"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_kill_history_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_kill_history_subtitle"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_top_offenders"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_top_offenders_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_top_offenders_subtitle"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_restriction_log"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_restriction_log_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_restriction_log_subtitle"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider_color"
-                android:layout_marginVertical="16dp" />
-
-            <!-- 6. About app -->
+            <!-- 5. About app -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -967,8 +853,6 @@
                         android:textSize="12sp" />
                 </LinearLayout>
             </LinearLayout>
-
-
 
             <TextView
                 android:id="@+id/text_version"

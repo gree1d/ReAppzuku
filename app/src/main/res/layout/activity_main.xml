@@ -75,7 +75,8 @@
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swiperefreshlayout1"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:background="?android:attr/colorBackground">
 
             <androidx.recyclerview.widget.RecyclerView
@@ -87,6 +88,14 @@
                 android:paddingTop="2dp" />
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/colorBackground"
+            app:menu="@menu/bottom_nav_menu" />
+
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -97,6 +106,7 @@
         android:layout_gravity="right|bottom"
         app:backgroundTint="#0136FF"
         app:srcCompat="@drawable/ic_force_stop"
-        app:tint="@android:color/white" />
+        app:tint="@android:color/white"
+        app:layout_anchorGravity="bottom|end" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
