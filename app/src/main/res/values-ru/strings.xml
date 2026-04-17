@@ -210,7 +210,6 @@
     <string name="settings_hidden_apps_subtitle">Скрыть приложения из общего списка</string>
     <string name="settings_backup_restore_title">Бэкап &amp; Восстановление</string>
     <string name="settings_backup_restore_subtitle">Сохранить и восстановить настройки ReAppzuku</string>
-    <string name="settings_section_stats_history">Статистика &amp; Журналы</string>
     <string name="settings_kill_history_title">Журнал Auto-Kill</string>
     <string name="settings_kill_history_subtitle">Auto-Kills, перезапуски и освобожденная ОЗУ</string>
     <string name="settings_top_offenders_title">Топ нарушителей</string>
@@ -361,5 +360,5 @@
     <string name="nav_statistics">Statistics</string>
 
     <!-- Statistics screen title -->
-    <string name="stats_tab_title">Statistics</string>
+    <string name="stats_tab_title">Статистика &amp; Журналы</string>
 </resources>
