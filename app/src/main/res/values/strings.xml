@@ -365,4 +365,12 @@
     <string name="settings_notification_mode_title">Notifications</string>
     <string name="settings_notification_mode_all">All</string>
     <string name="settings_notification_mode_important_only">Important only</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_main">Main</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_statistics">Statistics</string>
+
+    <!-- Statistics screen title -->
+    <string name="stats_tab_title">Statistics</string>
 </resources>
