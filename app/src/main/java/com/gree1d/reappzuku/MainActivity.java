@@ -54,6 +54,7 @@ public class MainActivity extends BaseActivity {
     private final List<AppModel> fullAppsList = new ArrayList<>();
     private String currentSearchQuery = "";
     private int currentSortMode = AppConstants.SORT_MODE_DEFAULT;
+    private MenuItem selectAllMenuItem;
 
     private int appliedAccent;
     private boolean appliedIsAmoled;
@@ -116,10 +117,12 @@ public class MainActivity extends BaseActivity {
                 return true;
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
+                overridePendingTransition(0, 0);
                 binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
                 return false;
             } else if (id == R.id.nav_statistics) {
                 startActivity(new Intent(this, StatisticsActivity.class));
+                overridePendingTransition(0, 0);
                 binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
                 return false;
             }
@@ -444,6 +447,10 @@ public class MainActivity extends BaseActivity {
         }
         listAdapter.submitList(new ArrayList<>(appsDataList));
         updateSelectMenuVisibility();
+        if (selectAllMenuItem != null) {
+            selectAllMenuItem.setIcon(R.drawable.ic_unselect_all);
+            selectAllMenuItem.setTitle(getString(R.string.menu_deselect_all));
+        }
     }
 
     private void unselectAll() {
@@ -452,11 +459,17 @@ public class MainActivity extends BaseActivity {
         }
         listAdapter.submitList(new ArrayList<>(appsDataList));
         updateSelectMenuVisibility();
+        if (selectAllMenuItem != null) {
+            selectAllMenuItem.setIcon(R.drawable.ic_select_all);
+            selectAllMenuItem.setTitle(getString(R.string.menu_select_all));
+        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
+
+        selectAllMenuItem = menu.findItem(R.id.action_select_all);
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();

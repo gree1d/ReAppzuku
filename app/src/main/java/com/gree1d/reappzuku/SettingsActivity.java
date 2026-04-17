@@ -82,15 +82,34 @@ public class SettingsActivity extends BaseActivity {
         setupToolbar();
         loadSettings();
         setupListeners();
+        setupBottomNavigation();
     }
 
     private void setupToolbar() {
         setSupportActionBar(binding.toolbar);
-        binding.toolbar.setNavigationOnClickListener(v -> finish());
         int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         if (accent == ACCENT_SYSTEM) {
             binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
         }
+    }
+
+    private void setupBottomNavigation() {
+        binding.bottomNavigation.setSelectedItemId(R.id.nav_settings);
+        binding.bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_settings) {
+                return true;
+            } else if (id == R.id.nav_main) {
+                finish();
+                overridePendingTransition(0, 0);
+                return false;
+            } else if (id == R.id.nav_statistics) {
+                startActivity(new Intent(this, StatisticsActivity.class));
+                overridePendingTransition(0, 0);
+                return false;
+            }
+            return false;
+        });
     }
 
     private void loadSettings() {
