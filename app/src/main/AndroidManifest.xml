@@ -41,6 +41,10 @@
             android:name=".SettingsActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".StatisticsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
         <service
             android:name=".ShappkyQuickTile"
             android:icon="@drawable/ic_force_stop"
