@@ -1,4 +1,8 @@
 <resources>
+    <style name="AppTheme.NoAnimation" parent="AppTheme">
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+    
     <!-- Базовая тема -->
     <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
