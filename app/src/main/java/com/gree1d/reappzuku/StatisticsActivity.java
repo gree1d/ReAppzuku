@@ -77,6 +77,7 @@ public class StatisticsActivity extends BaseActivity {
     }
 
     private void setupBottomNavigation() {
+        binding.bottomNavigation.setSelectedItemId(R.id.nav_statistics);
         binding.bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_main) {
