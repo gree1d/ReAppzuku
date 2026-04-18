@@ -1,4 +1,10 @@
 <resources>
+    <style name="NavIndicatorNoAnim" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="motionDurationLong2">0</item>
+        <item name="motionEasingEmphasizedInterpolator">@null</item>
+        <item name="android:animateLayoutChanges">false</item>
+    </style>
+    
     <style name="AppTheme.NoAnimation" parent="AppTheme">
         <item name="android:windowAnimationStyle">@style/NoAnimationWindow</item>
         <item name="android:fitsSystemWindows">false</item>
