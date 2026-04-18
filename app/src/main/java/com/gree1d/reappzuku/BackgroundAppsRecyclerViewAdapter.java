@@ -102,25 +102,33 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                 // В режиме выделения: короткий клик = toggle select
                 binding.linear1.setOnClickListener(v -> {
                     int pos = getAdapterPosition();
-                    if (actionListener != null && pos != RecyclerView.NO_POSITION
-                            && !app.isProtected() && !app.isWhitelisted()) {
-                        actionListener.onAppClick(app, pos);
+                    if (actionListener != null && pos != RecyclerView.NO_POSITION) {
+                        AppModel current = getItem(pos);
+                        if (!current.isProtected() && !current.isWhitelisted()) {
+                            actionListener.onAppClick(current, pos);
+                        }
                     }
                 });
                 binding.linear1.setOnLongClickListener(null);
             } else {
                 // Обычный режим: короткий клик = меню, длинный = войти в выделение
                 binding.linear1.setOnClickListener(v -> {
-                    if (actionListener != null) {
-                        actionListener.onOverflowClick(app, v);
+                    int pos = getAdapterPosition();
+                    if (actionListener != null && pos != RecyclerView.NO_POSITION) {
+                        // Берём актуальный app из адаптера, а не захваченный в лямбде —
+                        // после submitList/DiffUtil объект мог смениться
+                        AppModel current = getItem(pos);
+                        actionListener.onOverflowClick(current, v);
                     }
                 });
                 binding.linear1.setOnLongClickListener(v -> {
                     int pos = getAdapterPosition();
-                    if (actionListener != null && !app.isProtected()
-                            && !app.isWhitelisted() && pos != RecyclerView.NO_POSITION) {
-                        actionListener.onAppClick(app, pos);
-                        return true;
+                    if (actionListener != null && pos != RecyclerView.NO_POSITION) {
+                        AppModel current = getItem(pos);
+                        if (!current.isProtected() && !current.isWhitelisted()) {
+                            actionListener.onAppClick(current, pos);
+                            return true;
+                        }
                     }
                     return false;
                 });
@@ -166,7 +174,7 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                 binding.btnAppAction.setOnClickListener(v -> {
                     int pos = getAdapterPosition();
                     if (actionListener != null && pos != RecyclerView.NO_POSITION) {
-                        actionListener.onAppClick(app, pos);
+                        actionListener.onAppClick(getItem(pos), pos);
                     }
                 });
 
@@ -178,7 +186,7 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                 binding.btnAppAction.setOnClickListener(v -> {
                     int pos = getAdapterPosition();
                     if (actionListener != null && pos != RecyclerView.NO_POSITION) {
-                        actionListener.onKillApp(app, pos);
+                        actionListener.onKillApp(getItem(pos), pos);
                     }
                 });
             }
