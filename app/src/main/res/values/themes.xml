@@ -1,8 +1,20 @@
 <resources>
     <style name="NavIndicatorNoAnim" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:width">56dp</item>
+        <item name="android:height">32dp</item>
+        <item name="shapeAppearance">@style/NavIndicatorShape</item>
         <item name="motionDurationLong2">0</item>
-        <item name="motionEasingEmphasizedInterpolator">@null</item>
-        <item name="android:animateLayoutChanges">false</item>
+        <item name="motionDurationLong1">0</item>
+        <item name="motionDurationMedium2">0</item>
+        <item name="motionDurationMedium1">0</item>
+        <item name="motionDurationShort2">0</item>
+        <item name="motionDurationShort1">0</item>
+        <item name="motionEasingEmphasized">null</item>
+    </style>
+
+    <style name="NavIndicatorShape" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
     </style>
     
     <style name="AppTheme.NoAnimation" parent="AppTheme">
