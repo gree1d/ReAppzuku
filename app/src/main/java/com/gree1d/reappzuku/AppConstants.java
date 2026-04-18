@@ -72,6 +72,14 @@ public final class AppConstants {
         public static final int ACCENT_MOCHA     = 9;  // Мокко
         public static final int ACCENT_OLIVE     = 10; // Оливковый
         public static final int ACCENT_STEEL     = 11; // Стальной
+        public static final int ACCENT_APRICOT      = 12;  // Абрикосовый
+        public static final int ACCENT_SKY          = 13;  // Небесный
+        public static final int ACCENT_PAPAYA       = 14;  // Папайя
+        public static final int ACCENT_LAVENDER     = 15;  // Лаванда
+        public static final int ACCENT_MINT         = 16;  // Мятный
+        public static final int ACCENT_PEACH        = 17;  // Персиковый
+        public static final int ACCENT_POWDER       = 18;  // Пудровый
+        public static final int ACCENT_FOG          = 19;  // Туманный
 
         // Sleep Mode
         public static final long DEFAULT_SLEEP_MODE_DELAY_MS = 60 * 60 * 1000L; // 60 minutes

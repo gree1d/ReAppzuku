@@ -44,6 +44,15 @@ public abstract class BaseActivity extends AppCompatActivity {
                 case ACCENT_MOCHA:     setTheme(R.style.AppTheme_AccentMocha_Amoled);     break;
                 case ACCENT_OLIVE:     setTheme(R.style.AppTheme_AccentOlive_Amoled);     break;
                 case ACCENT_STEEL:     setTheme(R.style.AppTheme_AccentSteel_Amoled);     break;
+
+                case ACCENT_APRICOT:     setTheme(R.style.AppTheme_AccentApricot_Amoled);     break;
+                case ACCENT_SKY:     setTheme(R.style.AppTheme_AccentSky_Amoled);     break;
+                case ACCENT_PAPAYA:     setTheme(R.style.AppTheme_AccentPapaya_Amoled);     break;
+                case ACCENT_LAVENDER:     setTheme(R.style.AppTheme_AccentLavender_Amoled);     break;
+                case ACCENT_MINT:     setTheme(R.style.AppTheme_AccentMint_Amoled);     break;
+                case ACCENT_PEACH:     setTheme(R.style.AppTheme_AccentPeach_Amoled);     break;
+                case ACCENT_POWDER:     setTheme(R.style.AppTheme_AccentPowder_Amoled);     break;
+                case ACCENT_FOG:     setTheme(R.style.AppTheme_AccentFog_Amoled);     break;
                 default:               setTheme(R.style.AppTheme_Amoled);                 break; // ← дефолт = базовая AMOLED без акцента
             }
         } else if (isSystemTheme || accent == ACCENT_SYSTEM) {
@@ -63,6 +72,15 @@ public abstract class BaseActivity extends AppCompatActivity {
                 case ACCENT_MOCHA:     setTheme(R.style.AppTheme_AccentMocha);     break;
                 case ACCENT_OLIVE:     setTheme(R.style.AppTheme_AccentOlive);     break;
                 case ACCENT_STEEL:     setTheme(R.style.AppTheme_AccentSteel);     break;
+
+                case ACCENT_APRICOT:     setTheme(R.style.AppTheme_AccentApricot);     break;
+                case ACCENT_SKY:     setTheme(R.style.AppTheme_AccentSky);     break;
+                case ACCENT_PAPAYA:     setTheme(R.style.AppTheme_AccentPapaya);     break;
+                case ACCENT_LAVENDER:     setTheme(R.style.AppTheme_AccentLavender);     break;
+                case ACCENT_MINT:     setTheme(R.style.AppTheme_AccentMint);     break;
+                case ACCENT_PEACH:     setTheme(R.style.AppTheme_AccentPeach);     break;
+                case ACCENT_POWDER:     setTheme(R.style.AppTheme_AccentPowder);     break;
+                case ACCENT_FOG:     setTheme(R.style.AppTheme_AccentFog);     break;
                 default:               setTheme(R.style.AppTheme_AccentIndigo);    break;
             }
         }
