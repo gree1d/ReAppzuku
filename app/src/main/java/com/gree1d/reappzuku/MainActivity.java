@@ -131,7 +131,10 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Сброс выбора навбара без срабатывания listener
+        binding.bottomNavigation.setOnItemSelectedListener(null);
         binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
+        setupBottomNavigation();
 
         int newAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         boolean newIsAmoled = sharedPreferences.getBoolean(KEY_AMOLED, false);
