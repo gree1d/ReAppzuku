@@ -874,7 +874,6 @@
         android:layout_gravity="bottom"
         android:background="?android:attr/colorBackground"
         android:elevation="8dp"
-        app:itemRippleColor="@null"
         app:itemActiveIndicatorStyle="@style/NavIndicatorNoAnim"
         app:itemRippleColor="@null"
         app:itemIconSize="24dp"
