@@ -106,6 +106,7 @@ public class SettingsActivity extends BaseActivity {
             } else if (id == R.id.nav_statistics) {
                 startActivity(new Intent(this, StatisticsActivity.class));
                 overridePendingTransition(0, 0);
+                finish();
                 return false;
             }
             return false;
