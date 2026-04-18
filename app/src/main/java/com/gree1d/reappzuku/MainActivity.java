@@ -172,6 +172,7 @@ public class MainActivity extends BaseActivity {
                 }
                 app.setSelected(!app.isSelected());
                 listAdapter.notifyItemChanged(position);
+                listAdapter.refreshSelectionMode();
                 updateSelectMenuVisibility();
             }
 

@@ -43,13 +43,22 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
         boolean newSelectionMode = list != null && list.stream().anyMatch(AppModel::isSelected);
 
         if (newSelectionMode != selectionMode) {
-            // Режим выделения изменился (0→1 или 1→0):
-            // DiffUtil не знает о флаге selectionMode, поэтому он не перерисует
-            // ячейки, у которых isSelected не менялся. Обновляем принудительно.
             selectionMode = newSelectionMode;
             super.submitList(list, this::notifyDataSetChanged);
         } else {
             super.submitList(list);
+        }
+    }
+
+    /**
+     * Вызывать из Activity когда selectionMode мог измениться из-за поштучного
+     * выбора (notifyItemChanged не обновляет остальные ячейки).
+     */
+    public void refreshSelectionMode() {
+        boolean newSelectionMode = getCurrentList().stream().anyMatch(AppModel::isSelected);
+        if (newSelectionMode != selectionMode) {
+            selectionMode = newSelectionMode;
+            notifyDataSetChanged();
         }
     }
 
