@@ -76,19 +76,20 @@ public class StatisticsActivity extends BaseActivity {
     }
 
     private void setupBottomNavigation() {
-        android.widget.ImageView iconStats = binding.bottomNavigation.findViewById(R.id.nav_icon_statistics);
-        if (iconStats != null) iconStats.setSelected(true);
-        binding.bottomNavigation.findViewById(R.id.nav_btn_main).setOnClickListener(v -> {
+        binding.bottomNavigation.navIconMain.setSelected(false);
+        binding.bottomNavigation.navIconSettings.setSelected(false);
+        binding.bottomNavigation.navIconStatistics.setSelected(true);
+        binding.bottomNavigation.navBtnMain.setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             finish();
         });
-        binding.bottomNavigation.findViewById(R.id.nav_btn_settings).setOnClickListener(v -> {
+        binding.bottomNavigation.navBtnSettings.setOnClickListener(v -> {
             startActivity(new Intent(this, SettingsActivity.class));
             finish();
         });
-        binding.bottomNavigation.findViewById(R.id.nav_btn_statistics).setOnClickListener(v -> {});
+        binding.bottomNavigation.navBtnStatistics.setOnClickListener(v -> {});
     }
 
     private void setupListeners() {

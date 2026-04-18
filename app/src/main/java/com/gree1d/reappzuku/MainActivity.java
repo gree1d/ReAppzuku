@@ -109,23 +109,14 @@ public class MainActivity extends BaseActivity {
     }
 
     private void setupBottomNavigation() {
-        setNavSelected(binding.bottomNavigation.findViewById(R.id.nav_icon_main));
-        binding.bottomNavigation.findViewById(R.id.nav_btn_main).setOnClickListener(v -> {});
-        binding.bottomNavigation.findViewById(R.id.nav_btn_settings).setOnClickListener(v -> {
-            startActivity(new Intent(this, SettingsActivity.class));
-        });
-        binding.bottomNavigation.findViewById(R.id.nav_btn_statistics).setOnClickListener(v -> {
-            startActivity(new Intent(this, StatisticsActivity.class));
-        });
-    }
-
-    private void setNavSelected(android.widget.ImageView icon) {
-        int[] ids = {R.id.nav_icon_main, R.id.nav_icon_settings, R.id.nav_icon_statistics};
-        for (int id : ids) {
-            android.widget.ImageView v = binding.bottomNavigation.findViewById(id);
-            if (v != null) v.setSelected(false);
-        }
-        if (icon != null) icon.setSelected(true);
+        binding.bottomNavigation.navIconMain.setSelected(true);
+        binding.bottomNavigation.navIconSettings.setSelected(false);
+        binding.bottomNavigation.navIconStatistics.setSelected(false);
+        binding.bottomNavigation.navBtnMain.setOnClickListener(v -> {});
+        binding.bottomNavigation.navBtnSettings.setOnClickListener(v ->
+                startActivity(new Intent(this, SettingsActivity.class)));
+        binding.bottomNavigation.navBtnStatistics.setOnClickListener(v ->
+                startActivity(new Intent(this, StatisticsActivity.class)));
     }
 
     @Override

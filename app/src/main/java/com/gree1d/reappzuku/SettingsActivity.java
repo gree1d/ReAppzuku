@@ -94,16 +94,17 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void setupBottomNavigation() {
-        android.widget.ImageView iconSettings = binding.bottomNavigation.findViewById(R.id.nav_icon_settings);
-        if (iconSettings != null) iconSettings.setSelected(true);
-        binding.bottomNavigation.findViewById(R.id.nav_btn_main).setOnClickListener(v -> {
+        binding.bottomNavigation.navIconMain.setSelected(false);
+        binding.bottomNavigation.navIconSettings.setSelected(true);
+        binding.bottomNavigation.navIconStatistics.setSelected(false);
+        binding.bottomNavigation.navBtnMain.setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             finish();
         });
-        binding.bottomNavigation.findViewById(R.id.nav_btn_settings).setOnClickListener(v -> {});
-        binding.bottomNavigation.findViewById(R.id.nav_btn_statistics).setOnClickListener(v -> {
+        binding.bottomNavigation.navBtnSettings.setOnClickListener(v -> {});
+        binding.bottomNavigation.navBtnStatistics.setOnClickListener(v -> {
             startActivity(new Intent(this, StatisticsActivity.class));
             finish();
         });
