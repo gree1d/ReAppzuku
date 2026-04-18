@@ -874,6 +874,8 @@
         android:layout_gravity="bottom"
         android:background="?android:attr/colorBackground"
         android:elevation="8dp"
-        app:menu="@menu/bottom_nav_menu_settings" />
+        app:menu="@menu/bottom_nav_menu_settings"
+        app:itemActiveIndicatorStyle="@null"
+        app:itemRippleColor="@null" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
