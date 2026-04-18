@@ -171,8 +171,11 @@ public class MainActivity extends BaseActivity {
                     return;
                 }
                 app.setSelected(!app.isSelected());
-                listAdapter.notifyItemChanged(position);
-                listAdapter.refreshSelectionMode();
+                // refreshSelectionMode возвращает true если режим изменился и
+                // уже вызвал notifyDataSetChanged — тогда notifyItemChanged не нужен
+                if (!listAdapter.refreshSelectionMode()) {
+                    listAdapter.notifyItemChanged(position);
+                }
                 updateSelectMenuVisibility();
             }
 
