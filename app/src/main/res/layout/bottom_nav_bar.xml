@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:orientation="horizontal"
+    android:background="?android:attr/colorBackground"
+    android:elevation="8dp">
+
+    <LinearLayout
+        android:id="@+id/nav_btn_main"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/nav_icon_main"
+            android:layout_width="40dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_main"
+            android:padding="4dp"
+            android:background="@drawable/nav_indicator"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/nav_text_main"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/nav_main"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/nav_btn_settings"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/nav_icon_settings"
+            android:layout_width="40dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_settings"
+            android:padding="4dp"
+            android:background="@drawable/nav_indicator"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/nav_text_settings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/nav_settings"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/nav_btn_statistics"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/nav_icon_statistics"
+            android:layout_width="40dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_stat"
+            android:padding="4dp"
+            android:background="@drawable/nav_indicator"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/nav_text_statistics"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/nav_statistics"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+
+</LinearLayout>
