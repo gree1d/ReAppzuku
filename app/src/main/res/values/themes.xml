@@ -421,8 +421,7 @@
         <item name="android:theme">@style/ThemeOverlay.DarkToolbarIcons</item>
     </style>
 
-    <style name="ThemeOverlay.DarkToolbarIcons" parent="ThemeOverlay.Material3.Light.ActionBar">
+    <style name="ThemeOverlay.DarkToolbarIcons" parent="ThemeOverlay.AppCompat.Light">
         <item name="colorControlNormal">#FF000000</item>
     </style>
-
 </resources>
