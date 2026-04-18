@@ -90,20 +90,12 @@
 
     </LinearLayout>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
+    <include
         android:id="@+id/bottom_navigation"
+        layout="@layout/bottom_nav_bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="?android:attr/colorBackground"
-        android:elevation="8dp"
-        app:itemActiveIndicatorStyle="@null"
-        app:itemRippleColor="@null"
-        app:itemBackground="@drawable/nav_item_background"
-        app:itemIconSize="24dp"
-        app:itemPaddingTop="4dp"
-        app:itemPaddingBottom="4dp"
-        app:menu="@menu/bottom_nav_menu_main" />
+        android:layout_height="56dp"
+        android:layout_gravity="bottom" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
