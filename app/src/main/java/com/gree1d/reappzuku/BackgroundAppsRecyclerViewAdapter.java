@@ -48,10 +48,9 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
         }
     }
 
-    public boolean refreshSelectionMode() {
-        boolean newSelectionMode = getCurrentList().stream().anyMatch(AppModel::isSelected);
-        if (newSelectionMode != selectionMode) {
-            selectionMode = newSelectionMode;
+    public boolean refreshSelectionMode(boolean hasSelection) {
+        if (hasSelection != selectionMode) {
+            selectionMode = hasSelection;
             notifyDataSetChanged();
             return true;
         }

@@ -171,9 +171,10 @@ public class MainActivity extends BaseActivity {
                     return;
                 }
                 app.setSelected(!app.isSelected());
-                // refreshSelectionMode возвращает true если режим изменился и
-                // уже вызвал notifyDataSetChanged — тогда notifyItemChanged не нужен
-                if (!listAdapter.refreshSelectionMode()) {
+                // Считаем из fullAppsList — он всегда актуален в отличие от
+                // getCurrentList() адаптера, который обновляется асинхронно
+                boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
+                if (!listAdapter.refreshSelectionMode(hasSelection)) {
                     listAdapter.notifyItemChanged(position);
                 }
                 updateSelectMenuVisibility();
