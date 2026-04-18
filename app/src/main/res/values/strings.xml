@@ -247,6 +247,14 @@
         <item>Mocha</item>
         <item>Olive</item>
         <item>Steel</item>
+        <item>Apricot</item>
+        <item>Heavenly</item>
+        <item>Papaya</item>
+        <item>Lavender</item>
+        <item>Mint</item>
+        <item>Peach</item>
+        <item>Powdery</item>
+        <item>Fog</item>
     </string-array>
 
     <string-array name="settings_kill_interval_labels">
