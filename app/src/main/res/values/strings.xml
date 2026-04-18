@@ -380,4 +380,7 @@
 
     <!-- Statistics screen title -->
     <string name="stats_tab_title">Statistics &amp; Logs</string>
+
+    <string name="fab_kill_app">Kill app</string>
+    <string name="fab_kill_apps">Kill apps</string>
 </resources>
