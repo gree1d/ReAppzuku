@@ -369,4 +369,7 @@
 
     <!-- Statistics screen title -->
     <string name="stats_tab_title">Статистика &amp; Журналы</string>
+
+    <string name="fab_kill_app">Kill app</string>
+    <string name="fab_kill_apps">Kill apps</string>
 </resources>
