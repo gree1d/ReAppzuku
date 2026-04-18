@@ -98,7 +98,7 @@
         android:layout_gravity="bottom"
         android:background="?android:attr/colorBackground"
         android:elevation="8dp"
-        app:menu="@menu/bottom_nav_menu" />
+        app:menu="@menu/bottom_nav_menu_main" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
