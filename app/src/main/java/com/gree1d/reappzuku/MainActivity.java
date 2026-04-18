@@ -20,7 +20,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.gree1d.reappzuku.databinding.ActivityMainBinding;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,30 +109,29 @@ public class MainActivity extends BaseActivity {
     }
 
     private void setupBottomNavigation() {
-        binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
-        binding.bottomNavigation.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_main) {
-                return true;
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
-                binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
-                return false;
-            } else if (id == R.id.nav_statistics) {
-                startActivity(new Intent(this, StatisticsActivity.class));
-                binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
-                return false;
-            }
-            return false;
+        setNavSelected(binding.bottomNavigation.findViewById(R.id.nav_icon_main));
+        binding.bottomNavigation.findViewById(R.id.nav_btn_main).setOnClickListener(v -> {});
+        binding.bottomNavigation.findViewById(R.id.nav_btn_settings).setOnClickListener(v -> {
+            startActivity(new Intent(this, SettingsActivity.class));
         });
+        binding.bottomNavigation.findViewById(R.id.nav_btn_statistics).setOnClickListener(v -> {
+            startActivity(new Intent(this, StatisticsActivity.class));
+        });
+    }
+
+    private void setNavSelected(android.widget.ImageView icon) {
+        int[] ids = {R.id.nav_icon_main, R.id.nav_icon_settings, R.id.nav_icon_statistics};
+        for (int id : ids) {
+            android.widget.ImageView v = binding.bottomNavigation.findViewById(id);
+            if (v != null) v.setSelected(false);
+        }
+        if (icon != null) icon.setSelected(true);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         // Сброс выбора навбара без срабатывания listener
-        binding.bottomNavigation.setOnItemSelectedListener(null);
-        binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
         setupBottomNavigation();
 
         int newAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);

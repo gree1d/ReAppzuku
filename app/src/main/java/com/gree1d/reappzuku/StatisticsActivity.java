@@ -22,7 +22,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
 import com.gree1d.reappzuku.databinding.ActivityStatisticsBinding;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,20 +76,19 @@ public class StatisticsActivity extends BaseActivity {
     }
 
     private void setupBottomNavigation() {
-        binding.bottomNavigation.setSelectedItemId(R.id.nav_statistics);
-        binding.bottomNavigation.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_main) {
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
-                finish();
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
-                finish();
-            }
-            return true;
+        android.widget.ImageView iconStats = binding.bottomNavigation.findViewById(R.id.nav_icon_statistics);
+        if (iconStats != null) iconStats.setSelected(true);
+        binding.bottomNavigation.findViewById(R.id.nav_btn_main).setOnClickListener(v -> {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
         });
+        binding.bottomNavigation.findViewById(R.id.nav_btn_settings).setOnClickListener(v -> {
+            startActivity(new Intent(this, SettingsActivity.class));
+            finish();
+        });
+        binding.bottomNavigation.findViewById(R.id.nav_btn_statistics).setOnClickListener(v -> {});
     }
 
     private void setupListeners() {
