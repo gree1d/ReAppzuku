@@ -115,12 +115,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:itemActiveIndicatorStyle="@style/NavIndicatorNoAnim"
+        android:background="?android:attr/colorBackground"
         android:elevation="8dp"
+        app:itemActiveIndicatorStyle="@null"
         app:itemRippleColor="@null"
+        app:itemBackground="@drawable/nav_item_background"
         app:itemIconSize="24dp"
-        app:itemPaddingTop="8dp"
-        app:itemPaddingBottom="8dp"
-        app:menu="@menu/bottom_nav_menu_main" />
+        app:itemPaddingTop="4dp"
+        app:itemPaddingBottom="4dp"
+        app:menu="@menu/bottom_nav_menu_statistics" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
