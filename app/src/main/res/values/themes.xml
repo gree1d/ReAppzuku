@@ -1,10 +1,13 @@
 <resources>
     <style name="AppTheme.NoAnimation" parent="AppTheme">
-        <item name="android:windowAnimationStyle">@null</item>
-        <item name="android:activityOpenEnterAnimation">@null</item>
-        <item name="android:activityOpenExitAnimation">@null</item>
-        <item name="android:activityCloseEnterAnimation">@null</item>
-        <item name="android:activityCloseExitAnimation">@null</item>
+        <item name="android:windowAnimationStyle">@style/NoAnimationWindow</item>
+    </style>
+
+    <style name="NoAnimationWindow">
+        <item name="android:activityOpenEnterAnimation">@anim/no_anim</item>
+        <item name="android:activityOpenExitAnimation">@anim/no_anim</item>
+        <item name="android:activityCloseEnterAnimation">@anim/no_anim</item>
+        <item name="android:activityCloseExitAnimation">@anim/no_anim</item>
     </style>
     
     <!-- Базовая тема -->
