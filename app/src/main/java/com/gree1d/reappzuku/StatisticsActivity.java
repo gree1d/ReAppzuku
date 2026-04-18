@@ -84,11 +84,9 @@ public class StatisticsActivity extends BaseActivity {
                 return true;
             } else if (id == R.id.nav_main) {
                 finish();
-                overridePendingTransition(0, 0);
                 return false;
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
-                overridePendingTransition(0, 0);
                 finish();
                 return false;
             }

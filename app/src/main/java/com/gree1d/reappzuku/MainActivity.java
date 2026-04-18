@@ -117,12 +117,10 @@ public class MainActivity extends BaseActivity {
                 return true;
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
-                overridePendingTransition(0, 0);
                 binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
                 return false;
             } else if (id == R.id.nav_statistics) {
                 startActivity(new Intent(this, StatisticsActivity.class));
-                overridePendingTransition(0, 0);
                 binding.bottomNavigation.setSelectedItemId(R.id.nav_main);
                 return false;
             }
