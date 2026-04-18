@@ -97,7 +97,6 @@
         android:layout_gravity="bottom"
         android:background="?android:attr/colorBackground"
         android:elevation="8dp"
-        app:itemActiveIndicatorStyle="@null"
         app:itemRippleColor="@null"
         app:itemActiveIndicatorStyle="@style/NavIndicatorNoAnim"
         app:itemRippleColor="@null"
