@@ -1,6 +1,7 @@
 <resources>
     <style name="AppTheme.NoAnimation" parent="AppTheme">
         <item name="android:windowAnimationStyle">@style/NoAnimationWindow</item>
+        <item name="android:fitsSystemWindows">false</item>
     </style>
 
     <style name="NoAnimationWindow">
