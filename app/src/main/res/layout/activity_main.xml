@@ -94,7 +94,7 @@
         android:id="@+id/bottom_navigation"
         layout="@layout/bottom_nav_bar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="64dp"
         android:layout_gravity="bottom" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
