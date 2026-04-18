@@ -45,7 +45,7 @@
 
         <ImageView
             android:id="@+id/nav_icon_settings"
-            android:layout_width="40dp"
+            android:layout_width="56dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_settings"
             android:padding="4dp"
@@ -73,7 +73,7 @@
 
         <ImageView
             android:id="@+id/nav_icon_statistics"
-            android:layout_width="40dp"
+            android:layout_width="56dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_stats"
             android:padding="4dp"
