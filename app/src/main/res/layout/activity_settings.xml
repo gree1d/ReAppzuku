@@ -877,6 +877,9 @@
         app:itemActiveIndicatorStyle="@null"
         app:itemRippleColor="@null"
         app:itemBackground="@drawable/nav_item_background"
+        app:itemIconSize="24dp"
+        app:itemPaddingTop="8dp"
+        app:itemPaddingBottom="8dp"
         app:menu="@menu/bottom_nav_menu_main" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
