@@ -420,10 +420,18 @@ public class MainActivity extends BaseActivity {
         });
     }
 
+    private void updateFabText() {
+        long count = fullAppsList.stream().filter(AppModel::isSelected).count();
+        binding.fab.setText(count >= 2
+                ? getString(R.string.fab_kill_apps)
+                : getString(R.string.fab_kill_app));
+    }
+
     private void updateSelectMenuVisibility() {
         boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
         if (hasSelection) {
             binding.fab.show();
+            updateFabText();
         } else {
             binding.fab.hide();
         }
