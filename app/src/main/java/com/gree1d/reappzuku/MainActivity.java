@@ -440,6 +440,7 @@ public class MainActivity extends BaseActivity {
         if (selectAllMenuItem != null) {
             selectAllMenuItem.setIcon(R.drawable.ic_unselect_all);
             selectAllMenuItem.setTitle(getString(R.string.menu_deselect_all));
+            tintMenuItem(selectAllMenuItem);
         }
     }
 
@@ -452,7 +453,18 @@ public class MainActivity extends BaseActivity {
         if (selectAllMenuItem != null) {
             selectAllMenuItem.setIcon(R.drawable.ic_select_all);
             selectAllMenuItem.setTitle(getString(R.string.menu_select_all));
+            tintMenuItem(selectAllMenuItem);
         }
+    }
+
+    private void tintMenuItem(MenuItem item) {
+        if (item == null || item.getIcon() == null) return;
+        int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
+        boolean isNewAccent = (accent == ACCENT_APRICOT || accent == ACCENT_SKY ||
+                accent == ACCENT_PAPAYA || accent == ACCENT_LAVENDER ||
+                accent == ACCENT_MINT || accent == ACCENT_PEACH ||
+                accent == ACCENT_POWDER || accent == ACCENT_FOG);
+        item.getIcon().setTint(isNewAccent ? android.graphics.Color.BLACK : android.graphics.Color.WHITE);
     }
 
     @Override
@@ -460,6 +472,8 @@ public class MainActivity extends BaseActivity {
         getMenuInflater().inflate(R.menu.main, menu);
 
         selectAllMenuItem = menu.findItem(R.id.action_select_all);
+
+        applyToolbarIconTint(menu);
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
@@ -570,4 +584,25 @@ public class MainActivity extends BaseActivity {
             sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
         }
     }
+
+    private void applyToolbarIconTint(Menu menu) {
+        int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
+        boolean isNewAccent = (accent == ACCENT_APRICOT || accent == ACCENT_SKY ||
+                accent == ACCENT_PAPAYA || accent == ACCENT_LAVENDER ||
+                accent == ACCENT_MINT || accent == ACCENT_PEACH ||
+                accent == ACCENT_POWDER || accent == ACCENT_FOG);
+
+        int color = isNewAccent ? android.graphics.Color.BLACK : android.graphics.Color.WHITE;
+
+        int[] iconIds = {R.id.action_search, R.id.action_sort, R.id.action_select_all};
+        for (int id : iconIds) {
+            MenuItem item = menu.findItem(id);
+            if (item != null && item.getIcon() != null) {
+                item.getIcon().setTint(color);
+            }
+        }
+        // titleTextColor
+        binding.toolbar.setTitleTextColor(color);
+    }
+
 }
