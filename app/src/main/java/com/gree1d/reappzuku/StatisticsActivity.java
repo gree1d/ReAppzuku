@@ -77,23 +77,18 @@ public class StatisticsActivity extends BaseActivity {
     }
 
     private void setupBottomNavigation() {
-        binding.bottomNavigation.setSelectedItemId(R.id.nav_statistics);
         binding.bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_statistics) {
-                return true;
-            } else if (id == R.id.nav_main) {
+            if (id == R.id.nav_main) {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 finish();
-                return false;
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
                 finish();
-                return false;
             }
-            return false;
+            return true;
         });
     }
 
