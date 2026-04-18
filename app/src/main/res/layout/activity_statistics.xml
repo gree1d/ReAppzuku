@@ -116,7 +116,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         app:itemActiveIndicatorStyle="@style/NavIndicatorNoAnim"
-        app:itemRippleColor="@null"
         android:elevation="8dp"
         app:itemRippleColor="@null"
         app:itemBackground="@drawable/nav_item_background"
