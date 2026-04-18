@@ -118,7 +118,6 @@
         app:itemActiveIndicatorStyle="@style/NavIndicatorNoAnim"
         android:elevation="8dp"
         app:itemRippleColor="@null"
-        app:itemBackground="@drawable/nav_item_background"
         app:itemIconSize="24dp"
         app:itemPaddingTop="8dp"
         app:itemPaddingBottom="8dp"
