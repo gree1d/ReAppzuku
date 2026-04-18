@@ -24,8 +24,8 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
     public interface OnAppActionListener {
         void onKillApp(AppModel app, int position);
         void onToggleWhitelist(AppModel app, int position);
-        void onAppClick(AppModel app, int position);       // длинный клик → select
-        void onOverflowClick(AppModel app, View anchor);   // короткий клик → menu
+        void onAppClick(AppModel app, int position);
+        void onOverflowClick(AppModel app, View anchor);
     }
 
     public BackgroundAppsRecyclerViewAdapter(Context context) {
@@ -48,6 +48,11 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
         }
     }
 
+    /**
+     * Вызывается из MainActivity сразу после app.setSelected().
+     * hasSelection берётся из fullAppsList — он всегда актуален,
+     * в отличие от getCurrentList() который обновляется асинхронно.
+     */
     public boolean refreshSelectionMode(boolean hasSelection) {
         if (hasSelection != selectionMode) {
             selectionMode = hasSelection;
@@ -85,11 +90,16 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
 
             binding.whitelistIcon.setVisibility(app.isWhitelisted() ? View.VISIBLE : View.GONE);
             binding.linear1.setSelected(false);
+            binding.linearOverflow.setVisibility(View.GONE);
+
+            // ── Клики на весь item ────────────────────────────────────────────
+            // Обработчики ставим на linear1 — он имеет background с ripple
+            // и первым получает touch события. itemView их уже не видит.
+            itemView.setOnClickListener(null);
+            itemView.setOnLongClickListener(null);
 
             if (selectionMode) {
-                // ── Режим выделения ──────────────────────────────────────────
-                // Короткий клик = toggle select (весь item + кнопка-чекбокс)
-                // Длинный клик = ничего (уже в режиме выделения)
+                // В режиме выделения: короткий клик = toggle select
                 binding.linear1.setOnClickListener(v -> {
                     int pos = getAdapterPosition();
                     if (actionListener != null && pos != RecyclerView.NO_POSITION
@@ -98,11 +108,8 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                     }
                 });
                 binding.linear1.setOnLongClickListener(null);
-
             } else {
-                // ── Обычный режим ─────────────────────────────────────────────
-                // Короткий клик = открыть menu_app_options
-                // Длинный клик  = войти в режим выделения (select этого app)
+                // Обычный режим: короткий клик = меню, длинный = войти в выделение
                 binding.linear1.setOnClickListener(v -> {
                     if (actionListener != null) {
                         actionListener.onOverflowClick(app, v);
@@ -119,30 +126,43 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                 });
             }
 
-            // btn_overflow больше не нужен как отдельный обработчик —
-            // весь item открывает меню. Скрываем его чтобы не путал.
-            binding.linearOverflow.setVisibility(View.GONE);
+            // ── Внешний вид ───────────────────────────────────────────────────
+            // Alpha применяем на каждый дочерний вью по отдельности —
+            // setAlpha на getRoot ненадёжен при recycling ViewHolder
+            float alpha;
+            if (app.isProtected()) {
+                alpha = 0.4f;
+            } else if (app.isWhitelisted()) {
+                alpha = 0.85f;
+            } else {
+                alpha = 1.0f;
+            }
+            binding.appIcon.setAlpha(alpha);
+            binding.appName.setAlpha(alpha);
+            binding.appPkg.setAlpha(alpha);
+            binding.appRam.setAlpha(alpha);
 
             if (app.isProtected()) {
-                binding.getRoot().setAlpha(0.4f);
                 binding.btnAppAction.setImageResource(R.drawable.ic_protected);
+                binding.btnAppAction.setAlpha(alpha);
                 binding.btnAppAction.setVisibility(View.VISIBLE);
                 binding.btnAppAction.setClickable(false);
+                binding.btnAppAction.setOnClickListener(null);
 
             } else if (app.isWhitelisted()) {
-                binding.getRoot().setAlpha(0.85f);
+                binding.btnAppAction.setAlpha(alpha);
                 binding.btnAppAction.setVisibility(View.GONE);
                 binding.btnAppAction.setClickable(false);
+                binding.btnAppAction.setOnClickListener(null);
 
             } else if (selectionMode) {
-                binding.getRoot().setAlpha(1.0f);
+                binding.btnAppAction.setAlpha(1.0f);
                 binding.btnAppAction.setVisibility(View.VISIBLE);
                 binding.btnAppAction.setClickable(true);
                 binding.btnAppAction.setImageResource(
                         app.isSelected()
                                 ? R.drawable.ic_checkbox_checked
                                 : R.drawable.ic_checkbox_unchecked);
-                // Клик на чекбокс = то же что клик на item
                 binding.btnAppAction.setOnClickListener(v -> {
                     int pos = getAdapterPosition();
                     if (actionListener != null && pos != RecyclerView.NO_POSITION) {
@@ -151,8 +171,7 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                 });
 
             } else {
-                // Обычный режим: ic_force_stop — прямой kill без подтверждения
-                binding.getRoot().setAlpha(1.0f);
+                binding.btnAppAction.setAlpha(1.0f);
                 binding.btnAppAction.setImageResource(R.drawable.ic_force_stop);
                 binding.btnAppAction.setVisibility(View.VISIBLE);
                 binding.btnAppAction.setClickable(true);
