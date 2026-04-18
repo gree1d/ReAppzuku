@@ -255,4 +255,148 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:backgroundDimEnabled">false</item>
     </style>
+
+    <!-- Акцент: Абрикосовый -->
+    <style name="AppTheme.AccentApricot" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_apricot_primary</item>
+        <item name="colorSecondary">@color/accent_apricot_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_apricot_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_apricot_dark</item>
+        <item name="android:colorControlActivated">@color/accent_apricot_primary</item>
+        <item name="colorControlActivated">@color/accent_apricot_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentApricot.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_apricot_primary</item>
+        <item name="colorSecondary">@color/accent_apricot_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_apricot_dark</item>
+        <item name="android:colorControlActivated">@color/accent_apricot_secondary</item>
+        <item name="colorControlActivated">@color/accent_apricot_secondary</item>
+    </style>
+
+    <!-- Акцент: Небесный -->
+    <style name="AppTheme.AccentSky" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_sky_primary</item>
+        <item name="colorSecondary">@color/accent_sky_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_sky_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_sky_dark</item>
+        <item name="android:colorControlActivated">@color/accent_sky_primary</item>
+        <item name="colorControlActivated">@color/accent_sky_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentSky.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_sky_primary</item>
+        <item name="colorSecondary">@color/accent_sky_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_sky_dark</item>
+        <item name="android:colorControlActivated">@color/accent_sky_secondary</item>
+        <item name="colorControlActivated">@color/accent_sky_secondary</item>
+    </style>
+
+    <!-- Акцент: Папайя -->
+    <style name="AppTheme.AccentPapaya" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_papaya_primary</item>
+        <item name="colorSecondary">@color/accent_papaya_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_papaya_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_papaya_dark</item>
+        <item name="android:colorControlActivated">@color/accent_papaya_primary</item>
+        <item name="colorControlActivated">@color/accent_papaya_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentPapaya.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_papaya_primary</item>
+        <item name="colorSecondary">@color/accent_papaya_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_papaya_dark</item>
+        <item name="android:colorControlActivated">@color/accent_papaya_secondary</item>
+        <item name="colorControlActivated">@color/accent_papaya_secondary</item>
+    </style>
+
+    <!-- Акцент: Лаванда -->
+    <style name="AppTheme.AccentLavender" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_lavender_primary</item>
+        <item name="colorSecondary">@color/accent_lavender_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_lavender_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_lavender_dark</item>
+        <item name="android:colorControlActivated">@color/accent_lavender_primary</item>
+        <item name="colorControlActivated">@color/accent_lavender_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentLavender.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_lavender_primary</item>
+        <item name="colorSecondary">@color/accent_lavender_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_lavender_dark</item>
+        <item name="android:colorControlActivated">@color/accent_lavender_secondary</item>
+        <item name="colorControlActivated">@color/accent_lavender_secondary</item>
+    </style>
+
+    <!-- Акцент: Мятный -->
+    <style name="AppTheme.AccentMint" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_mint_primary</item>
+        <item name="colorSecondary">@color/accent_mint_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_mint_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_mint_dark</item>
+        <item name="android:colorControlActivated">@color/accent_mint_primary</item>
+        <item name="colorControlActivated">@color/accent_mint_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentMint.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_mint_primary</item>
+        <item name="colorSecondary">@color/accent_mint_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_mint_dark</item>
+        <item name="android:colorControlActivated">@color/accent_mint_secondary</item>
+        <item name="colorControlActivated">@color/accent_mint_secondary</item>
+    </style>
+
+    <!-- Акцент: Персиковый -->
+    <style name="AppTheme.AccentPeach" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_peach_primary</item>
+        <item name="colorSecondary">@color/accent_peach_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_peach_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_peach_dark</item>
+        <item name="android:colorControlActivated">@color/accent_peach_primary</item>
+        <item name="colorControlActivated">@color/accent_peach_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentPeach.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_peach_primary</item>
+        <item name="colorSecondary">@color/accent_peach_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_peach_dark</item>
+        <item name="android:colorControlActivated">@color/accent_peach_secondary</item>
+        <item name="colorControlActivated">@color/accent_peach_secondary</item>
+    </style>
+
+    <!-- Акцент: Пудровый -->
+    <style name="AppTheme.AccentPowder" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_powder_primary</item>
+        <item name="colorSecondary">@color/accent_powder_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_powder_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_powder_dark</item>
+        <item name="android:colorControlActivated">@color/accent_powder_primary</item>
+        <item name="colorControlActivated">@color/accent_powder_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentPowder.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_powder_primary</item>
+        <item name="colorSecondary">@color/accent_powder_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_powder_dark</item>
+        <item name="android:colorControlActivated">@color/accent_powder_secondary</item>
+        <item name="colorControlActivated">@color/accent_powder_secondary</item>
+    </style>
+
+    <!-- Акцент: Туманный -->
+    <style name="AppTheme.AccentFog" parent="AppTheme">
+        <item name="colorPrimary">@color/accent_fog_primary</item>
+        <item name="colorSecondary">@color/accent_fog_secondary</item>
+        <item name="colorPrimaryVariant">@color/accent_fog_dark</item>
+        <item name="colorPrimaryContainer">@color/accent_fog_dark</item>
+        <item name="android:colorControlActivated">@color/accent_fog_primary</item>
+        <item name="colorControlActivated">@color/accent_fog_primary</item>
+    </style>
+
+    <style name="AppTheme.AccentFog.Amoled" parent="AppTheme.Amoled">
+        <item name="colorPrimary">@color/accent_fog_primary</item>
+        <item name="colorSecondary">@color/accent_fog_secondary</item>
+        <item name="colorPrimaryContainer">@color/accent_fog_dark</item>
+        <item name="android:colorControlActivated">@color/accent_fog_secondary</item>
+        <item name="colorControlActivated">@color/accent_fog_secondary</item>
+    </style>
 </resources>
