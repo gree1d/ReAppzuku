@@ -74,4 +74,44 @@
     <color name="accent_steel_primary">#676F74</color>
     <color name="accent_steel_secondary">#7B8388</color>
     <color name="accent_steel_dark">#495156</color>
+
+    <!-- Абрикосовый -->
+    <color name="accent_apricot_primary">#FBCEB1</color>
+    <color name="accent_apricot_secondary">#F4A57A</color>
+    <color name="accent_apricot_dark">#C97840</color>
+    
+    <!-- Небесный -->
+    <color name="accent_sky_primary">#9ACEEB</color>
+    <color name="accent_sky_secondary">#6AB0D8</color>
+    <color name="accent_sky_dark">#3A7A9C</color>
+    
+    <!-- Папайя -->
+    <color name="accent_papaya_primary">#FFEFD5</color>
+    <color name="accent_papaya_secondary">#F4C97A</color>
+    <color name="accent_papaya_dark">#C49040</color>
+    
+    <!-- Лаванда -->
+    <color name="accent_lavender_primary">#E6DEFF</color>
+    <color name="accent_lavender_secondary">#B8A0E8</color>
+    <color name="accent_lavender_dark">#7A5CB8</color>
+    
+    <!-- Мятный -->
+    <color name="accent_mint_primary">#C8F0E0</color>
+    <color name="accent_mint_secondary">#80D4B0</color>
+    <color name="accent_mint_dark">#3A9870</color>
+    
+    <!-- Персиковый -->
+    <color name="accent_peach_primary">#FFD9C0</color>
+    <color name="accent_peach_secondary">#F4A878</color>
+    <color name="accent_peach_dark">#C47040</color>
+    
+    <!-- Пудровый -->
+    <color name="accent_powder_primary">#F5D0E8</color>
+    <color name="accent_powder_secondary">#E8A0C8</color>
+    <color name="accent_powder_dark">#B06090</color>
+   
+    <!-- Туманный -->
+    <color name="accent_fog_primary">#D0E8F5</color>
+    <color name="accent_fog_secondary">#90BCD8</color>
+    <color name="accent_fog_dark">#4080A8</color>
 </resources>
