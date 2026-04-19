@@ -36,6 +36,7 @@
             android:layout_marginEnd="8dp"
             android:orientation="vertical">
 
+            <!-- Строка 1: название + иконки protected/whitelist -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -53,6 +54,17 @@
                     android:textSize="16sp"
                     android:focusable="false" />
 
+                <!-- Иконка protected — на одной строке с названием -->
+                <ImageView
+                    android:id="@+id/protected_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/ic_protected"
+                    android:visibility="gone"
+                    android:focusable="false" />
+
+                <!-- Иконка whitelist -->
                 <ImageView
                     android:id="@+id/whitelist_icon"
                     android:layout_width="16dp"
@@ -64,6 +76,7 @@
 
             </LinearLayout>
 
+            <!-- Строка 2: пакет -->
             <TextView
                 android:id="@+id/app_pkg"
                 android:layout_width="match_parent"
@@ -74,15 +87,60 @@
                 android:textSize="12sp"
                 android:focusable="false" />
 
-            <TextView
-                android:id="@+id/app_ram"
+            <!-- Строка 3: ОЗУ + бейджи System / Persistent -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"
-                android:focusable="false" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/app_ram"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:focusable="false" />
+
+                <!-- Бейдж System -->
+                <TextView
+                    android:id="@+id/badge_system"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/badge_system"
+                    android:paddingStart="5dp"
+                    android:paddingEnd="5dp"
+                    android:paddingTop="1dp"
+                    android:paddingBottom="1dp"
+                    android:text="@string/badge_system"
+                    android:textColor="#1A5276"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:focusable="false" />
+
+                <!-- Бейдж Persistent -->
+                <TextView
+                    android:id="@+id/badge_persistent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/badge_persistent"
+                    android:paddingStart="5dp"
+                    android:paddingEnd="5dp"
+                    android:paddingTop="1dp"
+                    android:paddingBottom="1dp"
+                    android:text="@string/badge_persistent"
+                    android:textColor="#6C3483"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:focusable="false" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
