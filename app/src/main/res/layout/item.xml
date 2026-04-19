@@ -36,7 +36,10 @@
             android:layout_marginEnd="8dp"
             android:orientation="vertical">
 
-            <!-- Строка 1: название + иконки protected/whitelist -->
+            <!-- Строка 1: название + иконки protected/whitelist.
+                 app_name: layout_width="wrap_content" + layout_weight="1" — текст занимает
+                 ровно столько места, сколько нужно, но сжимается через ellipsize если
+                 не хватает. Иконки с layout_weight="0" резервируют своё место первыми. -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -45,7 +48,7 @@
 
                 <TextView
                     android:id="@+id/app_name"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
@@ -54,21 +57,21 @@
                     android:textSize="16sp"
                     android:focusable="false" />
 
-                <!-- Иконка protected — на одной строке с названием -->
                 <ImageView
                     android:id="@+id/protected_icon"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
+                    android:layout_weight="0"
                     android:layout_marginStart="4dp"
                     android:src="@drawable/ic_protected"
                     android:visibility="gone"
                     android:focusable="false" />
 
-                <!-- Иконка whitelist -->
                 <ImageView
                     android:id="@+id/whitelist_icon"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
+                    android:layout_weight="0"
                     android:layout_marginStart="4dp"
                     android:src="@drawable/ic_whitelist"
                     android:visibility="gone"
@@ -104,7 +107,6 @@
                     android:textSize="12sp"
                     android:focusable="false" />
 
-                <!-- Бейдж System -->
                 <TextView
                     android:id="@+id/badge_system"
                     android:layout_width="wrap_content"
@@ -122,7 +124,6 @@
                     android:visibility="gone"
                     android:focusable="false" />
 
-                <!-- Бейдж Persistent -->
                 <TextView
                     android:id="@+id/badge_persistent"
                     android:layout_width="wrap_content"
