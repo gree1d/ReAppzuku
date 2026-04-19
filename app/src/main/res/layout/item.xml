@@ -67,7 +67,7 @@
                     android:id="@+id/protected_icon"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="4dp"
                     android:src="@drawable/ic_protected"
                     android:visibility="gone"
                     android:focusable="false"
