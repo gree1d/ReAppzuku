@@ -363,16 +363,16 @@
     <string name="settings_notification_mode_important_only">Только важные</string>
 
         <!-- Bottom Navigation -->
-    <string name="nav_main">Main</string>
-    <string name="nav_settings">Settings</string>
-    <string name="nav_statistics">Statistics</string>
+    <string name="nav_main">Главная</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="nav_statistics">Статистика</string>
 
     <!-- Statistics screen title -->
     <string name="stats_tab_title">Статистика &amp; Журналы</string>
 
-    <string name="fab_kill_app">Kill app</string>
-    <string name="fab_kill_apps">Kill apps</string>
-    <string name="badge_system">System</string>
-    <string name="badge_persistent">Persistent</string>
-    <string name="app_ram_label">RAM: %1$s</string>
+    <string name="fab_kill_app">Закрыть приложение</string>
+    <string name="fab_kill_apps">Закрыть приложения</string>
+    <string name="badge_system">Системное</string>
+    <string name="badge_persistent">Критичное</string>
+    <string name="app_ram_label">ОЗУ: %1$s</string>
 </resources>
