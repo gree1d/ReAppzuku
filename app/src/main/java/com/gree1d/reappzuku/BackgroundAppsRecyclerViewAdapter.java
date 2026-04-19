@@ -213,6 +213,9 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
         public boolean areContentsTheSame(@NonNull AppModel oldItem, @NonNull AppModel newItem) {
             return oldItem.isSelected() == newItem.isSelected() &&
                    oldItem.isWhitelisted() == newItem.isWhitelisted() &&
+                   oldItem.isProtected() == newItem.isProtected() &&
+                   oldItem.isSystemApp() == newItem.isSystemApp() &&
+                   oldItem.isPersistentApp() == newItem.isPersistentApp() &&
                    oldItem.getAppRam().equals(newItem.getAppRam());
         }
     }
