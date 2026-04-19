@@ -300,7 +300,19 @@ public class MainActivity extends BaseActivity {
                 break;
         }
 
-        listAdapter.submitList(new ArrayList<>(appsDataList));
+        // Нельзя использовать submitList с теми же объектами после мутации —
+        // DiffUtil сравнивает один и тот же объект с самим собой и не видит разницы.
+        // Находим позицию в текущем списке адаптера и уведомляем точечно.
+        int adapterPos = -1;
+        for (int i = 0; i < appsDataList.size(); i++) {
+            if (appsDataList.get(i).getPackageName().equals(packageName)) {
+                adapterPos = i;
+                break;
+            }
+        }
+        if (adapterPos >= 0) {
+            listAdapter.notifyItemChanged(adapterPos);
+        }
         Toast.makeText(this, wasInList ? removedMsg : addedMsg, Toast.LENGTH_SHORT).show();
     }
 
