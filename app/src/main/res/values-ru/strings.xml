@@ -372,4 +372,7 @@
 
     <string name="fab_kill_app">Kill app</string>
     <string name="fab_kill_apps">Kill apps</string>
+    <string name="badge_system">System</string>
+    <string name="badge_persistent">Persistent</string>
+    <string name="app_ram_label">RAM: %1$s</string>
 </resources>
