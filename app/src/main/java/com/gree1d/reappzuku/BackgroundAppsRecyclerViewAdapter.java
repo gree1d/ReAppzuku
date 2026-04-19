@@ -85,21 +85,35 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
         void bind(AppModel app, int position) {
             binding.appName.setText(app.getAppName());
             binding.appPkg.setText(app.getPackageName());
-            binding.appRam.setText(app.getAppRam());
+
+            // Задача 2: подпись ОЗУ: "ОЗУ: 123 МБ"
+            String ramText = app.getAppRam();
+            if (ramText != null && !ramText.isEmpty()) {
+                binding.appRam.setText(context.getString(R.string.app_ram_label, ramText));
+            } else {
+                binding.appRam.setText("");
+            }
+
             binding.appIcon.setImageDrawable(app.getAppIcon());
 
+            // Задача 1: бейджи System / Persistent
+            binding.badgeSystem.setVisibility(app.isSystemApp() ? View.VISIBLE : View.GONE);
+            binding.badgePersistent.setVisibility(app.isPersistentApp() ? View.VISIBLE : View.GONE);
+
+            // Задача 3: иконка whitelist в строке названия
             binding.whitelistIcon.setVisibility(app.isWhitelisted() ? View.VISIBLE : View.GONE);
+
+            // Задача 3: иконка protected в строке названия (рядом с whitelist)
+            binding.protectedIcon.setVisibility(app.isProtected() ? View.VISIBLE : View.GONE);
+
             binding.linear1.setSelected(false);
             binding.linearOverflow.setVisibility(View.GONE);
 
             // ── Клики на весь item ────────────────────────────────────────────
-            // Обработчики ставим на linear1 — он имеет background с ripple
-            // и первым получает touch события. itemView их уже не видит.
             itemView.setOnClickListener(null);
             itemView.setOnLongClickListener(null);
 
             if (selectionMode) {
-                // В режиме выделения: короткий клик = toggle select
                 binding.linear1.setOnClickListener(v -> {
                     int pos = getAdapterPosition();
                     if (actionListener != null && pos != RecyclerView.NO_POSITION) {
@@ -111,12 +125,9 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
                 });
                 binding.linear1.setOnLongClickListener(null);
             } else {
-                // Обычный режим: короткий клик = меню, длинный = войти в выделение
                 binding.linear1.setOnClickListener(v -> {
                     int pos = getAdapterPosition();
                     if (actionListener != null && pos != RecyclerView.NO_POSITION) {
-                        // Берём актуальный app из адаптера, а не захваченный в лямбде —
-                        // после submitList/DiffUtil объект мог смениться
                         AppModel current = getItem(pos);
                         actionListener.onOverflowClick(current, v);
                     }
@@ -135,8 +146,6 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
             }
 
             // ── Внешний вид ───────────────────────────────────────────────────
-            // Alpha применяем на каждый дочерний вью по отдельности —
-            // setAlpha на getRoot ненадёжен при recycling ViewHolder
             float alpha;
             if (app.isProtected()) {
                 alpha = 0.4f;
@@ -149,11 +158,12 @@ public class BackgroundAppsRecyclerViewAdapter extends ListAdapter<AppModel, Bac
             binding.appName.setAlpha(alpha);
             binding.appPkg.setAlpha(alpha);
             binding.appRam.setAlpha(alpha);
+            binding.badgeSystem.setAlpha(alpha);
+            binding.badgePersistent.setAlpha(alpha);
 
             if (app.isProtected()) {
-                binding.btnAppAction.setImageResource(R.drawable.ic_protected);
-                binding.btnAppAction.setAlpha(alpha);
-                binding.btnAppAction.setVisibility(View.VISIBLE);
+                // Кнопку действия скрываем — protected уже показан иконкой в строке названия
+                binding.btnAppAction.setVisibility(View.GONE);
                 binding.btnAppAction.setClickable(false);
                 binding.btnAppAction.setOnClickListener(null);
 
