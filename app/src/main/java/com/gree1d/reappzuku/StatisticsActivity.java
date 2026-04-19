@@ -69,10 +69,15 @@ public class StatisticsActivity extends BaseActivity {
 
     private void setupToolbar() {
         setSupportActionBar(binding.toolbar);
-        int accent = sharedPreferences.getInt(PreferenceKeys.KEY_ACCENT, ACCENT_SYSTEM);
+        int accent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
         if (accent == ACCENT_SYSTEM) {
             binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
         }
+        boolean isNewAccent = (accent == ACCENT_APRICOT || accent == ACCENT_SKY ||
+                accent == ACCENT_PAPAYA || accent == ACCENT_LAVENDER ||
+                accent == ACCENT_MINT || accent == ACCENT_PEACH ||
+                accent == ACCENT_POWDER || accent == ACCENT_FOG);
+        binding.toolbar.setTitleTextColor(isNewAccent ? android.graphics.Color.BLACK : android.graphics.Color.WHITE);
     }
 
     private void setupBottomNavigation() {

@@ -91,6 +91,11 @@ public class SettingsActivity extends BaseActivity {
         if (accent == ACCENT_SYSTEM) {
             binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.toolbar_navy));
         }
+        boolean isNewAccent = (accent == ACCENT_APRICOT || accent == ACCENT_SKY ||
+                accent == ACCENT_PAPAYA || accent == ACCENT_LAVENDER ||
+                accent == ACCENT_MINT || accent == ACCENT_PEACH ||
+                accent == ACCENT_POWDER || accent == ACCENT_FOG);
+        binding.toolbar.setTitleTextColor(isNewAccent ? android.graphics.Color.BLACK : android.graphics.Color.WHITE);
     }
 
     private void setupBottomNavigation() {
