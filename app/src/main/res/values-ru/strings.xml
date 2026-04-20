@@ -375,4 +375,7 @@
     <string name="badge_system">Системное</string>
     <string name="badge_persistent">Критичное</string>
     <string name="app_ram_label">ОЗУ: %1$s</string>
+    <string name="menu_app_triggers">Триггеры приложения</string>
+    <string name="triggers_loading">Анализ…</string>
+    <string name="dialog_close">Закрыть</string>
 </resources>
