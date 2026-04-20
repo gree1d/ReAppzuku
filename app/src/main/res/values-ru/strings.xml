@@ -377,4 +377,47 @@
     <string name="app_ram_label">ОЗУ: %1$s</string>
     <string name="menu_app_triggers">Триггеры приложения</string>
     <string name="triggers_loading">Анализ…</string>
+
+    <!-- App Triggers dialog -->
+    <string name="menu_app_triggers">Триггеры запуска</string>
+    <string name="triggers_loading">Анализируем…</string>
+    <string name="dialog_close">Закрыть</string>
+    <string name="triggers_none_title">Триггеры не найдены</string>
+    <string name="triggers_none_detail">Активных причин фоновой работы не обнаружено</string>
+    <string name="triggers_none_explanation">Приложение может быть в памяти, но не удерживает себя явно.</string>
+
+    <!-- Foreground Service -->
+    <string name="triggers_fg_service_explanation">Приложение запустило фоновый сервис с постоянным уведомлением. Это самый надёжный способ не быть убитым системой — Android не трогает такие процессы, пока уведомление видно.</string>
+
+    <!-- Broadcast Receivers -->
+    <string name="triggers_receivers_explanation_base">Приложение подписано на системные события — при их наступлении оно запускается автоматически.</string>
+    <string name="triggers_receivers_explanation_boot"> Включает запуск при загрузке устройства (BOOT).</string>
+    <string name="triggers_receivers_explanation_network"> Следит за сетью — просыпается при появлении интернета.</string>
+
+    <!-- Alarms -->
+    <string name="triggers_alarms_wakeup_explanation">Будящие алармы (RTC_WAKEUP) поднимают устройство из режима сна, даже если экран выключен.</string>
+    <string name="triggers_alarms_wakeup_aggressive"> Интервал менее минуты — очень агрессивно, сильно влияет на батарею.</string>
+    <string name="triggers_alarms_wakeup_frequent"> Интервал менее 5 минут — заметно влияет на батарею.</string>
+    <string name="triggers_alarms_normal_explanation">Обычные алармы срабатывают только когда устройство активно — из сна не будят.</string>
+    <string name="triggers_alarms_exact_explanation"> setExactAndAllowWhileIdle — самый агрессивный тип: работает даже в режиме Doze.</string>
+
+    <!-- Jobs / WorkManager -->
+    <string name="triggers_jobs_running_and_pending_explanation">JobScheduler / WorkManager — система отложенных задач Android. Приложение сейчас выполняет %1$d задач и поставило ещё %2$d в очередь. Типичные причины: синхронизация, загрузка данных, аналитика. Android сам решает когда запустить — обычно при зарядке или Wi-Fi.</string>
+    <string name="triggers_jobs_running_explanation">JobScheduler / WorkManager — приложение прямо сейчас выполняет %1$d фоновых задач. Типичные причины: синхронизация, загрузка данных, аналитика.</string>
+    <string name="triggers_jobs_pending_explanation">JobScheduler / WorkManager — %1$d задач ждут запуска. Android выполнит их при подходящих условиях (сеть, зарядка и т.д.). Это современная замена будящим алармам.</string>
+
+    <!-- Doze Exemption -->
+    <string name="triggers_doze_sys_detail">Системный whitelist</string>
+    <string name="triggers_doze_user_detail">Пользовательский whitelist</string>
+    <string name="triggers_doze_sys_explanation">Добавлено производителем устройства — приложение всегда обходит Doze. Убрать нельзя.</string>
+    <string name="triggers_doze_user_explanation">Приложение запросило исключение из режима Doze («не оптимизировать батарею»). Работает в фоне когда угодно. Можно отозвать: Настройки → Батарея → Оптимизация батареи.</string>
+
+    <!-- WakeLocks -->
+    <string name="triggers_wakelock_partial_type">PARTIAL</string>
+    <string name="triggers_wakelock_full_type">FULL</string>
+    <string name="triggers_wakelock_generic_type">WAKE_LOCK</string>
+    <string name="triggers_wakelock_partial_explain">не даёт CPU засыпать</string>
+    <string name="triggers_wakelock_full_explain">держит экран и CPU включёнными</string>
+    <string name="triggers_wakelock_generic_explain">удерживает систему активной</string>
+    <string name="triggers_wakelock_explanation">WakeLock (%1$s) — приложение явно запросило у системы «не спать». Напрямую расходует батарею, пока удерживается.</string>
 </resources>
