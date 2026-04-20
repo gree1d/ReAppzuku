@@ -386,4 +386,7 @@
     <string name="badge_system">System</string>
     <string name="badge_persistent">Persistent</string>
     <string name="app_ram_label">RAM: %1$s</string>
+    <string name="menu_app_triggers">App triggers</string>
+    <string name="triggers_loading">Analyzing…</string>
+    <string name="dialog_close">Close</string>
 </resources>
