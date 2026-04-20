@@ -399,4 +399,36 @@
 
     <!-- Foreground Service -->
     <string name="triggers_fg_service_explanation">The app launched a background service with a persistent notification. This is the most reliable way to avoid being killed — Android won\'t touch such processes while the notification is visible.</string>
+
+    <!-- Broadcast Receivers -->
+    <string name="triggers_receivers_explanation_base">The app is subscribed to system events — it will start automatically when they occur.</string>
+    <string name="triggers_receivers_explanation_boot"> Includes launch at device boot (BOOT).</string>
+    <string name="triggers_receivers_explanation_network"> Watches for network changes — wakes up when internet becomes available.</string>
+
+    <!-- Alarms -->
+    <string name="triggers_alarms_wakeup_explanation">Wake-up alarms (RTC_WAKEUP) pull the device out of sleep mode, even when the screen is off.</string>
+    <string name="triggers_alarms_wakeup_aggressive"> Interval under 1 minute — very aggressive, heavy battery impact.</string>
+    <string name="triggers_alarms_wakeup_frequent"> Interval under 5 minutes — noticeable battery impact.</string>
+    <string name="triggers_alarms_normal_explanation">Regular alarms only fire when the device is active — they don\'t wake it from sleep.</string>
+    <string name="triggers_alarms_exact_explanation"> setExactAndAllowWhileIdle — the most aggressive type: fires even in Doze mode.</string>
+
+    <!-- Jobs / WorkManager -->
+    <string name="triggers_jobs_running_and_pending_explanation">JobScheduler / WorkManager — Android\'s deferred task system. The app is running %1$d tasks right now and has queued %2$d more. Typical reasons: sync, data download, analytics. Android decides when to run them — usually while charging or on Wi-Fi.</string>
+    <string name="triggers_jobs_running_explanation">JobScheduler / WorkManager — the app is currently running %1$d background tasks. Typical reasons: sync, data download, analytics.</string>
+    <string name="triggers_jobs_pending_explanation">JobScheduler / WorkManager — %1$d tasks are waiting to run. Android will execute them when conditions are right (network, charging, etc.). This is the modern replacement for wake-up alarms.</string>
+
+    <!-- Doze Exemption -->
+    <string name="triggers_doze_sys_detail">System whitelist</string>
+    <string name="triggers_doze_user_detail">User whitelist</string>
+    <string name="triggers_doze_sys_explanation">Added by the device manufacturer — this app always bypasses Doze. Cannot be removed.</string>
+    <string name="triggers_doze_user_explanation">The app requested a Doze exemption ("don\'t optimize battery"). It can run in the background at any time. Can be revoked: Settings → Battery → Battery optimization.</string>
+
+    <!-- WakeLocks -->
+    <string name="triggers_wakelock_partial_type">PARTIAL</string>
+    <string name="triggers_wakelock_full_type">FULL</string>
+    <string name="triggers_wakelock_generic_type">WAKE_LOCK</string>
+    <string name="triggers_wakelock_partial_explain">prevents CPU from sleeping</string>
+    <string name="triggers_wakelock_full_explain">keeps screen and CPU on</string>
+    <string name="triggers_wakelock_generic_explain">keeps the system active</string>
+    <string name="triggers_wakelock_explanation">WakeLock (%1$s) — the app explicitly asked the system to "stay awake". Directly drains the battery while held.</string>
 </resources>
