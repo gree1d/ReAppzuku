@@ -36,12 +36,6 @@
             android:layout_marginEnd="8dp"
             android:orientation="vertical">
 
-            <!-- Строка 1: название + иконки.
-                 ConstraintLayout позволяет точно разместить иконки сразу после текста:
-                 app_name прижат к start, его end соединён с start иконок.
-                 app_name имеет app:layout_constrainedWidth="true" — это ключевой атрибут,
-                 который не даёт тексту растягиваться дальше доступного места,
-                 заставляя его обрезаться через ellipsize вместо вытеснения иконок. -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
