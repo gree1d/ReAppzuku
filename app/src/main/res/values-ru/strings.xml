@@ -375,12 +375,10 @@
     <string name="badge_system">Системное</string>
     <string name="badge_persistent">Критичное</string>
     <string name="app_ram_label">ОЗУ: %1$s</string>
-    <string name="menu_app_triggers">Триггеры приложения</string>
-    <string name="triggers_loading">Анализ…</string>
 
     <!-- App Triggers dialog -->
-    <string name="menu_app_triggers">Триггеры запуска</string>
-    <string name="triggers_loading">Анализируем…</string>
+    <string name="menu_app_triggers">Триггеры приложения</string>
+    <string name="triggers_loading">Анализ…</string>
     <string name="dialog_close">Закрыть</string>
     <string name="triggers_none_title">Триггеры не найдены</string>
     <string name="triggers_none_detail">Активных причин фоновой работы не обнаружено</string>
