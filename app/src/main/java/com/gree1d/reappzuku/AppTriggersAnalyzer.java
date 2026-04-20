@@ -1,6 +1,8 @@
 package com.gree1d.reappzuku;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -19,9 +21,9 @@ public class AppTriggersAnalyzer {
     private static final String TAG = "AppTriggersAnalyzer";
 
     public static final class TriggerInfo {
-        public final String category;    // заголовок секции
-        public final String detail;      // основная строка — что обнаружено
-        public final String explanation; // пояснение для пользователя
+        public final String category;
+        public final String detail;
+        public final String explanation;
         public final Severity severity;
 
         public enum Severity { HIGH, MEDIUM, LOW, INFO }
@@ -49,6 +51,7 @@ public class AppTriggersAnalyzer {
     public List<TriggerInfo> analyze(String packageName) {
         List<TriggerInfo> results = new ArrayList<>();
 
+        results.addAll(analyzeCallerApp(packageName));
         results.addAll(analyzeForegroundServices(packageName));
         results.addAll(analyzeBroadcastReceivers(packageName));
         results.addAll(analyzeAlarms(packageName));
@@ -65,6 +68,73 @@ public class AppTriggersAnalyzer {
         }
 
         return results;
+    }
+
+    // -------------------------------------------------------------------------
+    // 0. Caller app — кто запустил этот процесс
+    // -------------------------------------------------------------------------
+
+    private List<TriggerInfo> analyzeCallerApp(String packageName) {
+        List<TriggerInfo> list = new ArrayList<>();
+        String output = shellManager.runShellCommandAndGetFullOutput(
+                "dumpsys activity processes");
+
+        if (output == null || output.trim().isEmpty()) return list;
+
+        boolean inTargetProcess = false;
+        String callerPkg = null;
+
+        for (String line : output.split("\n")) {
+        
+            if (line.contains("ProcessRecord") && line.contains(packageName)) {
+                inTargetProcess = true;
+                callerPkg = null;
+            }
+           
+            if (inTargetProcess && line.contains("ProcessRecord") && !line.contains(packageName)) {
+                break;
+            }
+
+            if (!inTargetProcess) continue;
+
+            
+            Matcher m = Pattern.compile("clientPackage=([\\w.]+)").matcher(line);
+            if (m.find()) {
+                callerPkg = m.group(1);
+                break;
+            }
+            
+            Matcher m2 = Pattern.compile("callingPackage=([\\w.]+)").matcher(line);
+            if (m2.find()) {
+                callerPkg = m2.group(1);
+                break;
+            }
+        }
+
+        if (callerPkg == null || callerPkg.equals(packageName) || callerPkg.equals("android")) {
+            return list;
+        }
+
+
+        String callerName = resolveAppName(callerPkg);
+        String detail = callerName + " (" + callerPkg + ")";
+
+        list.add(new TriggerInfo(
+                context.getString(R.string.triggers_caller_category),
+                detail,
+                context.getString(R.string.triggers_caller_explanation, callerName),
+                TriggerInfo.Severity.HIGH));
+        return list;
+    }
+
+    private String resolveAppName(String pkg) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            ApplicationInfo info = pm.getApplicationInfo(pkg, 0);
+            return pm.getApplicationLabel(info).toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            return pkg;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -100,12 +170,6 @@ public class AppTriggersAnalyzer {
         return list;
     }
 
-    /**
-     * Извлекает короткое имя класса сервиса из строки ServiceRecord.
-     * Форматы:
-     *   ServiceRecord{hex com.pkg/.ClassName}
-     *   ServiceRecord{hex com.pkg/com.pkg.ClassName}
-     */
     private String extractServiceShortName(String line, String packageName) {
         Matcher m = Pattern.compile("ServiceRecord\\{[^}]+\\s([\\w./]+)\\}").matcher(line);
         if (!m.find()) return null;
@@ -214,7 +278,6 @@ public class AppTriggersAnalyzer {
 
         if (wakeupCount + normalCount == 0) return list;
 
-        // detail
         StringBuilder detail = new StringBuilder();
         if (wakeupCount > 0) detail.append(wakeupCount).append(" будящих");
         if (normalCount > 0) {
@@ -224,7 +287,6 @@ public class AppTriggersAnalyzer {
         if (minInterval != Long.MAX_VALUE) detail.append(" · повтор ").append(formatInterval(minInterval));
         if (hasExact) detail.append(" · setExact");
 
-        // explanation
         StringBuilder explanation = new StringBuilder();
         if (wakeupCount > 0) {
             explanation.append(context.getString(R.string.triggers_alarms_wakeup_explanation));
@@ -284,7 +346,6 @@ public class AppTriggersAnalyzer {
 
         if (pending == 0 && running == 0) return list;
 
-        // detail
         StringBuilder detail = new StringBuilder();
         if (running > 0) detail.append(running).append(" выполняется прямо сейчас");
         if (pending > 0) {
@@ -292,7 +353,6 @@ public class AppTriggersAnalyzer {
             detail.append(pending).append(" ждут запуска");
         }
 
-        // explanation
         String explanation;
         if (running > 0 && pending > 0) {
             explanation = context.getString(R.string.triggers_jobs_running_and_pending_explanation, running, pending);
@@ -366,9 +426,9 @@ public class AppTriggersAnalyzer {
 
         boolean inWakeLockSection = false;
         for (String line : powerOutput.split("\n")) {
-            if (line.trim().startsWith("Wake Locks:"))                    { inWakeLockSection = true; continue; }
+            if (line.trim().startsWith("Wake Locks:"))                         { inWakeLockSection = true; continue; }
             if (inWakeLockSection && line.trim().startsWith("Suspend Blockers:")) break;
-            if (!inWakeLockSection || !line.contains("uid=" + uid))       continue;
+            if (!inWakeLockSection || !line.contains("uid=" + uid))            continue;
 
             int typeResId, explainResId;
             if (line.contains("PARTIAL_WAKE_LOCK")) {

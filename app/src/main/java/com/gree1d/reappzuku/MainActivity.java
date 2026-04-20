@@ -13,6 +13,8 @@ import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
@@ -122,7 +124,6 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Сброс выбора навбара без срабатывания listener
         setupBottomNavigation();
 
         int newAccent = sharedPreferences.getInt(KEY_ACCENT, ACCENT_SYSTEM);
@@ -171,8 +172,6 @@ public class MainActivity extends BaseActivity {
                     return;
                 }
                 app.setSelected(!app.isSelected());
-                // Считаем из fullAppsList — он всегда актуален в отличие от
-                // getCurrentList() адаптера, который обновляется асинхронно
                 boolean hasSelection = fullAppsList.stream().anyMatch(AppModel::isSelected);
                 if (!listAdapter.refreshSelectionMode(hasSelection)) {
                     listAdapter.notifyItemChanged(position);
@@ -258,8 +257,12 @@ public class MainActivity extends BaseActivity {
                 .show();
     }
 
+    // -------------------------------------------------------------------------
+    // App Triggers dialog
+    // -------------------------------------------------------------------------
+
     private void showAppTriggersDialog(AppModel app) {
-        androidx.appcompat.app.AlertDialog loadingDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+        AlertDialog loadingDialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.menu_app_triggers) + ": " + app.getAppName())
                 .setMessage(getString(R.string.triggers_loading))
                 .setCancelable(true)
@@ -279,20 +282,46 @@ public class MainActivity extends BaseActivity {
     }
 
     private void showTriggersResult(AppModel app, List<AppTriggersAnalyzer.TriggerInfo> triggers) {
-        StringBuilder sb = new StringBuilder();
 
-        for (AppTriggersAnalyzer.TriggerInfo t : triggers) {
-            sb.append("▸ ").append(t.category).append("\n");
-            sb.append(t.detail).append("\n");
-            sb.append(t.explanation).append("\n\n");
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_app_triggers, null);
+        LinearLayout container = dialogView.findViewById(R.id.triggers_container);
+
+        for (AppTriggersAnalyzer.TriggerInfo trigger : triggers) {
+            View item = getLayoutInflater().inflate(R.layout.item_trigger, container, false);
+
+            TextView categoryView    = item.findViewById(R.id.trigger_category);
+            TextView detailView      = item.findViewById(R.id.trigger_detail);
+            TextView explanationView = item.findViewById(R.id.trigger_explanation);
+            TextView arrowView       = item.findViewById(R.id.trigger_arrow);
+            View headerView          = item.findViewById(R.id.trigger_header);
+
+            categoryView.setText(trigger.category);
+            detailView.setText(trigger.detail);
+            explanationView.setText(trigger.explanation);
+
+            if (trigger.explanation == null || trigger.explanation.isEmpty()) {
+                arrowView.setVisibility(View.INVISIBLE);
+            } else {
+                headerView.setOnClickListener(v -> {
+                    boolean isExpanded = explanationView.getVisibility() == View.VISIBLE;
+                    explanationView.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
+                    arrowView.setText(isExpanded ? "▶" : "▼");
+                });
+            }
+
+            container.addView(item);
         }
 
-        new androidx.appcompat.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.menu_app_triggers) + ": " + app.getAppName())
-                .setMessage(sb.toString().trim())
+                .setView(dialogView)
                 .setPositiveButton(getString(R.string.dialog_close), null)
                 .show();
     }
+
+    // -------------------------------------------------------------------------
+    // List membership / restrictions
+    // -------------------------------------------------------------------------
 
     private void toggleListMembership(AppModel app, String listType) {
         String packageName = app.getPackageName();
@@ -339,9 +368,6 @@ public class MainActivity extends BaseActivity {
                 break;
         }
 
-        // Нельзя использовать submitList с теми же объектами после мутации —
-        // DiffUtil сравнивает один и тот же объект с самим собой и не видит разницы.
-        // Находим позицию в текущем списке адаптера и уведомляем точечно.
         int adapterPos = -1;
         for (int i = 0; i < appsDataList.size(); i++) {
             if (appsDataList.get(i).getPackageName().equals(packageName)) {
@@ -413,6 +439,10 @@ public class MainActivity extends BaseActivity {
         }
         return getString(R.string.main_restriction_menu_default);
     }
+
+    // -------------------------------------------------------------------------
+    // App list loading / filtering
+    // -------------------------------------------------------------------------
 
     private void loadBackgroundApps() {
         binding.swiperefreshlayout1.setRefreshing(true);
@@ -599,7 +629,7 @@ public class MainActivity extends BaseActivity {
         checkboxSystem.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked && !sharedPreferences.getBoolean("system_apps_warning_shown", false)) {
                 buttonView.setChecked(false);
-                new androidx.appcompat.app.AlertDialog.Builder(this)
+                new AlertDialog.Builder(this)
                         .setTitle(getString(R.string.settings_system_apps_warning_title))
                         .setMessage(getString(R.string.settings_system_apps_warning_message))
                         .setPositiveButton(getString(R.string.settings_system_apps_i_understand), (d, w) -> {
@@ -613,7 +643,7 @@ public class MainActivity extends BaseActivity {
             }
         });
 
-        androidx.appcompat.app.AlertDialog sortDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+        AlertDialog sortDialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setPositiveButton(getString(R.string.dialog_apply), (dialog, which) -> {
                     int checkedId = radioGroup.getCheckedRadioButtonId();
@@ -644,8 +674,8 @@ public class MainActivity extends BaseActivity {
                         androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
                         == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES;
         if (isDarkTheme) {
-            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
-            sortDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
+            sortDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
+            sortDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.WHITE);
         }
     }
 
@@ -660,12 +690,11 @@ public class MainActivity extends BaseActivity {
 
         int[] iconIds = {R.id.action_search, R.id.action_sort, R.id.action_select_all};
         for (int id : iconIds) {
-            MenuItem item = menu.findItem(id);
-            if (item != null && item.getIcon() != null) {
-                item.getIcon().setTint(color);
+            MenuItem menuItem = menu.findItem(id);
+            if (menuItem != null && menuItem.getIcon() != null) {
+                menuItem.getIcon().setTint(color);
             }
         }
-        // titleTextColor
         binding.toolbar.setTitleTextColor(color);
     }
 
