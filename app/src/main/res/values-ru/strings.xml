@@ -379,7 +379,6 @@
     <!-- App Triggers dialog -->
     <string name="menu_app_triggers">Триггеры приложения</string>
     <string name="triggers_loading">Анализ…</string>
-    <string name="dialog_close">Закрыть</string>
     <string name="triggers_none_title">Триггеры не найдены</string>
     <string name="triggers_none_detail">Активных причин фоновой работы не обнаружено</string>
     <string name="triggers_none_explanation">Приложение может быть в памяти, но не удерживает себя явно.</string>
