@@ -390,7 +390,6 @@
     <!-- App Triggers dialog -->
     <string name="menu_app_triggers">App triggers</string>
     <string name="triggers_loading">Analyzing…</string>
-    <string name="dialog_close">Close</string>
     <string name="triggers_none_title">No triggers found</string>
     <string name="triggers_none_detail">No active background reasons detected</string>
     <string name="triggers_none_explanation">The app may be in memory but is not actively keeping itself alive.</string>
