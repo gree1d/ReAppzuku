@@ -212,6 +212,9 @@ public class MainActivity extends BaseActivity {
             if (id == R.id.action_app_info) {
                 openAppInfo(packageName);
                 return true;
+            } else if (id == R.id.action_app_triggers) {
+                showAppTriggersDialog(app);
+                return true;
             } else if (id == R.id.action_uninstall) {
                 showUninstallConfirmation(app);
                 return true;
@@ -252,6 +255,46 @@ public class MainActivity extends BaseActivity {
                     appManager.uninstallPackage(app.getPackageName(), this::loadBackgroundApps);
                 })
                 .setNegativeButton(getString(R.string.dialog_cancel), null)
+                .show();
+    }
+
+    private void showAppTriggersDialog(AppModel app) {
+        androidx.appcompat.app.AlertDialog loadingDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(getString(R.string.menu_app_triggers) + ": " + app.getAppName())
+                .setMessage(getString(R.string.triggers_loading))
+                .setCancelable(true)
+                .create();
+        loadingDialog.show();
+
+        executor.execute(() -> {
+            AppTriggersAnalyzer analyzer = new AppTriggersAnalyzer(shellManager);
+            List<AppTriggersAnalyzer.TriggerInfo> triggers = analyzer.analyze(app.getPackageName());
+
+            handler.post(() -> {
+                loadingDialog.dismiss();
+                if (isFinishing() || isDestroyed()) return;
+                showTriggersResult(app, triggers);
+            });
+        });
+    }
+
+    private void showTriggersResult(AppModel app, List<AppTriggersAnalyzer.TriggerInfo> triggers) {
+        StringBuilder sb = new StringBuilder();
+        String currentCategory = null;
+
+        for (AppTriggersAnalyzer.TriggerInfo t : triggers) {
+            if (!t.category.equals(currentCategory)) {
+                if (currentCategory != null) sb.append("\n");
+                sb.append("▸ ").append(t.category).append("\n");
+                currentCategory = t.category;
+            }
+            sb.append("   ").append(t.detail).append("\n");
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(getString(R.string.menu_app_triggers) + ": " + app.getAppName())
+                .setMessage(sb.toString().trim())
+                .setPositiveButton(getString(R.string.dialog_close), null)
                 .show();
     }
 
