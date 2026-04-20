@@ -267,7 +267,7 @@ public class MainActivity extends BaseActivity {
         loadingDialog.show();
 
         executor.execute(() -> {
-            AppTriggersAnalyzer analyzer = new AppTriggersAnalyzer(shellManager);
+            AppTriggersAnalyzer analyzer = new AppTriggersAnalyzer(MainActivity.this, shellManager);
             List<AppTriggersAnalyzer.TriggerInfo> triggers = analyzer.analyze(app.getPackageName());
 
             handler.post(() -> {
@@ -280,15 +280,11 @@ public class MainActivity extends BaseActivity {
 
     private void showTriggersResult(AppModel app, List<AppTriggersAnalyzer.TriggerInfo> triggers) {
         StringBuilder sb = new StringBuilder();
-        String currentCategory = null;
 
         for (AppTriggersAnalyzer.TriggerInfo t : triggers) {
-            if (!t.category.equals(currentCategory)) {
-                if (currentCategory != null) sb.append("\n");
-                sb.append("▸ ").append(t.category).append("\n");
-                currentCategory = t.category;
-            }
-            sb.append("   ").append(t.detail).append("\n");
+            sb.append("▸ ").append(t.category).append("\n");
+            sb.append(t.detail).append("\n");
+            sb.append(t.explanation).append("\n\n");
         }
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
