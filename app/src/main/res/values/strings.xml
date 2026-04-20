@@ -394,26 +394,54 @@
     <string name="triggers_none_detail">No active background triggers detected</string>
     <string name="triggers_none_explanation">The app may be in memory but is not actively keeping itself alive.</string>
 
+    <!-- General Triggers -->
+    <string name="triggers_none_title">No triggers found</string>
+    <string name="triggers_none_detail">No active background triggers detected</string>
+    <string name="triggers_none_explanation">The app may be in memory but is not actively keeping itself alive.</string>
+
+    <!-- Category names -->
+    <string name="triggers_cat_caller">Launched by another app</string>
+    <string name="triggers_cat_fg_service">Foreground Service</string>
+    <string name="triggers_cat_receivers">Broadcast Receivers (%1$d)</string>
+    <string name="triggers_cat_alarms">Alarms</string>
+    <string name="triggers_cat_jobs">Jobs / WorkManager</string>
+    <string name="triggers_cat_doze">Doze Exempt</string>
+    <string name="triggers_cat_wakelock">WakeLock</string>
+    <string name="triggers_cat_sticky">Sticky Service</string>
+    <string name="triggers_cat_provider">Content Provider</string>
+    <string name="triggers_cat_sync">Sync Adapter</string>
+
     <!-- Caller app -->
-    <string name="triggers_caller_category">Launched by another app</string>
     <string name="triggers_caller_explanation">%1$s triggered this app to start. This is a chain launch — the app was not started by the user directly.</string>
 
     <!-- Foreground Service -->
     <string name="triggers_fg_service_explanation">The app launched a background service with a persistent notification. This is the most reliable way to avoid being killed — Android won\'t touch such processes while the notification is visible.</string>
 
     <!-- Broadcast Receivers -->
+    <string name="triggers_receivers_detail_overflow"> (+%1$d more)</string>
     <string name="triggers_receivers_explanation_base">The app is subscribed to system events — it will start automatically when they occur.</string>
     <string name="triggers_receivers_explanation_boot"> Includes launch at device boot (BOOT).</string>
     <string name="triggers_receivers_explanation_network"> Watches for network changes — wakes up when internet becomes available.</string>
 
-    <!-- Alarms -->
+    <!-- Alarms — detail parts -->
+    <string name="triggers_alarms_detail_wakeup">%1$d wake-up</string>
+    <string name="triggers_alarms_detail_normal">%1$d regular</string>
+    <string name="triggers_alarms_detail_repeat"> · repeat %1$s</string>
+    <string name="triggers_alarms_detail_exact"> · setExact</string>
+    <string name="triggers_alarms_interval_sec">every %1$d sec</string>
+    <string name="triggers_alarms_interval_min">every %1$d min</string>
+    <string name="triggers_alarms_interval_hour">every %1$d h</string>
+    <!-- Alarms — explanation -->
     <string name="triggers_alarms_wakeup_explanation">Wake-up alarms (RTC_WAKEUP) pull the device out of sleep mode, even when the screen is off.</string>
     <string name="triggers_alarms_wakeup_aggressive"> Interval under 1 minute — very aggressive, heavy battery impact.</string>
     <string name="triggers_alarms_wakeup_frequent"> Interval under 5 minutes — noticeable battery impact.</string>
     <string name="triggers_alarms_normal_explanation">Regular alarms only fire when the device is active — they don\'t wake it from sleep.</string>
     <string name="triggers_alarms_exact_explanation"> setExactAndAllowWhileIdle — the most aggressive type: fires even in Doze mode.</string>
 
-    <!-- Jobs / WorkManager -->
+    <!-- Jobs — detail parts -->
+    <string name="triggers_jobs_detail_running">%1$d running now</string>
+    <string name="triggers_jobs_detail_pending">%1$d queued</string>
+    <!-- Jobs — explanation -->
     <string name="triggers_jobs_running_and_pending_explanation">JobScheduler / WorkManager — Android\'s deferred task system. The app is running %1$d tasks right now and has queued %2$d more. Typical reasons: sync, data download, analytics. Android decides when to run them — usually while charging or on Wi-Fi.</string>
     <string name="triggers_jobs_running_explanation">JobScheduler / WorkManager — the app is currently running %1$d background tasks. Typical reasons: sync, data download, analytics.</string>
     <string name="triggers_jobs_pending_explanation">JobScheduler / WorkManager — %1$d tasks are waiting to run. Android will execute them when conditions are right (network, charging, etc.). This is the modern replacement for wake-up alarms.</string>
@@ -431,5 +459,16 @@
     <string name="triggers_wakelock_partial_explain">prevents CPU from sleeping</string>
     <string name="triggers_wakelock_full_explain">keeps screen and CPU on</string>
     <string name="triggers_wakelock_generic_explain">keeps the system active</string>
+    <string name="triggers_wakelock_detail_held">, held %1$s</string>
     <string name="triggers_wakelock_explanation">WakeLock (%1$s) — the app explicitly asked the system to "stay awake". Directly drains the battery while held.</string>
+
+    <!-- Sticky Service -->
+    <string name="triggers_sticky_explanation">The service is declared START_STICKY — Android will automatically restart it after it\'s killed. The app cannot be permanently stopped without disabling it.</string>
+
+    <!-- Content Provider -->
+    <string name="triggers_provider_explanation">The app exposes a Content Provider — it will be started automatically by any other app that accesses its data (contacts, files, settings, etc.).</string>
+
+    <!-- Sync Adapter -->
+    <string name="triggers_sync_detail">%1$d account(s)</string>
+    <string name="triggers_sync_explanation">The app has a Sync Adapter registered with the system. Android periodically launches it to synchronize account data, even if the app itself is not running.</string>
 </resources>
