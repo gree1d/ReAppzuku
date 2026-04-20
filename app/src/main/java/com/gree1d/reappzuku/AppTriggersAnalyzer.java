@@ -307,7 +307,6 @@ public class AppTriggersAnalyzer {
                 "dumpsys content | grep -A3 " + packageName);
         if (output == null || output.trim().isEmpty()) return list;
 
-        // Считаем уникальные accountType упоминания нашего пакета
         int accountCount = 0;
         for (String line : output.split("\n")) {
             if (line.contains(packageName) && line.contains("accountType")) {
@@ -315,7 +314,6 @@ public class AppTriggersAnalyzer {
             }
         }
 
-        // Запасной вариант: проверяем наличие syncadapter в манифесте через dumpsys package
         if (accountCount == 0) {
             String pkgOutput = shellManager.runShellCommandAndGetFullOutput(
                     "dumpsys package " + packageName + " | grep -i sync");
@@ -363,7 +361,6 @@ public class AppTriggersAnalyzer {
 
         if (wakeupCount + normalCount == 0) return list;
 
-        // detail — собираем из строк-ресурсов
         StringBuilder detail = new StringBuilder();
         if (wakeupCount > 0) {
             detail.append(context.getString(R.string.triggers_alarms_detail_wakeup, wakeupCount));
