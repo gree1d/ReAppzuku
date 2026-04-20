@@ -53,7 +53,10 @@ public class AppTriggersAnalyzer {
 
         results.addAll(analyzeCallerApp(packageName));
         results.addAll(analyzeForegroundServices(packageName));
+        results.addAll(analyzeStickyServices(packageName));
         results.addAll(analyzeBroadcastReceivers(packageName));
+        results.addAll(analyzeContentProviders(packageName));
+        results.addAll(analyzeSyncAdapters(packageName));
         results.addAll(analyzeAlarms(packageName));
         results.addAll(analyzeJobs(packageName));
         results.addAll(analyzeDozeExemption(packageName));
@@ -71,56 +74,43 @@ public class AppTriggersAnalyzer {
     }
 
     // -------------------------------------------------------------------------
-    // 0. Caller app — кто запустил этот процесс
+    // 0. Caller app
     // -------------------------------------------------------------------------
 
     private List<TriggerInfo> analyzeCallerApp(String packageName) {
         List<TriggerInfo> list = new ArrayList<>();
-        String output = shellManager.runShellCommandAndGetFullOutput(
-                "dumpsys activity processes");
-
+        String output = shellManager.runShellCommandAndGetFullOutput("dumpsys activity processes");
         if (output == null || output.trim().isEmpty()) return list;
 
         boolean inTargetProcess = false;
         String callerPkg = null;
 
         for (String line : output.split("\n")) {
-        
             if (line.contains("ProcessRecord") && line.contains(packageName)) {
                 inTargetProcess = true;
                 callerPkg = null;
             }
-           
             if (inTargetProcess && line.contains("ProcessRecord") && !line.contains(packageName)) {
                 break;
             }
-
             if (!inTargetProcess) continue;
 
-            
             Matcher m = Pattern.compile("clientPackage=([\\w.]+)").matcher(line);
-            if (m.find()) {
-                callerPkg = m.group(1);
-                break;
-            }
-            
+            if (m.find()) { callerPkg = m.group(1); break; }
+
             Matcher m2 = Pattern.compile("callingPackage=([\\w.]+)").matcher(line);
-            if (m2.find()) {
-                callerPkg = m2.group(1);
-                break;
-            }
+            if (m2.find()) { callerPkg = m2.group(1); break; }
         }
 
         if (callerPkg == null || callerPkg.equals(packageName) || callerPkg.equals("android")) {
             return list;
         }
 
-
         String callerName = resolveAppName(callerPkg);
         String detail = callerName + " (" + callerPkg + ")";
 
         list.add(new TriggerInfo(
-                context.getString(R.string.triggers_caller_category),
+                context.getString(R.string.triggers_cat_caller),
                 detail,
                 context.getString(R.string.triggers_caller_explanation, callerName),
                 TriggerInfo.Severity.HIGH));
@@ -145,7 +135,6 @@ public class AppTriggersAnalyzer {
         List<TriggerInfo> list = new ArrayList<>();
         String output = shellManager.runShellCommandAndGetFullOutput(
                 "dumpsys activity services " + packageName);
-
         if (output == null || output.trim().isEmpty()) return list;
 
         boolean inTargetPackage = false;
@@ -157,10 +146,9 @@ public class AppTriggersAnalyzer {
                 currentService = extractServiceShortName(line, packageName);
             }
             if (inTargetPackage && line.contains("isForeground=true")) {
-                String detail = currentService != null ? currentService : packageName;
                 list.add(new TriggerInfo(
-                        "Foreground Service",
-                        detail,
+                        context.getString(R.string.triggers_cat_fg_service),
+                        currentService != null ? currentService : packageName,
                         context.getString(R.string.triggers_fg_service_explanation),
                         TriggerInfo.Severity.HIGH));
                 inTargetPackage = false;
@@ -170,31 +158,48 @@ public class AppTriggersAnalyzer {
         return list;
     }
 
-    private String extractServiceShortName(String line, String packageName) {
-        Matcher m = Pattern.compile("ServiceRecord\\{[^}]+\\s([\\w./]+)\\}").matcher(line);
-        if (!m.find()) return null;
-        String fullName = m.group(1);
+    // -------------------------------------------------------------------------
+    // 2. Sticky Services
+    // -------------------------------------------------------------------------
 
-        if (fullName.contains("/")) {
-            String className = fullName.substring(fullName.indexOf('/') + 1);
-            if (className.startsWith(".")) return className.substring(1);
-            if (className.startsWith(packageName + ".")) {
-                return className.substring(packageName.length() + 1);
+    private List<TriggerInfo> analyzeStickyServices(String packageName) {
+        List<TriggerInfo> list = new ArrayList<>();
+        String output = shellManager.runShellCommandAndGetFullOutput(
+                "dumpsys activity services " + packageName);
+        if (output == null || output.trim().isEmpty()) return list;
+
+        boolean inTargetPackage = false;
+        String currentService = null;
+
+        for (String line : output.split("\n")) {
+            if (line.contains("ServiceRecord") && line.contains(packageName)) {
+                inTargetPackage = true;
+                currentService = extractServiceShortName(line, packageName);
             }
-            return className;
+            // START_STICKY = 1, проверяем оба варианта написания
+            if (inTargetPackage
+                    && (line.contains("START_STICKY") || line.contains("startRequested=true"))
+                    && !line.contains("isForeground=true")) {  // foreground уже покрыт выше
+                list.add(new TriggerInfo(
+                        context.getString(R.string.triggers_cat_sticky),
+                        currentService != null ? currentService : packageName,
+                        context.getString(R.string.triggers_sticky_explanation),
+                        TriggerInfo.Severity.HIGH));
+                inTargetPackage = false;
+                currentService = null;
+            }
         }
-        return fullName;
+        return list;
     }
 
     // -------------------------------------------------------------------------
-    // 2. Broadcast Receivers
+    // 3. Broadcast Receivers
     // -------------------------------------------------------------------------
 
     private List<TriggerInfo> analyzeBroadcastReceivers(String packageName) {
         List<TriggerInfo> list = new ArrayList<>();
         String output = shellManager.runShellCommandAndGetFullOutput(
                 "dumpsys package " + packageName);
-
         if (output == null || output.trim().isEmpty()) return list;
 
         boolean inReceiverSection = false;
@@ -215,8 +220,12 @@ public class AppTriggersAnalyzer {
 
         if (actions.isEmpty()) return list;
 
-        String detail = String.join(", ", actions.subList(0, Math.min(actions.size(), 5)));
-        if (actions.size() > 5) detail += " (+" + (actions.size() - 5) + ")";
+        int shown = Math.min(actions.size(), 5);
+        StringBuilder detail = new StringBuilder(String.join(", ", actions.subList(0, shown)));
+        if (actions.size() > shown) {
+            detail.append(context.getString(R.string.triggers_receivers_detail_overflow,
+                    actions.size() - shown));
+        }
 
         boolean hasBootReceiver = actions.stream().anyMatch(
                 a -> a.contains("BOOT") || a.contains("LOCKED_BOOT"));
@@ -225,16 +234,12 @@ public class AppTriggersAnalyzer {
 
         StringBuilder explanation = new StringBuilder(
                 context.getString(R.string.triggers_receivers_explanation_base));
-        if (hasBootReceiver) {
-            explanation.append(context.getString(R.string.triggers_receivers_explanation_boot));
-        }
-        if (hasConnectivity) {
-            explanation.append(context.getString(R.string.triggers_receivers_explanation_network));
-        }
+        if (hasBootReceiver) explanation.append(context.getString(R.string.triggers_receivers_explanation_boot));
+        if (hasConnectivity) explanation.append(context.getString(R.string.triggers_receivers_explanation_network));
 
         list.add(new TriggerInfo(
-                "Broadcast Receivers (" + actions.size() + ")",
-                detail,
+                context.getString(R.string.triggers_cat_receivers, actions.size()),
+                detail.toString(),
                 explanation.toString(),
                 TriggerInfo.Severity.MEDIUM));
         return list;
@@ -249,13 +254,93 @@ public class AppTriggersAnalyzer {
     }
 
     // -------------------------------------------------------------------------
-    // 3. Alarms
+    // 4. Content Providers
+    // -------------------------------------------------------------------------
+
+    private List<TriggerInfo> analyzeContentProviders(String packageName) {
+        List<TriggerInfo> list = new ArrayList<>();
+        String output = shellManager.runShellCommandAndGetFullOutput(
+                "dumpsys package " + packageName);
+        if (output == null || output.trim().isEmpty()) return list;
+
+        boolean inProviderSection = false;
+        List<String> authorities = new ArrayList<>();
+
+        for (String line : output.split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("Provider #")) {
+                inProviderSection = true;
+            }
+            if (inProviderSection && trimmed.startsWith("authority=")) {
+                String auth = trimmed.replaceFirst("authority=", "").trim();
+                // Убираем packageName-prefix для краткости
+                if (auth.startsWith(packageName + ".")) {
+                    auth = auth.substring(packageName.length() + 1);
+                }
+                if (!authorities.contains(auth)) authorities.add(auth);
+            }
+            // Следующая секция — выходим
+            if (inProviderSection && trimmed.startsWith("Activity #")) break;
+        }
+
+        if (authorities.isEmpty()) return list;
+
+        int shown = Math.min(authorities.size(), 3);
+        String detail = String.join(", ", authorities.subList(0, shown));
+        if (authorities.size() > shown) detail += " (+" + (authorities.size() - shown) + ")";
+
+        list.add(new TriggerInfo(
+                context.getString(R.string.triggers_cat_provider),
+                detail,
+                context.getString(R.string.triggers_provider_explanation),
+                TriggerInfo.Severity.LOW));
+        return list;
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. Sync Adapters
+    // -------------------------------------------------------------------------
+
+    private List<TriggerInfo> analyzeSyncAdapters(String packageName) {
+        List<TriggerInfo> list = new ArrayList<>();
+        String output = shellManager.runShellCommandAndGetFullOutput(
+                "dumpsys content | grep -A3 " + packageName);
+        if (output == null || output.trim().isEmpty()) return list;
+
+        // Считаем уникальные accountType упоминания нашего пакета
+        int accountCount = 0;
+        for (String line : output.split("\n")) {
+            if (line.contains(packageName) && line.contains("accountType")) {
+                accountCount++;
+            }
+        }
+
+        // Запасной вариант: проверяем наличие syncadapter в манифесте через dumpsys package
+        if (accountCount == 0) {
+            String pkgOutput = shellManager.runShellCommandAndGetFullOutput(
+                    "dumpsys package " + packageName + " | grep -i sync");
+            if (pkgOutput != null && pkgOutput.toLowerCase().contains("syncadapter")) {
+                accountCount = 1;
+            }
+        }
+
+        if (accountCount == 0) return list;
+
+        list.add(new TriggerInfo(
+                context.getString(R.string.triggers_cat_sync),
+                context.getString(R.string.triggers_sync_detail, accountCount),
+                context.getString(R.string.triggers_sync_explanation),
+                TriggerInfo.Severity.MEDIUM));
+        return list;
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. Alarms
     // -------------------------------------------------------------------------
 
     private List<TriggerInfo> analyzeAlarms(String packageName) {
         List<TriggerInfo> list = new ArrayList<>();
         String output = shellManager.runShellCommandAndGetFullOutput("dumpsys alarm");
-
         if (output == null || output.trim().isEmpty()) return list;
 
         int wakeupCount  = 0;
@@ -278,15 +363,24 @@ public class AppTriggersAnalyzer {
 
         if (wakeupCount + normalCount == 0) return list;
 
+        // detail — собираем из строк-ресурсов
         StringBuilder detail = new StringBuilder();
-        if (wakeupCount > 0) detail.append(wakeupCount).append(" будящих");
+        if (wakeupCount > 0) {
+            detail.append(context.getString(R.string.triggers_alarms_detail_wakeup, wakeupCount));
+        }
         if (normalCount > 0) {
             if (detail.length() > 0) detail.append(", ");
-            detail.append(normalCount).append(" обычных");
+            detail.append(context.getString(R.string.triggers_alarms_detail_normal, normalCount));
         }
-        if (minInterval != Long.MAX_VALUE) detail.append(" · повтор ").append(formatInterval(minInterval));
-        if (hasExact) detail.append(" · setExact");
+        if (minInterval != Long.MAX_VALUE) {
+            detail.append(context.getString(R.string.triggers_alarms_detail_repeat,
+                    formatInterval(minInterval)));
+        }
+        if (hasExact) {
+            detail.append(context.getString(R.string.triggers_alarms_detail_exact));
+        }
 
+        // explanation
         StringBuilder explanation = new StringBuilder();
         if (wakeupCount > 0) {
             explanation.append(context.getString(R.string.triggers_alarms_wakeup_explanation));
@@ -307,25 +401,28 @@ public class AppTriggersAnalyzer {
                         ? TriggerInfo.Severity.HIGH : TriggerInfo.Severity.MEDIUM)
                 : TriggerInfo.Severity.LOW;
 
-        list.add(new TriggerInfo("Alarms", detail.toString(), explanation.toString(), severity));
+        list.add(new TriggerInfo(
+                context.getString(R.string.triggers_cat_alarms),
+                detail.toString(),
+                explanation.toString(),
+                severity));
         return list;
     }
 
     private String formatInterval(long ms) {
         long sec = ms / 1000;
-        if (sec < 60)   return "каждые " + sec + " сек";
-        if (sec < 3600) return "каждые " + (sec / 60) + " мин";
-        return "каждые " + (sec / 3600) + " ч";
+        if (sec < 60)   return context.getString(R.string.triggers_alarms_interval_sec, (int) sec);
+        if (sec < 3600) return context.getString(R.string.triggers_alarms_interval_min, (int) (sec / 60));
+        return context.getString(R.string.triggers_alarms_interval_hour, (int) (sec / 3600));
     }
 
     // -------------------------------------------------------------------------
-    // 4. Jobs / WorkManager
+    // 7. Jobs / WorkManager
     // -------------------------------------------------------------------------
 
     private List<TriggerInfo> analyzeJobs(String packageName) {
         List<TriggerInfo> list = new ArrayList<>();
         String output = shellManager.runShellCommandAndGetFullOutput("dumpsys jobscheduler");
-
         if (output == null || output.trim().isEmpty()) return list;
 
         int pending = 0;
@@ -346,13 +443,17 @@ public class AppTriggersAnalyzer {
 
         if (pending == 0 && running == 0) return list;
 
+        // detail
         StringBuilder detail = new StringBuilder();
-        if (running > 0) detail.append(running).append(" выполняется прямо сейчас");
+        if (running > 0) {
+            detail.append(context.getString(R.string.triggers_jobs_detail_running, running));
+        }
         if (pending > 0) {
             if (detail.length() > 0) detail.append(", ");
-            detail.append(pending).append(" ждут запуска");
+            detail.append(context.getString(R.string.triggers_jobs_detail_pending, pending));
         }
 
+        // explanation
         String explanation;
         if (running > 0 && pending > 0) {
             explanation = context.getString(R.string.triggers_jobs_running_and_pending_explanation, running, pending);
@@ -363,7 +464,7 @@ public class AppTriggersAnalyzer {
         }
 
         list.add(new TriggerInfo(
-                "Jobs / WorkManager",
+                context.getString(R.string.triggers_cat_jobs),
                 detail.toString(),
                 explanation,
                 running > 0 ? TriggerInfo.Severity.HIGH : TriggerInfo.Severity.MEDIUM));
@@ -371,27 +472,22 @@ public class AppTriggersAnalyzer {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Doze exemption
+    // 8. Doze exemption
     // -------------------------------------------------------------------------
 
     private List<TriggerInfo> analyzeDozeExemption(String packageName) {
         List<TriggerInfo> list = new ArrayList<>();
         String output = shellManager.runShellCommandAndGetFullOutput(
                 "dumpsys deviceidle | grep -E 'whitelist|except'");
-
         if (output == null || output.trim().isEmpty()) return list;
 
         for (String line : output.split("\n")) {
             if (!line.contains(packageName)) continue;
             boolean isSys = line.contains("sys-");
             list.add(new TriggerInfo(
-                    "Doze Exempt",
-                    context.getString(isSys
-                            ? R.string.triggers_doze_sys_detail
-                            : R.string.triggers_doze_user_detail),
-                    context.getString(isSys
-                            ? R.string.triggers_doze_sys_explanation
-                            : R.string.triggers_doze_user_explanation),
+                    context.getString(R.string.triggers_cat_doze),
+                    context.getString(isSys ? R.string.triggers_doze_sys_detail : R.string.triggers_doze_user_detail),
+                    context.getString(isSys ? R.string.triggers_doze_sys_explanation : R.string.triggers_doze_user_explanation),
                     TriggerInfo.Severity.HIGH));
             break;
         }
@@ -399,7 +495,7 @@ public class AppTriggersAnalyzer {
     }
 
     // -------------------------------------------------------------------------
-    // 6. WakeLocks
+    // 9. WakeLocks
     // -------------------------------------------------------------------------
 
     private List<TriggerInfo> analyzeWakelocks(String packageName) {
@@ -426,9 +522,9 @@ public class AppTriggersAnalyzer {
 
         boolean inWakeLockSection = false;
         for (String line : powerOutput.split("\n")) {
-            if (line.trim().startsWith("Wake Locks:"))                         { inWakeLockSection = true; continue; }
+            if (line.trim().startsWith("Wake Locks:"))                            { inWakeLockSection = true; continue; }
             if (inWakeLockSection && line.trim().startsWith("Suspend Blockers:")) break;
-            if (!inWakeLockSection || !line.contains("uid=" + uid))            continue;
+            if (!inWakeLockSection || !line.contains("uid=" + uid))               continue;
 
             int typeResId, explainResId;
             if (line.contains("PARTIAL_WAKE_LOCK")) {
@@ -448,15 +544,38 @@ public class AppTriggersAnalyzer {
 
             String held = "";
             Matcher timeMatcher = Pattern.compile("(\\d+m\\s*\\d+s|\\d+s)").matcher(line);
-            if (timeMatcher.find()) held = ", " + timeMatcher.group(1);
+            if (timeMatcher.find()) {
+                held = context.getString(R.string.triggers_wakelock_detail_held, timeMatcher.group(1));
+            }
 
             String type   = context.getString(typeResId);
             String detail = type + (tag.isEmpty() ? "" : " · " + tag) + held;
             String explanation = context.getString(R.string.triggers_wakelock_explanation,
                     context.getString(explainResId));
 
-            list.add(new TriggerInfo("WakeLock", detail, explanation, TriggerInfo.Severity.HIGH));
+            list.add(new TriggerInfo(
+                    context.getString(R.string.triggers_cat_wakelock),
+                    detail,
+                    explanation,
+                    TriggerInfo.Severity.HIGH));
         }
         return list;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private String extractServiceShortName(String line, String packageName) {
+        Matcher m = Pattern.compile("ServiceRecord\\{[^}]+\\s([\\w./]+)\\}").matcher(line);
+        if (!m.find()) return null;
+        String fullName = m.group(1);
+        if (fullName.contains("/")) {
+            String className = fullName.substring(fullName.indexOf('/') + 1);
+            if (className.startsWith(".")) return className.substring(1);
+            if (className.startsWith(packageName + ".")) return className.substring(packageName.length() + 1);
+            return className;
+        }
+        return fullName;
     }
 }
