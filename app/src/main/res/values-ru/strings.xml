@@ -380,8 +380,12 @@
     <string name="menu_app_triggers">Триггеры приложения</string>
     <string name="triggers_loading">Анализ…</string>
     <string name="triggers_none_title">Триггеры не найдены</string>
-    <string name="triggers_none_detail">Активных причин фоновой работы не обнаружено</string>
+    <string name="triggers_none_detail">Активных триггеров фоновой работы не обнаружено</string>
     <string name="triggers_none_explanation">Приложение может быть в памяти, но не удерживает себя явно.</string>
+
+    <!-- Caller app -->
+    <string name="triggers_caller_category">Запущено другим приложением</string>
+    <string name="triggers_caller_explanation">%1$s инициировало запуск этого приложения. Это цепной запуск — приложение было запущено не пользователем напрямую.</string>
 
     <!-- Foreground Service -->
     <string name="triggers_fg_service_explanation">Приложение запустило фоновый сервис с постоянным уведомлением. Это самый надёжный способ не быть убитым системой — Android не трогает такие процессы, пока уведомление видно.</string>
