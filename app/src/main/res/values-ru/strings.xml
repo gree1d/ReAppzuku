@@ -383,26 +383,54 @@
     <string name="triggers_none_detail">Активных триггеров фоновой работы не обнаружено</string>
     <string name="triggers_none_explanation">Приложение может быть в памяти, но не удерживает себя явно.</string>
 
+    <!-- General Triggers -->
+    <string name="triggers_none_title">Триггеры не найдены</string>
+    <string name="triggers_none_detail">Активных триггеров фоновой работы не обнаружено</string>
+    <string name="triggers_none_explanation">Приложение может быть в памяти, но не удерживает себя явно.</string>
+
+    <!-- Category names -->
+    <string name="triggers_cat_caller">Запущено другим приложением</string>
+    <string name="triggers_cat_fg_service">Foreground Service</string>
+    <string name="triggers_cat_receivers">Broadcast Receivers (%1$d)</string>
+    <string name="triggers_cat_alarms">Alarms</string>
+    <string name="triggers_cat_jobs">Jobs / WorkManager</string>
+    <string name="triggers_cat_doze">Doze Exempt</string>
+    <string name="triggers_cat_wakelock">WakeLock</string>
+    <string name="triggers_cat_sticky">Sticky Service</string>
+    <string name="triggers_cat_provider">Content Provider</string>
+    <string name="triggers_cat_sync">Sync Adapter</string>
+
     <!-- Caller app -->
-    <string name="triggers_caller_category">Запущено другим приложением</string>
     <string name="triggers_caller_explanation">%1$s инициировало запуск этого приложения. Это цепной запуск — приложение было запущено не пользователем напрямую.</string>
 
     <!-- Foreground Service -->
     <string name="triggers_fg_service_explanation">Приложение запустило фоновый сервис с постоянным уведомлением. Это самый надёжный способ не быть убитым системой — Android не трогает такие процессы, пока уведомление видно.</string>
 
     <!-- Broadcast Receivers -->
+    <string name="triggers_receivers_detail_overflow"> (ещё %1$d)</string>
     <string name="triggers_receivers_explanation_base">Приложение подписано на системные события — при их наступлении оно запускается автоматически.</string>
     <string name="triggers_receivers_explanation_boot"> Включает запуск при загрузке устройства (BOOT).</string>
     <string name="triggers_receivers_explanation_network"> Следит за сетью — просыпается при появлении интернета.</string>
 
-    <!-- Alarms -->
+    <!-- Alarms — detail parts -->
+    <string name="triggers_alarms_detail_wakeup">%1$d будящих</string>
+    <string name="triggers_alarms_detail_normal">%1$d обычных</string>
+    <string name="triggers_alarms_detail_repeat"> · повтор %1$s</string>
+    <string name="triggers_alarms_detail_exact"> · setExact</string>
+    <string name="triggers_alarms_interval_sec">каждые %1$d сек</string>
+    <string name="triggers_alarms_interval_min">каждые %1$d мин</string>
+    <string name="triggers_alarms_interval_hour">каждые %1$d ч</string>
+    <!-- Alarms — explanation -->
     <string name="triggers_alarms_wakeup_explanation">Будящие алармы (RTC_WAKEUP) поднимают устройство из режима сна, даже если экран выключен.</string>
     <string name="triggers_alarms_wakeup_aggressive"> Интервал менее минуты — очень агрессивно, сильно влияет на батарею.</string>
     <string name="triggers_alarms_wakeup_frequent"> Интервал менее 5 минут — заметно влияет на батарею.</string>
     <string name="triggers_alarms_normal_explanation">Обычные алармы срабатывают только когда устройство активно — из сна не будят.</string>
     <string name="triggers_alarms_exact_explanation"> setExactAndAllowWhileIdle — самый агрессивный тип: работает даже в режиме Doze.</string>
 
-    <!-- Jobs / WorkManager -->
+    <!-- Jobs — detail parts -->
+    <string name="triggers_jobs_detail_running">%1$d выполняется прямо сейчас</string>
+    <string name="triggers_jobs_detail_pending">%1$d ждут запуска</string>
+    <!-- Jobs — explanation -->
     <string name="triggers_jobs_running_and_pending_explanation">JobScheduler / WorkManager — система отложенных задач Android. Приложение сейчас выполняет %1$d задач и поставило ещё %2$d в очередь. Типичные причины: синхронизация, загрузка данных, аналитика. Android сам решает когда запустить — обычно при зарядке или Wi-Fi.</string>
     <string name="triggers_jobs_running_explanation">JobScheduler / WorkManager — приложение прямо сейчас выполняет %1$d фоновых задач. Типичные причины: синхронизация, загрузка данных, аналитика.</string>
     <string name="triggers_jobs_pending_explanation">JobScheduler / WorkManager — %1$d задач ждут запуска. Android выполнит их при подходящих условиях (сеть, зарядка и т.д.). Это современная замена будящим алармам.</string>
@@ -420,5 +448,16 @@
     <string name="triggers_wakelock_partial_explain">не даёт CPU засыпать</string>
     <string name="triggers_wakelock_full_explain">держит экран и CPU включёнными</string>
     <string name="triggers_wakelock_generic_explain">удерживает систему активной</string>
+    <string name="triggers_wakelock_detail_held">, удерживается %1$s</string>
     <string name="triggers_wakelock_explanation">WakeLock (%1$s) — приложение явно запросило у системы «не спать». Напрямую расходует батарею, пока удерживается.</string>
+
+    <!-- Sticky Service -->
+    <string name="triggers_sticky_explanation">Сервис объявлен как START_STICKY — Android автоматически перезапустит его после kill. Приложение нельзя окончательно остановить без отключения.</string>
+
+    <!-- Content Provider -->
+    <string name="triggers_provider_explanation">Приложение предоставляет Content Provider — оно будет запущено автоматически любым другим приложением, которое обращается к его данным (контакты, файлы, настройки и т.д.).</string>
+
+    <!-- Sync Adapter -->
+    <string name="triggers_sync_detail">%1$d аккаунт(ов)</string>
+    <string name="triggers_sync_explanation">У приложения зарегистрирован Sync Adapter. Android периодически запускает его для синхронизации данных аккаунта, даже если само приложение не запущено.</string>
 </resources>
