@@ -469,25 +469,6 @@
     <string name="triggers_sync_detail">%1$d account(s)</string>
     <string name="triggers_sync_explanation">The app has a Sync Adapter registered with the system. Android periodically launches it to synchronize account data, even if the app itself is not running.</string>
 
-    <!-- Stats Graphics Info -->
-    <string name="info_card_kills">Processes killed</string>
-    <string name="info_card_relaunches">Relaunched</string>
-    <string name="info_card_ram_recovered">RAM freed</string>
-    <string name="info_card_self_drain">ReAppzuku drain</string>
-    <string name="stats_disclaimer">Estimated data based on Android batterystats / procstats. Actual consumption may differ. Battery values are reset on full charge.</string>
-    <string name="chart_title_battery">Battery consumption</string>
-    <string name="chart_title_cpu">CPU usage</string>
-    <string name="chart_title_ram">RAM usage</string>
-    <string name="chart_others_label">Others</string>
-    <string name="chart_others_expand">Low-consumption apps (%d)</string>
-    <string name="chart_others_dialog_title">Low-consumption apps</string>
-    <string name="stats_loading_charts">Loading data…</string>
-    <string name="stats_no_data_hint">Not enough data yet.\nSnapshots are collected every 30–60 minutes.\nCome back later.</string>
-    <string name="stats_no_data_hint_short">Collecting data…</string>
-    <string name="detail_chart_battery">Battery (mAh / hour)</string>
-    <string name="detail_chart_cpu">CPU usage (% / hour)</string>
-    <string name="detail_chart_ram">RAM — avg PSS (MB)</string>
-
     <!-- ── Kill history dialog ── -->
     <string name="stats_dialog_title">Kill history</string>
     <!-- %1$d = kills, %2$d = relaunches, %3$s = RAM freed -->
