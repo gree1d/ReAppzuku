@@ -287,6 +287,8 @@ public class StatisticsActivity extends BaseActivity {
         // Colors — gradient of the accent color
         List<Integer> colors = generatePieColors(accentColor, entries.size());
 
+        final double finalTotal = total; // effectively final copy for use in anonymous class
+
         PieDataSet dataSet = new PieDataSet(entries, "");
         dataSet.setColors(colors);
         dataSet.setSliceSpace(2f);
@@ -315,11 +317,11 @@ public class StatisticsActivity extends BaseActivity {
                 Object tag = pe.getData();
                 if ("__others__".equals(tag)) {
                     // Show list of "others" apps in a small dialog
-                    showOthersDialog(othersList, metric, total);
+                    showOthersDialog(othersList, metric, finalTotal);
                 } else {
                     // Navigate to per-app detail screen
                     String pkg = tag != null ? tag.toString() : pe.getLabel();
-                    float pct  = (float)(metricValue(findByPkg(sorted, pkg), metric) / total * 100);
+                    float pct  = (float)(metricValue(findByPkg(sorted, pkg), metric) / finalTotal * 100);
                     String info = String.format(Locale.US, "%s\n%.1f%%  %s",
                             pe.getLabel(), pct, formatMetricValue(findByPkg(sorted, pkg), metric));
                     Toast.makeText(StatisticsActivity.this, info, Toast.LENGTH_SHORT).show();
@@ -333,7 +335,7 @@ public class StatisticsActivity extends BaseActivity {
         chart.invalidate();
 
         // "Others" expandable list below the chart (collapsed by default)
-        buildOthersRow(othersContainer, othersList, metric, total);
+        buildOthersRow(othersContainer, othersList, metric, finalTotal);
     }
 
     private void buildOthersRow(android.view.ViewGroup container,
