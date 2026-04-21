@@ -487,4 +487,47 @@
     <string name="detail_chart_battery">Battery (mAh / hour)</string>
     <string name="detail_chart_cpu">CPU usage (% / hour)</string>
     <string name="detail_chart_ram">RAM — avg PSS (MB)</string>
+
+    <!-- ── Kill history dialog ── -->
+    <string name="stats_dialog_title">Kill history</string>
+    <!-- %1$d = kills, %2$d = relaunches, %3$s = RAM freed -->
+    <string name="stats_dialog_subtitle">Kills: %1$d · Relaunches: %2$d · Freed: %3$s</string>
+    <string name="stats_dialog_empty">No kill history yet</string>
+
+    <!-- ── Top offenders dialog ── -->
+    <string name="stats_offenders_title">Top offenders</string>
+    <string name="stats_offenders_empty">No data yet</string>
+    <!-- %1$d = number of offenders shown -->
+    <string name="stats_offenders_summary">Showing top %1$d apps</string>
+
+    <!-- ── Restriction log dialog ── -->
+    <string name="stats_restriction_log_empty">No restriction events yet</string>
+
+    <!-- ── Charts ── -->
+    <string name="chart_others_label">Others</string>
+    <!-- %1$d = number of low-consumption apps -->
+    <string name="chart_others_expand">Low-consumption apps (%1$d)</string>
+    <string name="chart_others_dialog_title">Low-consumption apps</string>
+
+    <!-- ── Info cards ── -->
+    <string name="info_card_kills">Processes killed</string>
+    <string name="info_card_relaunches">Relaunched</string>
+    <string name="info_card_ram_recovered">RAM freed</string>
+    <string name="info_card_self_drain">ReAppzuku drain</string>
+
+    <!-- ── Loading / empty states ── -->
+    <string name="stats_loading_charts">Loading data…</string>
+    <string name="stats_no_data_hint">Not enough data yet.\nSnapshots are collected every 30–60 min.\nCome back later.</string>
+    <string name="stats_no_data_hint_short">Collecting data…</string>
+    <string name="stats_disclaimer">Estimated data based on Android batterystats / procstats. Actual values may differ. Battery stats reset on full charge.</string>
+
+    <!-- ── Chart titles ── -->
+    <string name="chart_title_battery">Battery consumption</string>
+    <string name="chart_title_cpu">CPU usage</string>
+    <string name="chart_title_ram">RAM usage</string>
+
+    <!-- ── Detail screen ── -->
+    <string name="detail_chart_battery">Battery (mAh / hour)</string>
+    <string name="detail_chart_cpu">CPU (% / hour)</string>
+    <string name="detail_chart_ram">RAM — avg PSS (MB)</string>
 </resources>
