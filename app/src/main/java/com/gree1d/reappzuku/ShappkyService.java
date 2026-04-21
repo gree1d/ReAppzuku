@@ -306,12 +306,12 @@ public class ShappkyService extends Service {
         );
     }
 
-    private static final long SNAPSHOT_INTERVAL_MS = 45 * 60 * 1000L; // 45 minutes
+    private static final long SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000L; // 15 minutes
 
     /**
      * Periodically collects battery/RAM snapshots so that Statistics history
      * is populated even when the user never opens the Statistics screen.
-     * Fires every 45 minutes while the service is running.
+     * Fires every 15 minutes while the service is running.
      */
     private void scheduleSnapshotCollection() {
         handler.postDelayed(new Runnable() {

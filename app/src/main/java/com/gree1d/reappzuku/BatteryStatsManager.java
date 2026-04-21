@@ -27,24 +27,25 @@ import java.util.regex.Pattern;
  * Manages collection and aggregation of per-app resource usage snapshots.
  *
  * Data sources:
- *  - Battery + CPU:  dumpsys batterystats --charged --checkin   (pwi lines → mAh per UID)
- *  - RAM:            dumpsys procstats --hours N                (avg PSS per package)
+ *  - Battery:  dumpsys batterystats --charged --checkin   (pwi uid lines → mAh per UID)
+ *  - RAM:      dumpsys procstats --hours N                (avg PSS per package)
+ *  - CPU:      batterystats per-app cpu= fields           (cumulative ms since charge)
  *
  * Snapshot strategy:
  *  Every 30–60 minutes a full snapshot is saved to Room (ResourceSnapshot table).
  *  Period queries (2h / 6h / 12h / 24h) diff the two closest snapshots to that window.
  *
- * Usage:
- *  BatteryStatsManager mgr = new BatteryStatsManager(context, handler, executor, shellManager);
- *  mgr.takeSnapshotAsync(null);                       // background snapshot
- *  mgr.getStatsForPeriodAsync(6, callback);           // returns AppResourceStats list
+ *  NOTE: batterystats --charged resets on every charge cycle.
+ *  batteryMah is a CUMULATIVE value since last charge — diffing works correctly as long
+ *  as no charge event occurs between two snapshots. If the device was charged between
+ *  snapshots the delta goes negative; we clamp it to 0 in that case.
  */
 public class BatteryStatsManager {
 
     private static final String TAG = "BatteryStatsManager";
 
-    /** Minimum interval between snapshots (30 min). Prevents duplicate writes. */
-    private static final long MIN_SNAPSHOT_INTERVAL_MS = 30 * 60 * 1000L;
+    /** Minimum interval between snapshots (15 min). Prevents duplicate writes. */
+    private static final long MIN_SNAPSHOT_INTERVAL_MS = 10 * 60 * 1000L;
 
     /** Percentage threshold — apps at or below this share are grouped into "Others". */
     public static final float OTHERS_THRESHOLD_PCT = 5.0f;
@@ -52,35 +53,72 @@ public class BatteryStatsManager {
     /** Minimum number of top apps always shown as individual slices (even if < threshold). */
     public static final int MIN_TOP_SLICES = 3;
 
-    /** Own UID — excluded from "all apps" total but shown separately in UI. */
-    private static final int MY_UID = android.os.Process.myUid();
-
     // ──────────────────────────────────────────────────────────────────────────
     // Regex patterns
     // ──────────────────────────────────────────────────────────────────────────
 
     /**
-     * Matches a pwi (Power Use Item) line from --checkin output.
-     * Format (Android 14+):  9,0,l,pwi,uid,<uid>,<mAh>,0,0,0,0
-     * Field index (0-based after "pwi,"): 0=type/uid-token, 1=uid, 2=mAh, ...
+     * Matches a pwi uid line from --checkin output.
      *
-     * We use a simpler split-based approach because the format varies slightly between
-     * Android versions. Pattern here is just used to detect the line.
+     * Real format (verified on Android 12–14):
+     *   9,<uid>,l,pwi,uid,<mAh>,1,...
+     *
+     * Fields (0-based, comma-split):
+     *   [0] version      → "9"
+     *   [1] uid          → numeric app UID  (THIS is the UID we need)
+     *   [2] "l"
+     *   [3] "pwi"
+     *   [4] "uid"        → literal token distinguishing per-uid rows
+     *   [5] mAh          → battery drain value
+     *   [6] "1"          → present flag
+     *   [7] foreground mAh (may be 0)
+     *
+     * We detect the line by the literal pattern "^9,\d+,l,pwi,uid," and then
+     * extract uid from parts[1] and mAh from parts[5].
      */
-    private static final Pattern PWI_LINE = Pattern.compile("^\\d+,\\d+,l,pwi,uid,");
+    private static final Pattern PWI_UID_LINE = Pattern.compile("^9,\\d+,l,pwi,uid,");
+
+    /**
+     * Matches per-app cpu= lines inside the non-checkin batterystats output.
+     * Used to obtain cumulative CPU time in ms.
+     *
+     * Example:
+     *   Proc com.example.app:
+     *     CPU: 3m 53s 330ms usr + 2m 22s 40ms krn ; 1m 21s 260ms fg
+     *
+     * We capture the package name from the "Proc" line and parse the "CPU:" line
+     * for total user+kernel time.
+     */
+    private static final Pattern BSTATS_PROC_LINE =
+            Pattern.compile("^\\s+Proc ([\\w./:]+):");
+
+    /**
+     * Matches a CPU summary line such as:
+     *   CPU: 3m 53s 330ms usr + 2m 22s 40ms krn ; ...
+     * We parse every time component (Nm, Ns, Nms) and sum them to milliseconds.
+     */
+    private static final Pattern CPU_TIME_COMPONENT =
+            Pattern.compile("(\\d+)m|(\\d+)s(?!\\d)|(\\d+)ms");
 
     /**
      * Matches package stat lines from procstats.
-     * Example:  "  * com.example.app / u0a123:"
+     * Example:  "  * com.example.app / u0a123 / v456:"
      */
-    private static final Pattern PROCSTATS_PKG = Pattern.compile("^\\s{2}\\*\\s([\\w.]+)\\s*/\\su\\d+a(\\d+):");
+    private static final Pattern PROCSTATS_PKG =
+            Pattern.compile("^\\s{2}\\*\\s([\\w.]+)\\s*/\\su\\d+a(\\d+)");
 
     /**
-     * Extracts avg PSS in kB from procstats package block.
-     * Example:  "    TOTAL: 20% (184MB avg pss)"
+     * Extracts the average PSS value from a procstats TOTAL line.
+     *
+     * Real format:
+     *   TOTAL: 100% (346MB-346MB-346MB/161MB-161MB-161MB/288MB-288MB-288MB over 1)
+     *   Fields: PSS min-avg-max / USS min-avg-max / RSS min-avg-max
+     *
+     * We want the PSS average (second number in the first triplet).
+     * Pattern captures the three PSS values; group(2) = avg PSS in MB.
      */
-    private static final Pattern PROCSTATS_AVG_PSS = Pattern.compile(
-            "(\\d+(?:\\.\\d+)?)\\s*MB\\s+avg\\s+pss", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PROCSTATS_PSS =
+            Pattern.compile("(\\d+(?:\\.\\d+)?)MB-(\\d+(?:\\.\\d+)?)MB-(\\d+(?:\\.\\d+)?)MB");
 
     // ──────────────────────────────────────────────────────────────────────────
     // Fields
@@ -100,31 +138,29 @@ public class BatteryStatsManager {
                                @NonNull Handler handler,
                                @NonNull ExecutorService executor,
                                @NonNull ShellManager shellManager) {
-        this.context = context.getApplicationContext();
-        this.handler = handler;
-        this.executor = executor;
+        this.context      = context.getApplicationContext();
+        this.handler      = handler;
+        this.executor     = executor;
         this.shellManager = shellManager;
-        this.dao = AppDatabase.getInstance(context).resourceSnapshotDao();
+        this.dao          = AppDatabase.getInstance(context).resourceSnapshotDao();
     }
 
     /**
-     * Convenience constructor for use in ShappkyService where Handler and ExecutorService
-     * are already managed by the service itself.
-     * Creates a dedicated single-thread executor and a main-thread handler internally.
+     * Convenience constructor for ShappkyService where Handler/Executor are managed externally.
      */
     public BatteryStatsManager(@NonNull Context context,
                                @NonNull ShellManager shellManager) {
-        this.context = context.getApplicationContext();
-        this.handler = new Handler(Looper.getMainLooper());
-        this.executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        this.context      = context.getApplicationContext();
+        this.handler      = new Handler(Looper.getMainLooper());
+        this.executor     = java.util.concurrent.Executors.newSingleThreadExecutor();
         this.shellManager = shellManager;
-        this.dao = AppDatabase.getInstance(context).resourceSnapshotDao();
+        this.dao          = AppDatabase.getInstance(context).resourceSnapshotDao();
     }
 
     /** Public data container for one app's resource stats over a period. */
     public static class AppResourceStats {
         public final String packageName;
-        public final String appName;        // resolved by caller
+        public final String appName;
         /** Battery drain estimate in mAh over the period. */
         public final double batteryMah;
         /** CPU time fraction over the period, 0.0–1.0. */
@@ -148,13 +184,9 @@ public class BatteryStatsManager {
 
     /** Result of a period query, ready for the chart. */
     public static class PeriodStats {
-        /** All apps sorted by the primary metric (battery, CPU or RAM). */
         public final List<AppResourceStats> sorted;
-        /** True if there are enough snapshots for this period. */
         public final boolean hasData;
-        /** Actual hours covered by the diff (may differ from requested period). */
         public final double actualHours;
-        /** Human-readable explanation if hasData == false. */
         public final String dataHint;
 
         PeriodStats(List<AppResourceStats> sorted, boolean hasData,
@@ -166,7 +198,7 @@ public class BatteryStatsManager {
         }
     }
 
-    /** Async snapshot trigger. Posts result to the optional callback on the main thread. */
+    /** Async snapshot trigger. Posts onComplete to the main thread when done. */
     public void takeSnapshotAsync(@Nullable Runnable onComplete) {
         executor.execute(() -> {
             takeSnapshotBlocking();
@@ -175,8 +207,7 @@ public class BatteryStatsManager {
     }
 
     /**
-     * Returns aggregated stats for the given period in hours.
-     * Valid values: 2, 6, 12, 24.
+     * Returns aggregated stats for the given period in hours (2 / 6 / 12 / 24).
      * Callback is invoked on the main thread.
      */
     public void getStatsForPeriodAsync(int hours, @NonNull StatsCallback callback) {
@@ -188,7 +219,6 @@ public class BatteryStatsManager {
 
     /**
      * Returns per-hour breakdown for a single app (for the detail graph).
-     * Covers the last `hours` hours split into hourly buckets.
      * Callback is invoked on the main thread.
      */
     public void getHourlyStatsAsync(String packageName, int hours,
@@ -204,17 +234,16 @@ public class BatteryStatsManager {
 
     /** One data point on the per-app hourly graph. */
     public static class HourlyPoint {
-        /** Hour label, e.g. "14:00" */
         public final String hourLabel;
         public final double batteryMah;
         public final double cpuPercent;
         public final double ramMb;
 
         HourlyPoint(String hourLabel, double batteryMah, double cpuPercent, double ramMb) {
-            this.hourLabel   = hourLabel;
-            this.batteryMah  = batteryMah;
-            this.cpuPercent  = cpuPercent;
-            this.ramMb       = ramMb;
+            this.hourLabel  = hourLabel;
+            this.batteryMah = batteryMah;
+            this.cpuPercent = cpuPercent;
+            this.ramMb      = ramMb;
         }
     }
 
@@ -226,42 +255,61 @@ public class BatteryStatsManager {
     private void takeSnapshotBlocking() {
         long now = System.currentTimeMillis();
 
-        // Throttle: skip if last snapshot was taken recently
+        // Throttle: skip if last snapshot was too recent
         ResourceSnapshot last = dao.getLatestSnapshot();
         if (last != null && (now - last.timestamp) < MIN_SNAPSHOT_INTERVAL_MS) {
             Log.d(TAG, "Snapshot skipped — too soon after last one");
             return;
         }
 
-        // 1. Battery + CPU from batterystats
+        // 1. Battery (mAh) from batterystats --checkin pwi uid lines
         Map<String, Double> batteryMahByPkg = collectBatteryStats();
 
-        // 2. RAM + CPU-time from procstats (24h window gives broadest coverage)
-        Map<String, Double> ramMbByPkg    = new HashMap<>();
-        Map<String, Double> cpuTimeByPkg  = new HashMap<>();
-        collectProcStats(24, ramMbByPkg, cpuTimeByPkg);
+        // 2. RAM (PSS MB) from procstats
+        Map<String, Double> ramMbByPkg = new HashMap<>();
+        collectProcStatsRam(24, ramMbByPkg);
 
-        // 3. Merge into a single snapshot row per package
-        for (String pkg : mergedKeySet(batteryMahByPkg, ramMbByPkg)) {
+        // 3. CPU time (ms) from batterystats non-checkin Proc/CPU lines
+        Map<String, Long> cpuMsByPkg = collectCpuStats();
+
+        // 4. Merge into one snapshot row per package
+        java.util.Set<String> allPkgs = new java.util.HashSet<>();
+        allPkgs.addAll(batteryMahByPkg.keySet());
+        allPkgs.addAll(ramMbByPkg.keySet());
+        allPkgs.addAll(cpuMsByPkg.keySet());
+
+        for (String pkg : allPkgs) {
             ResourceSnapshot snap = new ResourceSnapshot();
             snap.timestamp   = now;
             snap.packageName = pkg;
             snap.batteryMah  = getOrZero(batteryMahByPkg, pkg);
             snap.ramMb       = getOrZero(ramMbByPkg, pkg);
-            snap.cpuTimeMs   = (long)(getOrZero(cpuTimeByPkg, pkg) * 60_000); // fraction→ms approx
+            snap.cpuTimeMs   = cpuMsByPkg.containsKey(pkg) ? cpuMsByPkg.get(pkg) : 0L;
             dao.insert(snap);
         }
 
-        // 4. Prune old snapshots (keep 3 days)
+        // 5. Prune old snapshots (keep 3 days)
         dao.deleteOlderThan(now - 3 * 24 * 3600_000L);
 
-        Log.d(TAG, "Snapshot saved: " + mergedKeySet(batteryMahByPkg, ramMbByPkg).size() + " apps");
+        Log.d(TAG, "Snapshot saved: " + allPkgs.size() + " apps"
+                + "  battery=" + batteryMahByPkg.size()
+                + "  ram=" + ramMbByPkg.size()
+                + "  cpu=" + cpuMsByPkg.size());
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Private — battery stats parsing
+    // Private — battery stats parsing  (FIX 1)
     // ──────────────────────────────────────────────────────────────────────────
 
+    /**
+     * Parses "dumpsys batterystats --charged --checkin" pwi uid lines.
+     *
+     * Real line format:
+     *   9,<uid>,l,pwi,uid,<mAh>,1,<fg_mAh>,0
+     *
+     * uid  = parts[1]   (NOT parts[pwiIdx+2] — that would be the mAh value)
+     * mAh  = parts[5]   (first field after the literal "uid" token at parts[4])
+     */
     @WorkerThread
     @NonNull
     private Map<String, Double> collectBatteryStats() {
@@ -269,56 +317,113 @@ public class BatteryStatsManager {
         String output = shellManager.runCommandAndGetOutput(cmd);
         if (output == null || output.isEmpty()) return Collections.emptyMap();
 
-        // Step 1: build UID → mAh map from pwi lines
-        // Line format: 9,0,l,pwi,uid,<uid>,<mAh>,0,0,0,0
         Map<Integer, Double> uidToMah = new HashMap<>();
         for (String line : output.split("\n")) {
-            if (!PWI_LINE.matcher(line).find()) continue;
+            if (!PWI_UID_LINE.matcher(line).find()) continue;
             try {
                 String[] parts = line.split(",");
-                // parts[5] = uid, parts[6] = mAh  (indices may shift across Android versions)
-                // Locate "pwi" token and offset from there for robustness
-                int pwiIdx = -1;
-                for (int i = 0; i < parts.length; i++) {
-                    if ("pwi".equals(parts[i])) { pwiIdx = i; break; }
-                }
-                if (pwiIdx < 0 || pwiIdx + 2 >= parts.length) continue;
-                // After "pwi": next field is "uid", then uid value, then mAh
-                // e.g. [..., "pwi", "uid", "10234", "12.5", ...]
-                int uidVal = Integer.parseInt(parts[pwiIdx + 2].trim());
-                double mah = Double.parseDouble(parts[pwiIdx + 3].trim());
-                if (mah > 0) uidToMah.put(uidVal, mah);
-            } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {}
+                // parts[1] = UID, parts[5] = mAh  (format: 9,<uid>,l,pwi,uid,<mAh>,...)
+                if (parts.length < 6) continue;
+                int uid      = Integer.parseInt(parts[1].trim());
+                double mah   = Double.parseDouble(parts[5].trim());
+                if (mah > 0) uidToMah.put(uid, mah);
+            } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                Log.w(TAG, "pwi parse error: " + line, e);
+            }
         }
 
-        // Step 2: map UID → package name
+        // Map UID → package name(s)
         Map<String, Double> result = new HashMap<>();
         android.content.pm.PackageManager pm = context.getPackageManager();
         for (Map.Entry<Integer, Double> entry : uidToMah.entrySet()) {
             String[] pkgs = pm.getPackagesForUid(entry.getKey());
             if (pkgs == null || pkgs.length == 0) continue;
-            // If multiple packages share UID, distribute mAh equally
             double share = entry.getValue() / pkgs.length;
-            for (String pkg : pkgs) {
-                result.merge(pkg, share, Double::sum);
-            }
+            for (String pkg : pkgs) result.merge(pkg, share, Double::sum);
         }
         return result;
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Private — procstats parsing
+    // Private — CPU stats parsing  (FIX 2)
     // ──────────────────────────────────────────────────────────────────────────
 
+    /**
+     * Parses per-app cumulative CPU time from the non-checkin batterystats output.
+     *
+     * Looks for blocks like:
+     *   Proc com.example.app:
+     *     CPU: 3m 53s 330ms usr + 2m 22s 40ms krn ; ...
+     *
+     * Returns map of package → cumulative CPU ms (user + kernel).
+     */
     @WorkerThread
-    private void collectProcStats(int hours,
-                                  Map<String, Double> ramMbOut,
-                                  Map<String, Double> cpuFractionOut) {
+    @NonNull
+    private Map<String, Long> collectCpuStats() {
+        String cmd = "dumpsys batterystats --charged";
+        String output = shellManager.runCommandAndGetOutput(cmd);
+        if (output == null || output.isEmpty()) return Collections.emptyMap();
+
+        Map<String, Long> result = new HashMap<>();
+        String currentPkg = null;
+
+        for (String line : output.split("\n")) {
+            Matcher procMatcher = BSTATS_PROC_LINE.matcher(line);
+            if (procMatcher.find()) {
+                currentPkg = procMatcher.group(1);
+                // Strip trailing ":isolatedXXX" or "/XXX" suffixes to get base package
+                if (currentPkg != null && currentPkg.contains("/")) {
+                    currentPkg = currentPkg.split("/")[0];
+                }
+                continue;
+            }
+
+            if (currentPkg == null) continue;
+
+            // CPU line: "CPU: Xm Ys Zms usr + Am Bs Cms krn ; ..."
+            String trimmed = line.trim();
+            if (!trimmed.startsWith("CPU:")) continue;
+
+            // Sum all time components before the ";" (user + kernel)
+            String beforeSemicolon = trimmed.contains(";")
+                    ? trimmed.substring(0, trimmed.indexOf(';'))
+                    : trimmed;
+            long totalMs = 0;
+            Matcher m = CPU_TIME_COMPONENT.matcher(beforeSemicolon);
+            while (m.find()) {
+                if (m.group(1) != null) totalMs += Long.parseLong(m.group(1)) * 60_000L;
+                if (m.group(2) != null) totalMs += Long.parseLong(m.group(2)) * 1_000L;
+                if (m.group(3) != null) totalMs += Long.parseLong(m.group(3));
+            }
+            if (totalMs > 0) {
+                result.merge(currentPkg, totalMs, Long::sum);
+            }
+            currentPkg = null; // CPU line always follows immediately after Proc line
+        }
+        return result;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Private — procstats RAM parsing  (FIX 3)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Parses average PSS RAM from "dumpsys procstats --hours N".
+     *
+     * Real TOTAL line format:
+     *   TOTAL: 100% (346MB-346MB-346MB/161MB-161MB-161MB/288MB-288MB-288MB over 1)
+     *   Structure: PSS(min-avg-max) / USS(min-avg-max) / RSS(min-avg-max)
+     *
+     * We take PSS avg (second value in the first triplet).
+     * If there are multiple TOTAL lines per package (different process states),
+     * we keep the maximum avg PSS across states.
+     */
+    @WorkerThread
+    private void collectProcStatsRam(int hours, Map<String, Double> ramMbOut) {
         String cmd = "dumpsys procstats --hours " + hours;
         String output = shellManager.runCommandAndGetOutput(cmd);
         if (output == null || output.isEmpty()) return;
 
-        // Simple state machine: detect package header, then scan following lines for PSS
         String currentPkg = null;
         for (String line : output.split("\n")) {
             Matcher pkgMatcher = PROCSTATS_PKG.matcher(line);
@@ -328,24 +433,15 @@ public class BatteryStatsManager {
             }
             if (currentPkg == null) continue;
 
-            // Average PSS
-            Matcher pssMatcher = PROCSTATS_AVG_PSS.matcher(line);
+            // TOTAL line with PSS triplet
+            if (!line.contains("TOTAL")) continue;
+            Matcher pssMatcher = PROCSTATS_PSS.matcher(line);
             if (pssMatcher.find()) {
                 try {
-                    double mb = Double.parseDouble(pssMatcher.group(1));
-                    ramMbOut.merge(currentPkg, mb, (a, b) -> Math.max(a, b)); // take max across states
-                } catch (NumberFormatException ignored) {}
-            }
-
-            // CPU fraction — procstats format: "XX%: <n>ms" or "Total cpu:" line varies
-            // We parse the simpler "XX% (NNms cpu)" pattern
-            if (line.contains("cpu") && line.contains("%")) {
-                try {
-                    Matcher cpuM = Pattern.compile("(\\d+(?:\\.\\d+)?)%").matcher(line);
-                    if (cpuM.find()) {
-                        double pct = Double.parseDouble(cpuM.group(1)) / 100.0;
-                        cpuFractionOut.merge(currentPkg, pct, Double::sum);
-                    }
+                    // group(2) = avg PSS
+                    double avgPssMb = Double.parseDouble(pssMatcher.group(2));
+                    // Keep max across multiple state rows for the same package
+                    ramMbOut.merge(currentPkg, avgPssMb, Math::max);
                 } catch (NumberFormatException ignored) {}
             }
         }
@@ -358,8 +454,8 @@ public class BatteryStatsManager {
     @WorkerThread
     @NonNull
     private PeriodStats getStatsForPeriodBlocking(int hours) {
-        long now     = System.currentTimeMillis();
-        long target  = now - (long) hours * 3600_000L;
+        long now    = System.currentTimeMillis();
+        long target = now - (long) hours * 3600_000L;
 
         ResourceSnapshot current  = dao.getLatestSnapshot();
         ResourceSnapshot previous = dao.getClosestSnapshotBefore(target);
@@ -379,28 +475,32 @@ public class BatteryStatsManager {
                     "Снапшоты слишком близко. Попробуйте позже.");
         }
 
-        // Load all snapshots in window
-        List<ResourceSnapshot> windowSnaps = dao.getSnapshotsBetween(previous.timestamp, current.timestamp);
+        // Load all snapshots in the window, ordered by (packageName, timestamp)
+        List<ResourceSnapshot> windowSnaps =
+                dao.getSnapshotsBetween(previous.timestamp, current.timestamp);
 
         // Build per-package deltas
         Map<String, double[]> perPkg = new HashMap<>(); // [batteryMah, ramMb, cpuMs]
-        Map<String, ResourceSnapshot> first = new HashMap<>();
+        Map<String, ResourceSnapshot> firstByPkg = new HashMap<>();
 
         for (ResourceSnapshot snap : windowSnaps) {
-            if (!first.containsKey(snap.packageName)) {
-                first.put(snap.packageName, snap);
+            if (!firstByPkg.containsKey(snap.packageName)) {
+                firstByPkg.put(snap.packageName, snap);
             } else {
-                ResourceSnapshot f = first.get(snap.packageName);
+                ResourceSnapshot f = firstByPkg.get(snap.packageName);
+                // batteryMah and cpuTimeMs are cumulative since last charge.
+                // Clamp negatives to 0 (charge event between snapshots resets the counter).
                 double dBat = Math.max(0, snap.batteryMah - f.batteryMah);
-                double dRam = snap.ramMb; // use latest value for RAM
-                double dCpu = Math.max(0, snap.cpuTimeMs - f.cpuTimeMs);
+                double dCpu = Math.max(0, snap.cpuTimeMs  - f.cpuTimeMs);
+                double dRam = snap.ramMb; // PSS is already an average — use latest value
                 perPkg.put(snap.packageName, new double[]{ dBat, dRam, dCpu });
             }
         }
 
-        // Resolve app names and build result list
+        // Resolve app names and compute CPU fractions
         android.content.pm.PackageManager pm = context.getPackageManager();
         List<AppResourceStats> result = new ArrayList<>();
+
         double totalCpuMs = 0;
         for (double[] vals : perPkg.values()) totalCpuMs += vals[2];
 
@@ -413,7 +513,6 @@ public class BatteryStatsManager {
                     pkg.equals(context.getPackageName())));
         }
 
-        // Sort by battery descending
         result.sort((a, b) -> Double.compare(b.batteryMah, a.batteryMah));
         return new PeriodStats(result, true, actualHours, null);
     }
@@ -425,14 +524,14 @@ public class BatteryStatsManager {
     @WorkerThread
     @NonNull
     private List<HourlyPoint> getHourlyStatsBlocking(String packageName, int hours) {
-        long now    = System.currentTimeMillis();
-        long start  = now - (long) hours * 3600_000L;
+        long now   = System.currentTimeMillis();
+        long start = now - (long) hours * 3600_000L;
 
-        List<ResourceSnapshot> snaps = dao.getSnapshotsForPackageBetween(packageName, start, now);
+        List<ResourceSnapshot> snaps =
+                dao.getSnapshotsForPackageBetween(packageName, start, now);
         List<HourlyPoint> points = new ArrayList<>();
         if (snaps.size() < 2) return points;
 
-        // Group snapshots into hourly buckets
         for (int h = 0; h < hours; h++) {
             long bucketStart = start + (long) h * 3600_000L;
             long bucketEnd   = bucketStart + 3600_000L;
@@ -445,13 +544,16 @@ public class BatteryStatsManager {
             if (prev == null || curr == null || prev == curr) continue;
 
             double dBat = Math.max(0, curr.batteryMah - prev.batteryMah);
-            double dCpu = (double) Math.max(0, curr.cpuTimeMs - prev.cpuTimeMs) / 3600_000.0 * 100;
-            double ram  = curr.ramMb;
+            double dCpuMs = Math.max(0, curr.cpuTimeMs - prev.cpuTimeMs);
+            // Express CPU as % of wall-clock time in this bucket
+            double cpuPct = (dCpuMs / 3600_000.0) * 100.0;
+            double ram    = curr.ramMb;
 
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTimeInMillis(bucketStart);
-            String label = String.format(Locale.US, "%02d:00", cal.get(java.util.Calendar.HOUR_OF_DAY));
-            points.add(new HourlyPoint(label, dBat, dCpu, ram));
+            String label = String.format(Locale.US, "%02d:00",
+                    cal.get(java.util.Calendar.HOUR_OF_DAY));
+            points.add(new HourlyPoint(label, dBat, cpuPct, ram));
         }
         return points;
     }
@@ -463,12 +565,6 @@ public class BatteryStatsManager {
     private static double getOrZero(Map<String, Double> map, String key) {
         Double v = map.get(key);
         return v != null ? v : 0.0;
-    }
-
-    private static java.util.Set<String> mergedKeySet(Map<String, Double> a, Map<String, Double> b) {
-        java.util.Set<String> keys = new java.util.HashSet<>(a.keySet());
-        keys.addAll(b.keySet());
-        return keys;
     }
 
     private static String resolveAppName(android.content.pm.PackageManager pm, String pkg) {
