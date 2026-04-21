@@ -22,7 +22,9 @@ public abstract class AppDatabase extends RoomDatabase {
     static final Migration MIGRATION_2_3 = new Migration(2, 3) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase db) {
-            db.execSQL("CREATE TABLE IF NOT EXISTS `resource_snapshots` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL)");
+            db.execSQL("CREATE TABLE IF NOT EXISTS `resource_snapshots` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `packageName` TEXT, `batteryMah` REAL NOT NULL, `ramMb` REAL NOT NULL, `cpuTimeMs` INTEGER NOT NULL)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_resource_snapshots_packageName_timestamp` ON `resource_snapshots` (`packageName`, `timestamp`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_resource_snapshots_timestamp` ON `resource_snapshots` (`timestamp`)");
         }
     };
 
