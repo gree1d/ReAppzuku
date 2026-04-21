@@ -2,6 +2,7 @@ package com.gree1d.reappzuku;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -102,6 +103,20 @@ public class BatteryStatsManager {
         this.context = context.getApplicationContext();
         this.handler = handler;
         this.executor = executor;
+        this.shellManager = shellManager;
+        this.dao = AppDatabase.getInstance(context).resourceSnapshotDao();
+    }
+
+    /**
+     * Convenience constructor for use in ShappkyService where Handler and ExecutorService
+     * are already managed by the service itself.
+     * Creates a dedicated single-thread executor and a main-thread handler internally.
+     */
+    public BatteryStatsManager(@NonNull Context context,
+                               @NonNull ShellManager shellManager) {
+        this.context = context.getApplicationContext();
+        this.handler = new Handler(Looper.getMainLooper());
+        this.executor = java.util.concurrent.Executors.newSingleThreadExecutor();
         this.shellManager = shellManager;
         this.dao = AppDatabase.getInstance(context).resourceSnapshotDao();
     }
