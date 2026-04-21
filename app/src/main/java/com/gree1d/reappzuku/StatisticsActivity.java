@@ -629,7 +629,7 @@ public class StatisticsActivity extends BaseActivity {
                 getString(R.string.settings_restriction_log_title), null, content.rootView);
         executor.execute(() -> {
             List<BackgroundRestrictionLog.LogEntry> logEntries =
-                    BackgroundRestrictionLog.getInstance().getEntries();
+                    BackgroundRestrictionLog.readEntries(StatisticsActivity.this);
             List<SettingsSurfaceRow> rows = buildRestrictionLogRows(logEntries);
             handler.post(() -> {
                 content.loading.setVisibility(View.GONE);
