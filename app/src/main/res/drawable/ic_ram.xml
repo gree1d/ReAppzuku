@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Source: Material Symbols Outlined — memory (memory_alt)
+    https://fonts.google.com/icons?icon.query=memory_alt
+    License: Apache 2.0
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="?attr/colorControlNormal"
+        android:pathData="M17,17H7V7H17ZM15,9H9V15H15ZM13,11H11V13H13ZM7,1H9V3H7ZM11,1H13V3H11ZM15,1H17V3H15ZM7,21H9V23H7ZM11,21H13V23H11ZM15,21H17V23H15ZM1,7H3V9H1ZM1,11H3V13H1ZM1,15H3V17H1ZM21,7H23V9H21ZM21,11H23V13H21ZM21,15H23V17H21Z" />
+</vector>
