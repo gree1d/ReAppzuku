@@ -15,13 +15,14 @@
     <color name="divider_color">#DDDDDD</color>
     <color name="toolbar_navy">#001F5C</color>
     <color name="dialog_button_text">#1A237E</color>
+    
+    <!-- Stats charts -->
     <color name="stats_battery">#FF9800</color>
     <color name="stats_cpu">#F44336</color>
     <color name="stats_ram">#2196F3</color>
     <color name="stats_positive">#4CAF50</color>
     <color name="stats_warn">#FF5722</color>
-    <color name="stats_disclaimer_bg">#0D808080</color>
-
+    
     <!-- AMOLED -->
     <color name="amoled_background">#000000</color>
     <color name="amoled_surface_variant">#0D0D0D</color>
