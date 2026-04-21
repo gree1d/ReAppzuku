@@ -457,4 +457,23 @@
     <!-- Sync Adapter -->
     <string name="triggers_sync_detail">%1$d аккаунт(ов)</string>
     <string name="triggers_sync_explanation">У приложения зарегистрирован Sync Adapter. Android периодически запускает его для синхронизации данных аккаунта, даже если само приложение не запущено.</string>
+
+    <!-- Stats Graphics Info -->
+    <string name="info_card_kills">Убито процессов</string>
+    <string name="info_card_relaunches">Перезапусков</string>
+    <string name="info_card_ram_recovered">Освобождено ОЗУ</string>
+    <string name="info_card_self_drain">Расход ReAppzuku</string>
+    <string name="stats_disclaimer">Оценочные данные на основе Android batterystats / procstats. Реальное потребление может отличаться. Значения батареи сбрасываются при полной зарядке.</string>
+    <string name="chart_title_battery">Потребление батареи</string>
+    <string name="chart_title_cpu">Использование CPU</string>
+    <string name="chart_title_ram">Использование ОЗУ</string>
+    <string name="chart_others_label">Прочие</string>
+    <string name="chart_others_expand">Экономичные приложения (%d)</string>
+    <string name="chart_others_dialog_title">Экономичные приложения</string>
+    <string name="stats_loading_charts">Загрузка данных…</string>
+    <string name="stats_no_data_hint">Недостаточно данных.\nСнапшоты собираются каждые 30–60 минут.\nЗайдите позже.</string>
+    <string name="stats_no_data_hint_short">Накапливаются данные…</string>
+    <string name="detail_chart_battery">Батарея (mAh / час)</string>
+    <string name="detail_chart_cpu">CPU (% / час)</string>
+    <string name="detail_chart_ram">ОЗУ — средний PSS (МБ)</string>
 </resources>
