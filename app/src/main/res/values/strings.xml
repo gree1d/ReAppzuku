@@ -468,22 +468,7 @@
     <!-- Sync Adapter -->
     <string name="triggers_sync_detail">%1$d account(s)</string>
     <string name="triggers_sync_explanation">The app has a Sync Adapter registered with the system. Android periodically launches it to synchronize account data, even if the app itself is not running.</string>
-
-    <!-- ── Kill history dialog ── -->
-    <string name="stats_dialog_title">Kill history</string>
-    <!-- %1$d = kills, %2$d = relaunches, %3$s = RAM freed -->
-    <string name="stats_dialog_subtitle">Kills: %1$d · Relaunches: %2$d · Freed: %3$s</string>
-    <string name="stats_dialog_empty">No kill history yet</string>
-
-    <!-- ── Top offenders dialog ── -->
-    <string name="stats_offenders_title">Top offenders</string>
-    <string name="stats_offenders_empty">No data yet</string>
-    <!-- %1$d = number of offenders shown -->
-    <string name="stats_offenders_summary">Showing top %1$d apps</string>
-
-    <!-- ── Restriction log dialog ── -->
-    <string name="stats_restriction_log_empty">No restriction events yet</string>
-
+    
     <!-- ── Charts ── -->
     <string name="chart_others_label">Others</string>
     <!-- %1$d = number of low-consumption apps -->
