@@ -459,15 +459,6 @@
     <string name="triggers_sync_explanation">У приложения зарегистрирован Sync Adapter. Android периодически запускает его для синхронизации данных аккаунта, даже если само приложение не запущено.</string>
 
     <!-- Stats Graphics Info -->
-    <string name="stats_dialog_title">История убийств</string>
-    <string name="stats_dialog_subtitle">Убито: %1$d · Перезапусков: %2$d · Освобождещно: %3$s</string>
-    <string name="stats_dialog_empty">История пуста</string>
-
-    <string name="stats_offenders_title">Топ нарушителей</string>
-    <string name="stats_offenders_empty">Данных пока нет</string>
-    <string name="stats_offenders_summary">Показано %1$d приложений</string>
-
-    <string name="stats_restriction_log_empty">События ограничений отсутствуют</string>
 
     <string name="chart_others_label">Прочие</string>
     <string name="chart_others_expand">Экономичные приложения (%1$d)</string>
