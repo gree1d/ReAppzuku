@@ -513,12 +513,11 @@ public class StatisticsActivity extends BaseActivity {
             final long fRecoveredKb = totalRecoveredKb;
 
             handler.post(() -> {
-                String subtitle = getString(R.string.stats_dialog_subtitle,
-                        fKills, fRelaunches, formatRecoveredSize(fRecoveredKb));
+                String subtitle = getString(R.string.stats_dialog_subtitle);
                 SettingsListContent content = createSettingsListContent(
-                        getString(R.string.stats_dialog_empty), false);
+                        getString(R.string.stats_no_activity_12h), false);
                 AlertDialog dialog = createSettingsSurfaceDialog(
-                        getString(R.string.stats_dialog_title), subtitle, content.rootView);
+                        getString(R.string.settings_kill_history_title), subtitle, content.rootView);
                 SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
                 content.listView.setAdapter(adapter);
                 if (finalEntries.isEmpty()) {
@@ -541,7 +540,7 @@ public class StatisticsActivity extends BaseActivity {
 
     private void showTopOffendersDialog() {
         SettingsListContent content = createSettingsListContent(
-                getString(R.string.stats_offenders_empty), true);
+                getString(R.string.stats_top_offenders_empty), true);
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, topOffenderFilterLabels);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -550,7 +549,7 @@ public class StatisticsActivity extends BaseActivity {
         content.listView.setAdapter(adapter);
 
         AlertDialog dialog = createSettingsSurfaceDialog(
-                getString(R.string.stats_offenders_title), null, content.rootView);
+                getString(R.string.settings_top_offenders_title), null, content.rootView);
 
         content.filterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -595,8 +594,12 @@ public class StatisticsActivity extends BaseActivity {
             offenders.sort((a, b) -> Double.compare(b.score, a.score));
             if (offenders.size() > TOP_OFFENDERS_LIMIT) offenders = offenders.subList(0, TOP_OFFENDERS_LIMIT);
 
+            int sumKills = 0, sumRelaunches = 0; long sumRamKb = 0;
+            for (TopOffender o : offenders) { sumKills += o.killCount; sumRelaunches += o.relaunchCount; sumRamKb += o.recoveredKb; }
+            String periodLabel = topOffenderFilterLabels.length > filterIdx ? topOffenderFilterLabels[filterIdx] : "";
             String summary = offenders.isEmpty() ? "" :
-                    getString(R.string.stats_offenders_summary, offenders.size());
+                    getString(R.string.stats_top_offenders_summary, periodLabel,
+                            offenders.size(), sumKills, sumRelaunches, formatRecoveredSize(sumRamKb));
             List<SettingsSurfaceRow> rows = buildTopOffenderRows(offenders);
             final List<TopOffender> finalOffenders = offenders;
 
@@ -618,7 +621,7 @@ public class StatisticsActivity extends BaseActivity {
 
     private void showBackgroundRestrictionLogDialog() {
         SettingsListContent content = createSettingsListContent(
-                getString(R.string.stats_restriction_log_empty), false);
+                getString(R.string.settings_restriction_log_empty), false);
         SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
         content.listView.setAdapter(adapter);
         content.loading.setVisibility(View.VISIBLE);
