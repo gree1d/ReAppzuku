@@ -217,7 +217,7 @@
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="8dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/stats_disclaimer_bg"
+                    app:cardBackgroundColor="#1A808080"
                     android:layout_marginBottom="4dp">
 
                     <LinearLayout
@@ -230,8 +230,7 @@
                         <ImageView
                             android:layout_width="16dp"
                             android:layout_height="16dp"
-                            android:src="@drawable/ic_info_outline"
-                            app:tint="@color/text_secondary"
+                            android:src="@android:drawable/ic_dialog_info"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -274,8 +273,7 @@
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:src="@drawable/ic_chart_placeholder"
-                        app:tint="@color/text_secondary"
+                        android:src="@android:drawable/stat_sys_data_bluetooth"
                         android:layout_marginBottom="8dp" />
 
                     <TextView
@@ -329,7 +327,7 @@
                 app:tabSelectedTextColor="?attr/colorPrimary"
                 app:tabIndicatorColor="?attr/colorPrimary"
                 app:tabIndicatorHeight="2dp"
-                app:tabTextAppearance="@style/TabTextSmall" />
+                 />
 
             <!-- Chart: Battery consumption -->
             <com.google.android.material.card.MaterialCardView
@@ -359,8 +357,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@drawable/ic_battery_chart"
-                            app:tint="@color/stats_battery"
+                            android:src="@android:drawable/ic_lock_power_off"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -426,8 +423,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@drawable/ic_cpu"
-                            app:tint="@color/stats_cpu"
+                            android:src="@android:drawable/ic_menu_manage"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -491,8 +487,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@drawable/ic_ram"
-                            app:tint="@color/stats_ram"
+                            android:src="@android:drawable/ic_menu_info_details"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -539,7 +534,7 @@
                 android:layout_height="1dp"
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginVertical="4dp"
-                android:background="@color/divider" />
+                android:background="?android:attr/listDivider" />
 
             <LinearLayout
                 android:id="@+id/layout_stats"

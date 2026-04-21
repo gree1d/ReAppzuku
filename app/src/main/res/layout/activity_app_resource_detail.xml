@@ -26,7 +26,7 @@
             android:elevation="4dp"
             android:theme="@style/AppTheme.AppBarOverlay"
             app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:navigationIcon="@drawable/ic_arrow_back"
+            
             app:titleTextColor="@android:color/white" />
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -105,7 +105,7 @@
                 app:tabSelectedTextColor="?attr/colorPrimary"
                 app:tabIndicatorColor="?attr/colorPrimary"
                 app:tabIndicatorHeight="2dp"
-                app:tabTextAppearance="@style/TabTextSmall" />
+                 />
 
             <!-- Loading indicator -->
             <LinearLayout
@@ -155,8 +155,7 @@
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
-                            android:src="@drawable/ic_battery_chart"
-                            app:tint="@color/stats_battery"
+                            android:src="@android:drawable/ic_lock_power_off"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -212,8 +211,7 @@
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
-                            android:src="@drawable/ic_cpu"
-                            app:tint="@color/stats_cpu"
+                            android:src="@android:drawable/ic_menu_manage"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -268,8 +266,7 @@
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
-                            android:src="@drawable/ic_ram"
-                            app:tint="@color/stats_ram"
+                            android:src="@android:drawable/ic_menu_info_details"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
