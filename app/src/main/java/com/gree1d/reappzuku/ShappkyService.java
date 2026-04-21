@@ -41,6 +41,7 @@ public class ShappkyService extends Service {
 
     private ShellManager shellManager;
     private BackgroundAppManager appManager;
+    private BatteryStatsManager batteryStatsManager;
     private KillTriggerReceiver screenOffReceiver;
 
     // True if background restricted apps are currently frozen
@@ -90,6 +91,7 @@ public class ShappkyService extends Service {
         super.onCreate();
         shellManager = new ShellManager(this, handler, executor);
         appManager = new BackgroundAppManager(this, handler, executor, shellManager);
+        batteryStatsManager = new BatteryStatsManager(this, shellManager);
         createNotificationChannel();
 
         // The foreground service notification is always shown (critical — keeps the service alive).
@@ -114,6 +116,7 @@ public class ShappkyService extends Service {
         
         cancelShizukuLostNotification();
         scheduleShizukuCheck();
+        scheduleSnapshotCollection();
 
         appManager.reapplySavedBackgroundRestrictions(null);
     }
@@ -301,6 +304,24 @@ public class ShappkyService extends Service {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+    }
+
+    private static final long SNAPSHOT_INTERVAL_MS = 45 * 60 * 1000L; // 45 minutes
+
+    /**
+     * Periodically collects battery/RAM snapshots so that Statistics history
+     * is populated even when the user never opens the Statistics screen.
+     * Fires every 45 minutes while the service is running.
+     */
+    private void scheduleSnapshotCollection() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!isRunning) return;
+                batteryStatsManager.takeSnapshotAsync(null);
+                handler.postDelayed(this, SNAPSHOT_INTERVAL_MS);
+            }
+        }, SNAPSHOT_INTERVAL_MS);
     }
 
     private void scheduleNextKill() {

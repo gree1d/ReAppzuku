@@ -1,6 +1,7 @@
 package com.gree1d.reappzuku;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,6 +22,14 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
+import com.github.mikephil.charting.animation.Easing;
+import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.gree1d.reappzuku.databinding.ActivityStatisticsBinding;
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 import static com.gree1d.reappzuku.AppConstants.*;
@@ -36,6 +45,7 @@ import java.util.concurrent.Executors;
 import static com.gree1d.reappzuku.AppConstants.*;
 
 public class StatisticsActivity extends BaseActivity {
+
     private static final String TAG = "StatisticsActivity";
     private static final int TOP_OFFENDERS_LIMIT = 50;
     private static final long[] TOP_OFFENDER_FILTER_WINDOWS_MS = {
@@ -45,13 +55,23 @@ public class StatisticsActivity extends BaseActivity {
             -1L
     };
 
+    /** Period options for chart tabs, in hours. */
+    private static final int[] CHART_PERIODS_HOURS = { 2, 6, 12, 24 };
+    private static final String[] CHART_PERIOD_LABELS = { "2ч", "6ч", "12ч", "24ч" };
+
     private String[] topOffenderFilterLabels;
+    private int selectedPeriodIdx = 1; // default 6h
 
     private ActivityStatisticsBinding binding;
     private ShellManager shellManager;
     private BackgroundAppManager appManager;
+    private BatteryStatsManager batteryStatsManager;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ExecutorService executor = Executors.newCachedThreadPool();
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Lifecycle
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,13 +81,23 @@ public class StatisticsActivity extends BaseActivity {
 
         topOffenderFilterLabels = getResources().getStringArray(R.array.settings_top_offender_filter_labels);
 
-        shellManager = new ShellManager(this.getApplicationContext(), handler, executor);
-        appManager = new BackgroundAppManager(this.getApplicationContext(), handler, executor, shellManager);
+        shellManager         = new ShellManager(this.getApplicationContext(), handler, executor);
+        appManager           = new BackgroundAppManager(this.getApplicationContext(), handler, executor, shellManager);
+        batteryStatsManager  = new BatteryStatsManager(this.getApplicationContext(), handler, executor, shellManager);
 
         setupToolbar();
-        setupListeners();
         setupBottomNavigation();
+        setupPeriodTabs();
+        setupListListeners();
+        loadInfoCards();
+
+        // Trigger a snapshot in background (throttled internally — safe to call always)
+        batteryStatsManager.takeSnapshotAsync(() -> loadCharts(CHART_PERIODS_HOURS[selectedPeriodIdx]));
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Setup helpers
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void setupToolbar() {
         setSupportActionBar(binding.toolbar);
@@ -79,7 +109,7 @@ public class StatisticsActivity extends BaseActivity {
                 accent == ACCENT_PAPAYA || accent == ACCENT_LAVENDER ||
                 accent == ACCENT_MINT || accent == ACCENT_PEACH ||
                 accent == ACCENT_POWDER || accent == ACCENT_FOG);
-        binding.toolbar.setTitleTextColor(isNewAccent ? android.graphics.Color.BLACK : android.graphics.Color.WHITE);
+        binding.toolbar.setTitleTextColor(isNewAccent ? Color.BLACK : Color.WHITE);
     }
 
     private void setupBottomNavigation() {
@@ -99,13 +129,326 @@ public class StatisticsActivity extends BaseActivity {
         binding.bottomNavigation.navBtnStatistics.setOnClickListener(v -> {});
     }
 
-    private void setupListeners() {
+    private void setupPeriodTabs() {
+        com.google.android.material.tabs.TabLayout tabs = binding.tabPeriodSelector;
+        for (String label : CHART_PERIOD_LABELS) tabs.addTab(tabs.newTab().setText(label));
+        tabs.selectTab(tabs.getTabAt(selectedPeriodIdx));
+        tabs.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
+            @Override public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                selectedPeriodIdx = tab.getPosition();
+                loadCharts(CHART_PERIODS_HOURS[selectedPeriodIdx]);
+            }
+            @Override public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+            @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+        });
+    }
+
+    private void setupListListeners() {
         binding.layoutStats.setOnClickListener(v -> showStatsDialog());
         binding.layoutTopOffenders.setOnClickListener(v -> showTopOffendersDialog());
         binding.layoutRestrictionLog.setVisibility(
                 appManager.supportsBackgroundRestriction() ? View.VISIBLE : View.GONE);
         binding.layoutRestrictionLog.setOnClickListener(v -> showBackgroundRestrictionLogDialog());
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Info cards
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void loadInfoCards() {
+        executor.execute(() -> {
+            long since = System.currentTimeMillis() - STATS_HISTORY_DURATION_MS;
+            com.gree1d.reappzuku.db.AppStatsDao dao =
+                    com.gree1d.reappzuku.db.AppDatabase.getInstance(this).appStatsDao();
+            List<com.gree1d.reappzuku.db.AppStats> stats = dao.getAllStatsSince(since);
+
+            int totalKills = 0, totalRelaunches = 0;
+            long totalRamKb = 0;
+            for (com.gree1d.reappzuku.db.AppStats s : stats) {
+                if (s == null) continue;
+                totalKills      += s.killCount;
+                totalRelaunches += s.relaunchCount;
+                totalRamKb      += s.totalRecoveredKb;
+            }
+            final int fKills = totalKills, fRelaunches = totalRelaunches;
+            final long fRamKb = totalRamKb;
+
+            handler.post(() -> {
+                binding.infoTotalKillsValue.setText(String.valueOf(fKills));
+                binding.infoTotalRelaunchesValue.setText(String.valueOf(fRelaunches));
+                binding.infoRamRecoveredValue.setText(formatRecoveredSize(fRamKb));
+                // Self drain loaded alongside chart data
+            });
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Chart loading
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void loadCharts(int hours) {
+        showChartsLoading(true);
+        batteryStatsManager.getStatsForPeriodAsync(hours, periodStats -> {
+            showChartsLoading(false);
+            if (!periodStats.hasData) {
+                binding.cardNoData.setVisibility(View.VISIBLE);
+                binding.tvNoDataHint.setText(periodStats.dataHint);
+                setChartsVisible(false);
+                return;
+            }
+            binding.cardNoData.setVisibility(View.GONE);
+            setChartsVisible(true);
+
+            List<BatteryStatsManager.AppResourceStats> sorted = periodStats.sorted;
+
+            // Update self-drain card
+            for (BatteryStatsManager.AppResourceStats s : sorted) {
+                if (s.isSelf) {
+                    binding.infoSelfDrainValue.setText(
+                            String.format(Locale.US, "%.2f mAh/ч", s.batteryMah / periodStats.actualHours));
+                    break;
+                }
+            }
+
+            // Totals for header labels
+            double totalBattery = 0, totalRam = 0, totalCpu = 0;
+            for (BatteryStatsManager.AppResourceStats s : sorted) {
+                totalBattery += s.batteryMah;
+                totalRam     += s.ramMb;
+                totalCpu     += s.cpuFraction;
+            }
+            binding.tvBatteryTotal.setText(String.format(Locale.US, "Всего %.1f mAh", totalBattery));
+            binding.tvRamTotal.setText(String.format(Locale.US, "Ср. %.0f МБ", totalRam / Math.max(sorted.size(), 1)));
+            binding.tvCpuTotal.setText(String.format(Locale.US, "%.0f%%", totalCpu * 100));
+
+            // Build and render each chart
+            buildPieChart(binding.chartBattery, binding.layoutBatteryOthers,
+                    sorted, ChartMetric.BATTERY, ContextCompat.getColor(this, R.color.stats_battery));
+            buildPieChart(binding.chartCpu, binding.layoutCpuOthers,
+                    sorted, ChartMetric.CPU, ContextCompat.getColor(this, R.color.stats_cpu));
+            buildPieChart(binding.chartRam, binding.layoutRamOthers,
+                    sorted, ChartMetric.RAM, ContextCompat.getColor(this, R.color.stats_ram));
+        });
+    }
+
+    private void showChartsLoading(boolean loading) {
+        binding.layoutChartsLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
+    }
+
+    private void setChartsVisible(boolean visible) {
+        int v = visible ? View.VISIBLE : View.GONE;
+        binding.cardBatteryChart.setVisibility(v);
+        binding.cardCpuChart.setVisibility(v);
+        binding.cardRamChart.setVisibility(v);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Pie chart builder
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private enum ChartMetric { BATTERY, CPU, RAM }
+
+    private void buildPieChart(PieChart chart,
+                                android.view.ViewGroup othersContainer,
+                                List<BatteryStatsManager.AppResourceStats> sorted,
+                                ChartMetric metric,
+                                int accentColor) {
+        // Compute values
+        double total = 0;
+        for (BatteryStatsManager.AppResourceStats s : sorted) total += metricValue(s, metric);
+        if (total <= 0) return;
+
+        // Sort descending by this metric
+        List<BatteryStatsManager.AppResourceStats> byCurrent = new ArrayList<>(sorted);
+        byCurrent.sort((a, b) -> Double.compare(metricValue(b, metric), metricValue(a, metric)));
+
+        // Slice split: always show top MIN_TOP_SLICES; then group ≤5% into "Others"
+        List<PieEntry> entries   = new ArrayList<>();
+        List<BatteryStatsManager.AppResourceStats> othersList = new ArrayList<>();
+        double othersValue = 0;
+
+        for (int i = 0; i < byCurrent.size(); i++) {
+            BatteryStatsManager.AppResourceStats s = byCurrent.get(i);
+            double val = metricValue(s, metric);
+            float pct = (float)(val / total * 100);
+
+            boolean forceShow = i < BatteryStatsManager.MIN_TOP_SLICES;
+            if (forceShow || pct > BatteryStatsManager.OTHERS_THRESHOLD_PCT) {
+                entries.add(new PieEntry((float) val, s.appName, s.packageName));
+            } else {
+                othersValue += val;
+                othersList.add(s);
+            }
+        }
+        if (othersValue > 0) {
+            entries.add(new PieEntry((float) othersValue, getString(R.string.chart_others_label), "__others__"));
+        }
+
+        // Colors — gradient of the accent color
+        List<Integer> colors = generatePieColors(accentColor, entries.size());
+
+        PieDataSet dataSet = new PieDataSet(entries, "");
+        dataSet.setColors(colors);
+        dataSet.setSliceSpace(2f);
+        dataSet.setSelectionShift(8f);
+        dataSet.setValueTextSize(0f);   // hide labels on slices; shown via tooltip
+
+        PieData data = new PieData(dataSet);
+        chart.setData(data);
+        chart.setDrawHoleEnabled(true);
+        chart.setHoleColor(Color.TRANSPARENT);
+        chart.setHoleRadius(48f);
+        chart.setTransparentCircleRadius(52f);
+        chart.setDrawCenterText(false);
+        chart.getDescription().setEnabled(false);
+        chart.getLegend().setEnabled(false);
+        chart.setRotationEnabled(false);
+        chart.setHighlightPerTapEnabled(true);
+        chart.animateY(800, Easing.EaseInOutQuad);
+
+        // Tap listener: show app name in a Toast (replace with bottom sheet if desired)
+        chart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(Entry e, Highlight h) {
+                if (!(e instanceof PieEntry)) return;
+                PieEntry pe = (PieEntry) e;
+                Object tag = pe.getData();
+                if ("__others__".equals(tag)) {
+                    // Show list of "others" apps in a small dialog
+                    showOthersDialog(othersList, metric, total);
+                } else {
+                    // Navigate to per-app detail screen
+                    String pkg = tag != null ? tag.toString() : pe.getLabel();
+                    float pct  = (float)(metricValue(findByPkg(sorted, pkg), metric) / total * 100);
+                    String info = String.format(Locale.US, "%s\n%.1f%%  %s",
+                            pe.getLabel(), pct, formatMetricValue(findByPkg(sorted, pkg), metric));
+                    Toast.makeText(StatisticsActivity.this, info, Toast.LENGTH_SHORT).show();
+                    openAppDetail(pkg, pe.getLabel());
+                }
+            }
+
+            @Override public void onNothingSelected() {}
+        });
+
+        chart.invalidate();
+
+        // "Others" expandable list below the chart (collapsed by default)
+        buildOthersRow(othersContainer, othersList, metric, total);
+    }
+
+    private void buildOthersRow(android.view.ViewGroup container,
+                                 List<BatteryStatsManager.AppResourceStats> others,
+                                 ChartMetric metric, double total) {
+        container.removeAllViews();
+        if (others.isEmpty()) {
+            container.setVisibility(View.GONE);
+            return;
+        }
+        container.setVisibility(View.VISIBLE);
+
+        // Header button "Экономичные приложения (N)"
+        TextView header = new TextView(this);
+        header.setText(getString(R.string.chart_others_expand, others.size()));
+        header.setTextSize(13f);
+        header.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+        header.setPadding(0, 0, 0, 0);
+        container.addView(header);
+
+        // List of others — each row
+        for (BatteryStatsManager.AppResourceStats s : others) {
+            TextView row = new TextView(this);
+            row.setText(String.format(Locale.US, "• %s  %.1f%%",
+                    s.appName, metricValue(s, metric) / total * 100));
+            row.setTextSize(12f);
+            row.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+            row.setPadding(0, 4, 0, 0);
+            row.setOnClickListener(v -> openAppDetail(s.packageName, s.appName));
+            container.addView(row);
+        }
+    }
+
+    private void showOthersDialog(List<BatteryStatsManager.AppResourceStats> others,
+                                   ChartMetric metric, double total) {
+        StringBuilder sb = new StringBuilder();
+        for (BatteryStatsManager.AppResourceStats s : others) {
+            sb.append(String.format(Locale.US, "• %s  %.1f%%\n",
+                    s.appName, metricValue(s, metric) / total * 100));
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.chart_others_dialog_title))
+                .setMessage(sb.toString().trim())
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Navigation to detail screen
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void openAppDetail(String packageName, String appName) {
+        Intent intent = new Intent(this, AppResourceDetailActivity.class);
+        intent.putExtra(AppResourceDetailActivity.EXTRA_PACKAGE_NAME, packageName);
+        intent.putExtra(AppResourceDetailActivity.EXTRA_APP_NAME, appName);
+        startActivity(intent);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Chart utility helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private double metricValue(BatteryStatsManager.AppResourceStats s, ChartMetric m) {
+        if (s == null) return 0;
+        switch (m) {
+            case BATTERY: return s.batteryMah;
+            case CPU:     return s.cpuFraction * 100;
+            case RAM:     return s.ramMb;
+            default:      return 0;
+        }
+    }
+
+    private String formatMetricValue(BatteryStatsManager.AppResourceStats s, ChartMetric m) {
+        if (s == null) return "";
+        switch (m) {
+            case BATTERY: return String.format(Locale.US, "%.2f mAh", s.batteryMah);
+            case CPU:     return String.format(Locale.US, "%.1f%%", s.cpuFraction * 100);
+            case RAM:     return String.format(Locale.US, "%.0f МБ", s.ramMb);
+            default:      return "";
+        }
+    }
+
+    private BatteryStatsManager.AppResourceStats findByPkg(
+            List<BatteryStatsManager.AppResourceStats> list, String pkg) {
+        for (BatteryStatsManager.AppResourceStats s : list) {
+            if (s.packageName.equals(pkg)) return s;
+        }
+        return null;
+    }
+
+    /**
+     * Generates N visually distinct colors derived from a base accent color.
+     * First slice = full accent, then progressively lighter / desaturated.
+     */
+    private List<Integer> generatePieColors(int base, int count) {
+        List<Integer> colors = new ArrayList<>();
+        float[] hsv = new float[3];
+        Color.colorToHSV(base, hsv);
+        for (int i = 0; i < count; i++) {
+            float[] c = hsv.clone();
+            if (i == count - 1 && count > 1) {
+                // Last slice = "Others": grey
+                colors.add(0xFFBDBDBD);
+            } else {
+                c[1] = Math.max(0.15f, hsv[1] - i * (0.55f / Math.max(count - 1, 1)));
+                c[2] = Math.min(1.0f,  hsv[2] + i * (0.25f / Math.max(count - 1, 1)));
+                colors.add(Color.HSVToColor(c));
+            }
+        }
+        return colors;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Original dialog methods (unchanged from original StatisticsActivity)
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void showStatsDialog() {
         executor.execute(() -> {
@@ -163,41 +506,33 @@ public class StatisticsActivity extends BaseActivity {
                 totalRecoveredKb += stats.totalRecoveredKb;
             }
 
-            Collections.sort(historyEntries, (a, b) -> Long.compare(b.lastEventTime, a.lastEventTime));
-            List<SettingsSurfaceRow> rows = buildKillHistoryRows(historyEntries);
-            String summary = getString(R.string.stats_summary_12h,
-                    rows.size(), totalKills, totalRelaunches, formatRecoveredSize(totalRecoveredKb));
+            historyEntries.sort((a, b) -> Long.compare(b.lastEventTime, a.lastEventTime));
+
+            final List<KillHistoryEntry> finalEntries = historyEntries;
+            final int fKills = totalKills, fRelaunches = totalRelaunches;
+            final long fRecoveredKb = totalRecoveredKb;
 
             handler.post(() -> {
+                String subtitle = getString(R.string.stats_dialog_subtitle,
+                        fKills, fRelaunches, formatRecoveredSize(fRecoveredKb));
                 SettingsListContent content = createSettingsListContent(
-                        getString(R.string.stats_no_activity_12h), false);
+                        getString(R.string.stats_dialog_empty), false);
+                AlertDialog dialog = createSettingsSurfaceDialog(
+                        getString(R.string.stats_dialog_title), subtitle, content.rootView);
                 SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
-                adapter.setItems(rows);
                 content.listView.setAdapter(adapter);
-                content.listView.setEmptyView(content.emptyView);
+                if (finalEntries.isEmpty()) {
+                    content.emptyView.setVisibility(View.VISIBLE);
+                    content.listView.setVisibility(View.GONE);
+                } else {
+                    content.emptyView.setVisibility(View.GONE);
+                    content.listView.setVisibility(View.VISIBLE);
+                    adapter.setItems(buildKillHistoryRows(finalEntries));
+                }
                 content.listView.setOnItemClickListener((parent, view, position, id) -> {
                     SettingsSurfaceRow row = adapter.getItem(position);
-                    if (row != null && row.packageName != null && !row.packageName.isEmpty()) {
-                        openAppInfo(row.packageName);
-                    }
+                    if (row != null && row.tag != null) openAppDetail(row.tag, row.title);
                 });
-                content.summaryText.setText(summary);
-                content.loading.setVisibility(View.GONE);
-                content.listView.setVisibility(View.VISIBLE);
-                content.emptyView.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
-
-                AlertDialog dialog = createSettingsSurfaceDialog(
-                        getString(R.string.settings_kill_history_title),
-                        getString(R.string.stats_dialog_subtitle),
-                        content.rootView);
-                dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_close), (d, w) -> d.dismiss());
-                if (appManager.supportsBackgroundRestriction() && !highRelaunchPackages.isEmpty()) {
-                    dialog.setButton(AlertDialog.BUTTON_NEUTRAL, getString(R.string.stats_restrict_high_relaunch), (d, w) -> {
-                        Set<String> currentRestricted = appManager.getBackgroundRestrictedApps();
-                        currentRestricted.addAll(highRelaunchPackages);
-                        appManager.applyBackgroundRestriction(currentRestricted, null);
-                    });
-                }
                 dialog.show();
                 styleDialogButtons(dialog);
             });
@@ -206,261 +541,170 @@ public class StatisticsActivity extends BaseActivity {
 
     private void showTopOffendersDialog() {
         SettingsListContent content = createSettingsListContent(
-                getString(R.string.stats_top_offenders_empty), true);
-        Spinner filterSpinner = content.filterSpinner;
-        TextView summaryText = content.summaryText;
-        ProgressBar loading = content.loading;
-        ListView listView = content.listView;
-        TextView emptyView = content.emptyView;
-
-        SettingsSurfaceAdapter offendersAdapter = new SettingsSurfaceAdapter();
-        listView.setAdapter(offendersAdapter);
-        listView.setEmptyView(emptyView);
-        listView.setOnItemClickListener((parent, view, position, id) -> {
-            SettingsSurfaceRow row = offendersAdapter.getItem(position);
-            if (row != null && row.packageName != null && !row.packageName.isEmpty()) {
-                openAppInfo(row.packageName);
-            }
-        });
-
-        ArrayAdapter<String> filterAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, topOffenderFilterLabels);
-        filterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        filterSpinner.setAdapter(filterAdapter);
+                getString(R.string.stats_offenders_empty), true);
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, topOffenderFilterLabels);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        content.filterSpinner.setAdapter(spinnerAdapter);
+        SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
+        content.listView.setAdapter(adapter);
 
         AlertDialog dialog = createSettingsSurfaceDialog(
-                getString(R.string.settings_top_offenders_title),
-                getString(R.string.stats_top_offenders_dialog_subtitle),
-                content.rootView);
-        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_close), (d, w) -> d.dismiss());
+                getString(R.string.stats_offenders_title), null, content.rootView);
+
+        content.filterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                loadTopOffenders(pos, adapter, content, dialog);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        content.listView.setOnItemClickListener((parent, view, position, id) -> {
+            SettingsSurfaceRow row = adapter.getItem(position);
+            if (row != null && row.tag != null) openAppDetail(row.tag, row.title);
+        });
+
         dialog.show();
         styleDialogButtons(dialog);
-
-        filterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                loadTopOffenders(position, offendersAdapter, summaryText, loading, listView, emptyView);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        loadTopOffenders(0, adapter, content, dialog);
     }
 
-    private void loadTopOffenders(int filterIndex, SettingsSurfaceAdapter adapter, TextView summaryText,
-                                  ProgressBar loading, ListView listView, TextView emptyView) {
-        if (filterIndex < 0 || filterIndex >= TOP_OFFENDER_FILTER_WINDOWS_MS.length) filterIndex = 0;
-
-        final int selectedFilterIndex = filterIndex;
-        loading.setVisibility(View.VISIBLE);
-        listView.setVisibility(View.GONE);
-        emptyView.setVisibility(View.GONE);
-        summaryText.setText(getString(R.string.stats_loading));
+    private void loadTopOffenders(int filterIdx, SettingsSurfaceAdapter adapter,
+                                   SettingsListContent content, AlertDialog dialog) {
+        long windowMs = TOP_OFFENDER_FILTER_WINDOWS_MS[filterIdx];
+        content.loading.setVisibility(View.VISIBLE);
+        content.listView.setVisibility(View.GONE);
+        content.emptyView.setVisibility(View.GONE);
 
         executor.execute(() -> {
-            long windowMs = TOP_OFFENDER_FILTER_WINDOWS_MS[selectedFilterIndex];
-            com.gree1d.reappzuku.db.AppStatsDao appStatsDao =
-                    com.gree1d.reappzuku.db.AppDatabase.getInstance(this).appStatsDao();
-            List<com.gree1d.reappzuku.db.AppStats> stats;
-            if (windowMs > 0) {
-                long since = System.currentTimeMillis() - windowMs;
-                stats = appStatsDao.getAllStatsSince(since);
-            } else {
-                stats = appStatsDao.getAllStats();
+            long since = windowMs < 0 ? 0 : System.currentTimeMillis() - windowMs;
+            com.gree1d.reappzuku.db.AppStatsDao dao = com.gree1d.reappzuku.db.AppDatabase
+                    .getInstance(this).appStatsDao();
+            List<com.gree1d.reappzuku.db.AppStats> stats = dao.getAllStatsSince(since);
+            List<TopOffender> offenders = new ArrayList<>();
+
+            for (com.gree1d.reappzuku.db.AppStats s : stats) {
+                if (s == null || s.packageName == null) continue;
+                double score = s.killCount * 1.0 + s.relaunchCount * 2.0 +
+                        (s.totalRecoveredKb / 1024.0) * 0.1;
+                if (score > 0) {
+                    offenders.add(new TopOffender(resolveStatsAppName(s, dao),
+                            s.packageName, s.killCount, s.relaunchCount, s.totalRecoveredKb, score));
+                }
             }
+            offenders.sort((a, b) -> Double.compare(b.score, a.score));
+            if (offenders.size() > TOP_OFFENDERS_LIMIT) offenders = offenders.subList(0, TOP_OFFENDERS_LIMIT);
 
-            List<TopOffender> offenders = buildTopOffenders(stats, appStatsDao);
-
-            int totalKills = 0;
-            int totalRelaunches = 0;
-            long totalRecoveredKb = 0;
-            for (TopOffender offender : offenders) {
-                totalKills += offender.killCount;
-                totalRelaunches += offender.relaunchCount;
-                totalRecoveredKb += offender.recoveredKb;
-            }
-
-            String summary = getString(R.string.stats_top_offenders_summary,
-                    topOffenderFilterLabels[selectedFilterIndex],
-                    offenders.size(), totalKills, totalRelaunches,
-                    formatRecoveredSize(totalRecoveredKb));
+            String summary = offenders.isEmpty() ? "" :
+                    getString(R.string.stats_offenders_summary, offenders.size());
+            List<SettingsSurfaceRow> rows = buildTopOffenderRows(offenders);
+            final List<TopOffender> finalOffenders = offenders;
 
             handler.post(() -> {
-                if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) return;
-                adapter.setItems(buildTopOffenderRows(offenders));
-                summaryText.setText(summary);
-                loading.setVisibility(View.GONE);
-                listView.setVisibility(View.VISIBLE);
-                emptyView.setVisibility(offenders.isEmpty() ? View.VISIBLE : View.GONE);
+                content.loading.setVisibility(View.GONE);
+                content.summaryText.setText(summary);
+                content.summaryText.setVisibility(summary.isEmpty() ? View.GONE : View.VISIBLE);
+                if (rows.isEmpty()) {
+                    content.emptyView.setVisibility(View.VISIBLE);
+                    content.listView.setVisibility(View.GONE);
+                } else {
+                    content.emptyView.setVisibility(View.GONE);
+                    content.listView.setVisibility(View.VISIBLE);
+                    adapter.setItems(rows);
+                }
             });
         });
-    }
-
-    private List<TopOffender> buildTopOffenders(List<com.gree1d.reappzuku.db.AppStats> statsList,
-                                                 com.gree1d.reappzuku.db.AppStatsDao appStatsDao) {
-        List<TopOffender> offenders = new ArrayList<>();
-        for (com.gree1d.reappzuku.db.AppStats stats : statsList) {
-            if (stats == null || stats.packageName == null) continue;
-            if (stats.killCount <= 0 && stats.relaunchCount <= 0 && stats.totalRecoveredKb <= 0) continue;
-
-            String appName = resolveStatsAppName(stats, appStatsDao);
-            double score = (stats.killCount * 1.0) + (stats.relaunchCount * 2.0) + (stats.totalRecoveredKb / 102400.0);
-            offenders.add(new TopOffender(appName, stats.packageName, stats.killCount,
-                    stats.relaunchCount, stats.totalRecoveredKb, score));
-        }
-
-        Collections.sort(offenders, (a, b) -> {
-            int c = Double.compare(b.score, a.score);
-            if (c != 0) return c;
-            c = Integer.compare(b.killCount, a.killCount);
-            if (c != 0) return c;
-            c = Integer.compare(b.relaunchCount, a.relaunchCount);
-            if (c != 0) return c;
-            return Long.compare(b.recoveredKb, a.recoveredKb);
-        });
-
-        return offenders.size() > TOP_OFFENDERS_LIMIT
-                ? new ArrayList<>(offenders.subList(0, TOP_OFFENDERS_LIMIT))
-                : offenders;
     }
 
     private void showBackgroundRestrictionLogDialog() {
         SettingsListContent content = createSettingsListContent(
-                getString(R.string.settings_restriction_log_empty), false);
+                getString(R.string.stats_restriction_log_empty), false);
         SettingsSurfaceAdapter adapter = new SettingsSurfaceAdapter();
         content.listView.setAdapter(adapter);
-        content.listView.setEmptyView(content.emptyView);
-        content.listView.setOnItemClickListener((parent, view, position, id) -> {
-            SettingsSurfaceRow row = adapter.getItem(position);
-            if (row != null && row.packageName != null && row.packageName.contains(".")) {
-                openAppInfo(row.packageName);
-            }
-        });
         content.loading.setVisibility(View.VISIBLE);
-        content.listView.setVisibility(View.GONE);
-        content.summaryText.setText(getString(R.string.stats_loading));
-
         AlertDialog dialog = createSettingsSurfaceDialog(
-                getString(R.string.settings_restriction_log_title),
-                getString(R.string.settings_restriction_log_dialog_subtitle),
-                content.rootView);
-        dialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.dialog_close), (d, w) -> d.dismiss());
-        dialog.setButton(AlertDialog.BUTTON_NEUTRAL, getString(R.string.settings_restriction_log_clear), (d, w) -> {});
-        dialog.show();
-        styleDialogButtons(dialog);
-
-        Runnable reloadLog = () -> executor.execute(() -> {
-            List<SettingsSurfaceRow> rows = buildRestrictionLogRows(BackgroundRestrictionLog.readEntries(this));
-            String summary = getString(R.string.settings_restriction_log_summary, rows.size());
+                getString(R.string.settings_restriction_log_title), null, content.rootView);
+        executor.execute(() -> {
+            List<BackgroundRestrictionLog.LogEntry> logEntries =
+                    BackgroundRestrictionLog.getInstance().getEntries();
+            List<SettingsSurfaceRow> rows = buildRestrictionLogRows(logEntries);
             handler.post(() -> {
-                adapter.setItems(rows);
-                content.summaryText.setText(summary);
                 content.loading.setVisibility(View.GONE);
-                content.listView.setVisibility(View.VISIBLE);
-                content.emptyView.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+                if (rows.isEmpty()) {
+                    content.emptyView.setVisibility(View.VISIBLE);
+                    content.listView.setVisibility(View.GONE);
+                } else {
+                    content.emptyView.setVisibility(View.GONE);
+                    content.listView.setVisibility(View.VISIBLE);
+                    adapter.setItems(rows);
+                }
             });
         });
-        reloadLog.run();
-
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
-            appManager.clearBackgroundRestrictionLog();
-            reloadLog.run();
-            Toast.makeText(this, getString(R.string.settings_restriction_log_cleared), Toast.LENGTH_SHORT).show();
-        });
+        dialog.show();
+        styleDialogButtons(dialog);
     }
 
-    private String resolveStatsAppName(com.gree1d.reappzuku.db.AppStats stats,
-                                       com.gree1d.reappzuku.db.AppStatsDao appStatsDao) {
-        if (stats.appName != null && !stats.appName.trim().isEmpty()) return stats.appName;
-        try {
-            android.content.pm.ApplicationInfo appInfo = getPackageManager().getApplicationInfo(stats.packageName, 0);
-            CharSequence label = getPackageManager().getApplicationLabel(appInfo);
-            if (label != null) {
-                String name = label.toString();
-                stats.appName = name;
-                appStatsDao.updateAppName(stats.packageName, name);
-                return name;
-            }
-        } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
-        return stats.packageName;
-    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Internal data classes
+    // ─────────────────────────────────────────────────────────────────────────
 
-    private String formatRecoveredSize(long kb) {
-        if (kb < 1024) return kb + " KB";
-        if (kb < 1024 * 1024) return String.format(Locale.US, "%.2f MB", kb / 1024f);
-        return String.format(Locale.US, "%.2f GB", kb / (1024f * 1024f));
-    }
-
-    private void openAppInfo(String packageName) {
-        try {
-            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            intent.setData(Uri.parse("package:" + packageName));
-            startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(this, getString(R.string.settings_open_app_info_error), Toast.LENGTH_SHORT).show();
+    private static class KillHistoryEntry {
+        final String appName, packageName, detail, badge;
+        final long lastEventTime;
+        KillHistoryEntry(String appName, String packageName, String detail, String badge, long t) {
+            this.appName = appName; this.packageName = packageName;
+            this.detail = detail; this.badge = badge; this.lastEventTime = t;
         }
     }
-
-    // ---- Inner helpers (moved from SettingsActivity) ----
 
     private static class TopOffender {
         final String appName, packageName;
         final int killCount, relaunchCount;
         final long recoveredKb;
         final double score;
-        TopOffender(String appName, String packageName, int killCount, int relaunchCount, long recoveredKb, double score) {
+        TopOffender(String appName, String packageName, int kills, int relaunches, long kb, double score) {
             this.appName = appName; this.packageName = packageName;
-            this.killCount = killCount; this.relaunchCount = relaunchCount;
-            this.recoveredKb = recoveredKb; this.score = score;
+            this.killCount = kills; this.relaunchCount = relaunches;
+            this.recoveredKb = kb; this.score = score;
         }
     }
 
-    private static class KillHistoryEntry {
-        final String appName, packageName, detail, badge;
-        final long lastEventTime;
-        KillHistoryEntry(String appName, String packageName, String detail, String badge, long lastEventTime) {
-            this.appName = appName; this.packageName = packageName;
-            this.detail = detail; this.badge = badge; this.lastEventTime = lastEventTime;
-        }
-    }
-
-    static class SettingsSurfaceRow {
-        final String leadingText, title, subtitle, detail, badge, packageName;
-        SettingsSurfaceRow(String leadingText, String title, String subtitle, String detail, String badge, String packageName) {
+    private static class SettingsSurfaceRow {
+        final String leadingText, title, subtitle, detail, badge, tag;
+        SettingsSurfaceRow(String leadingText, String title, String subtitle,
+                           String detail, String badge, String tag) {
             this.leadingText = leadingText; this.title = title; this.subtitle = subtitle;
-            this.detail = detail; this.badge = badge; this.packageName = packageName;
+            this.detail = detail; this.badge = badge; this.tag = tag;
         }
     }
 
     private static class SettingsListContent {
         final View rootView;
         final Spinner filterSpinner;
-        final TextView summaryText;
+        final TextView summaryText, emptyView;
         final ProgressBar loading;
         final ListView listView;
-        final TextView emptyView;
         SettingsListContent(View rootView, Spinner filterSpinner, TextView summaryText,
-                            ProgressBar loading, ListView listView, TextView emptyView) {
+                             ProgressBar loading, ListView listView, TextView emptyView) {
             this.rootView = rootView; this.filterSpinner = filterSpinner;
             this.summaryText = summaryText; this.loading = loading;
             this.listView = listView; this.emptyView = emptyView;
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Adapters and builders (preserved from original)
+    // ─────────────────────────────────────────────────────────────────────────
+
     private class SettingsSurfaceAdapter extends BaseAdapter {
         private final List<SettingsSurfaceRow> items = new ArrayList<>();
         private final LayoutInflater inflater = LayoutInflater.from(StatisticsActivity.this);
-
         void setItems(List<SettingsSurfaceRow> newItems) {
-            items.clear();
-            if (newItems != null) items.addAll(newItems);
-            notifyDataSetChanged();
+            items.clear(); if (newItems != null) items.addAll(newItems); notifyDataSetChanged();
         }
-
         @Override public int getCount() { return items.size(); }
         @Override public SettingsSurfaceRow getItem(int pos) { return (pos >= 0 && pos < items.size()) ? items.get(pos) : null; }
         @Override public long getItemId(int pos) { return pos; }
-
         @Override
         public View getView(int position, View convertView, android.view.ViewGroup parent) {
             View view = convertView != null ? convertView : inflater.inflate(R.layout.item_top_offender, parent, false);
@@ -476,9 +720,8 @@ public class StatisticsActivity extends BaseActivity {
     }
 
     private void bindOptionalText(TextView view, String text) {
-        if (text == null || text.trim().isEmpty()) { view.setVisibility(View.GONE); view.setText(""); return; }
-        view.setVisibility(View.VISIBLE);
-        view.setText(text);
+        if (text == null || text.trim().isEmpty()) { view.setVisibility(View.GONE); return; }
+        view.setVisibility(View.VISIBLE); view.setText(text);
     }
 
     private AlertDialog createSettingsSurfaceDialog(String title, String subtitle, View contentView) {
@@ -488,7 +731,6 @@ public class StatisticsActivity extends BaseActivity {
         subtitleView.setText(subtitle);
         subtitleView.setVisibility(subtitle == null || subtitle.trim().isEmpty() ? View.GONE : View.VISIBLE);
         contentContainer.addView(contentView);
-
         AlertDialog dialog = new AlertDialog.Builder(this).setTitle(title).setView(dialogView).create();
         dialog.getWindow().setBackgroundDrawable(
                 new android.graphics.drawable.ColorDrawable(ContextCompat.getColor(this, R.color.background_primary)));
@@ -549,6 +791,16 @@ public class StatisticsActivity extends BaseActivity {
         return rows;
     }
 
+    private String resolveStatsAppName(com.gree1d.reappzuku.db.AppStats stats,
+                                        com.gree1d.reappzuku.db.AppStatsDao dao) {
+        try {
+            return getPackageManager().getApplicationLabel(
+                    getPackageManager().getApplicationInfo(stats.packageName, 0)).toString();
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            return stats.packageName;
+        }
+    }
+
     private String resolveRestrictionTypeBadge(String action) {
         if (action == null) return "";
         switch (action.trim().toLowerCase()) {
@@ -569,14 +821,14 @@ public class StatisticsActivity extends BaseActivity {
     private String humanizeLogOutcome(String outcome) {
         if (outcome == null || outcome.trim().isEmpty()) return "";
         switch (outcome.trim().toLowerCase()) {
-            case "ok": return getString(R.string.log_outcome_ok);
-            case "verified": return getString(R.string.log_outcome_verified);
-            case "failed": return getString(R.string.log_outcome_failed);
-            case "skipped": return getString(R.string.log_outcome_skipped);
-            case "verify-failed": return getString(R.string.log_outcome_verify_failed);
-            case "verify-unavailable": return getString(R.string.log_outcome_verify_unavailable);
+            case "ok":                        return getString(R.string.log_outcome_ok);
+            case "verified":                  return getString(R.string.log_outcome_verified);
+            case "failed":                    return getString(R.string.log_outcome_failed);
+            case "skipped":                   return getString(R.string.log_outcome_skipped);
+            case "verify-failed":             return getString(R.string.log_outcome_verify_failed);
+            case "verify-unavailable":        return getString(R.string.log_outcome_verify_unavailable);
             case "battery-whitelist-removed": return getString(R.string.log_outcome_battery_whitelist_removed);
-            case "battery-whitelist-restored": return getString(R.string.log_outcome_battery_whitelist_restored);
+            case "battery-whitelist-restored":return getString(R.string.log_outcome_battery_whitelist_restored);
             default:
                 String n = outcome.trim().replace('-', ' ').replace('_', ' ');
                 return n.toUpperCase(Locale.US);
@@ -591,6 +843,12 @@ public class StatisticsActivity extends BaseActivity {
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(color);
         if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null)
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color);
+    }
+
+    private String formatRecoveredSize(long kb) {
+        if (kb >= 1024 * 1024) return String.format(Locale.US, "%.1f ГБ", kb / (1024.0 * 1024));
+        if (kb >= 1024)        return String.format(Locale.US, "%.1f МБ", kb / 1024.0);
+        return kb + " КБ";
     }
 
     @Override

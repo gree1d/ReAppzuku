@@ -21,6 +21,7 @@ import rikka.shizuku.ShizukuBinderWrapper;
 import rikka.shizuku.ShizukuRemoteProcess;
 import rikka.shizuku.SystemServiceHelper;
 
+
 /**
  * Manages shell command execution via Root or Shizuku.
  * Prioritizes Root access over Shizuku when both are available.
@@ -276,6 +277,22 @@ public class ShellManager {
      * This method is blocking and should be called from a background thread.
      */
     public String runShellCommandAndGetFullOutput(String command) {
+        if (hasRootAccess()) {
+            return executeRootCommandAndGetFullOutput(command);
+        } else if (hasShizukuPermission()) {
+            return executeShizukuCommandAndGetFullOutput(command);
+        }
+        return null;
+    }
+
+    /**
+     * Runs a command via Root or Shizuku and returns the full stdout as a String.
+     * Blocking — must be called from a background thread.
+     * Returns null on failure.
+     */
+    @androidx.annotation.WorkerThread
+    @androidx.annotation.Nullable
+    public String runCommandAndGetOutput(String command) {
         if (hasRootAccess()) {
             return executeRootCommandAndGetFullOutput(command);
         } else if (hasShizukuPermission()) {
