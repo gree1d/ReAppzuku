@@ -280,6 +280,13 @@
         <item>Last 7 days</item>
         <item>All time</item>
     </string-array>
+    
+    <string-array name="chart_period_labels">
+        <item>2h</item>
+        <item>6h</item>
+        <item>12h</item>
+        <item>24h</item>
+    </string-array>
 
     <!-- BackgroundAppManager — toasts and notifications -->
     <string name="bg_manager_auto_kill_active">Auto-Kill active</string>
@@ -496,10 +503,27 @@
     <string name="detail_chart_battery">Battery (mAh / hour)</string>
     <string name="detail_chart_cpu">CPU (% / hour)</string>
     <string name="detail_chart_ram">RAM — avg PSS (MB)</string>
-
-    <string name="info_card_battery_saved">Сохранено батареи</string>
-    <string name="info_card_cpu_reduced">Снижено нагрузки CPU</string>
-    <string name="stats_self_overhead">Потребление ReAppzuku: 🔋 %1$s · ⚙️ %2$s · 📊 %3$s</string>
-    <string name="chart_nav_prev">Предыдущая диаграмма</string>
-    <string name="chart_nav_next">Следующая диаграмма</string>
+    
+    <!-- Stats — info tiles -->         
+    <string name="stats_battery_trace">&lt; 0.1%</string>
+    <string name="stats_chart_total_battery">Total %.1f mAh</string>
+    <string name="stats_chart_total_ram">Avg. %s</string>
+    <string name="stats_self_overhead_label">ReAppzuku overhead:</string>
+    <string name="info_card_battery_saved">Battery saved</string>
+    <string name="info_card_cpu_reduced">CPU load reduced</string>
+    <string name="stats_self_overhead">ReAppzuku overhead: %1$s · %2$s · %3$s</string>
+    <string name="chart_nav_prev">Previous chart</string>
+    <string name="chart_nav_next">Next chart</string>
+    
+    <!-- Stats — no data hints -->
+    <string name="stats_no_data_hint_no_snapshot">No data collected yet. Please wait ~30 mins.</string>
+    <string name="stats_no_data_hint_no_history">Not enough history. Data is accumulating — check back later.</string>
+    <string name="stats_no_data_hint_too_close">Snapshots are too close. Try again later.</string>
+    
+    <!-- Units -->
+    <string name="unit_kb">%d KB</string>
+    <string name="unit_mb">%d MB</string>
+    <string name="unit_mb_precise">%.2f MB</string>
+    <string name="unit_gb">%.1f GB</string>
+    <string name="unit_gb_precise">%.2f GB</string>
 </resources>
