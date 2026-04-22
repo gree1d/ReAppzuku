@@ -268,17 +268,15 @@ public class StatisticsActivity extends BaseActivity {
             String cpuText = String.format(Locale.US, "%.1f%%", totalCpuFraction * 100.0);
             binding.infoCpuReducedValue.setText(cpuText);
 
-            // ── Self overhead line ────────────────────────────────────────
+            // ── Self overhead row ─────────────────────────────────────────
             if (selfStats != null) {
                 double selfBatPct = (selfStats.batteryMah / BATTERY_CAPACITY_MAH) * 100.0;
-                String selfLine = getString(R.string.stats_self_overhead,
-                        String.format(Locale.US, "%.1f%%", selfBatPct),
-                        String.format(Locale.US, "%.1f%%", selfStats.cpuFraction * 100.0),
-                        formatRamMb(selfStats.ramMb));
-                binding.tvSelfOverhead.setText(selfLine);
-                binding.tvSelfOverhead.setVisibility(View.VISIBLE);
+                binding.tvSelfBat.setText(String.format(Locale.US, "%.1f%%", selfBatPct));
+                binding.tvSelfCpu.setText(String.format(Locale.US, "%.1f%%", selfStats.cpuFraction * 100.0));
+                binding.tvSelfRam.setText(formatRamMb(selfStats.ramMb));
+                binding.layoutSelfOverhead.setVisibility(View.VISIBLE);
             } else {
-                binding.tvSelfOverhead.setVisibility(View.GONE);
+                binding.layoutSelfOverhead.setVisibility(View.GONE);
             }
 
             // ── Build all 3 charts ─────────────────────────────────────────
