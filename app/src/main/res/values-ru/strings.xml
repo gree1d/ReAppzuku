@@ -280,6 +280,13 @@
         <item>Последние 7 дней</item>
         <item>Всё время</item>
     </string-array>
+    
+    <string-array name="chart_period_labels">
+        <item>2ч</item>
+        <item>6ч</item>
+        <item>12ч</item>
+        <item>24ч</item>
+    </string-array>
 
     <!-- BackgroundAppManager — toasts and notifications -->
     <string name="bg_manager_auto_kill_active">Auto-Kill активен</string>
@@ -481,4 +488,27 @@
     <string name="detail_chart_battery">Батарея (mAh / час)</string>
     <string name="detail_chart_cpu">CPU (% / час)</string>
     <string name="detail_chart_ram">ОЗУ — средний PSS (МБ)</string>
+    
+    <!-- Stats — info tiles -->
+    <string name="stats_battery_trace">&lt; 0.1%</string>
+    <string name="stats_chart_total_battery">Всего %.1f mAh</string>
+    <string name="stats_chart_total_ram">Ср. %s</string>
+    <string name="stats_self_overhead_label">Потребление ReAppzuku:</string>
+    <string name="info_card_battery_saved">Сохранено батареи</string>
+    <string name="info_card_cpu_reduced">Снижено нагрузки CPU</string>
+    <string name="stats_self_overhead">Потребление ReAppzuku: %1$s · %2$s · %3$s</string>
+    <string name="chart_nav_prev">Предыдущая диаграмма</string>
+    <string name="chart_nav_next">Следующая диаграмма</string>
+    
+    <!-- Stats — no data hints -->
+    <string name="stats_no_data_hint_no_snapshot">Данные ещё не собраны. Подождите ~30 минут.</string>
+    <string name="stats_no_data_hint_no_history">Недостаточно истории. Данные накапливаются — зайдите позже.</string>
+    <string name="stats_no_data_hint_too_close">Снапшоты слишком близко. Попробуйте позже.</string>
+    
+    <!-- Units -->
+    <string name="unit_kb">%d KB</string>
+    <string name="unit_mb">%d МБ</string>
+    <string name="unit_mb_precise">%.2f МБ</string>
+    <string name="unit_gb">%.1f ГБ</string>
+    <string name="unit_gb_precise">%.2f ГБ</string>
 </resources>
