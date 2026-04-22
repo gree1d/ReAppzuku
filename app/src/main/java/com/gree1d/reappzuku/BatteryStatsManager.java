@@ -44,7 +44,7 @@ public class BatteryStatsManager {
 
     private static final String TAG = "BatteryStatsManager";
 
-    /** Minimum interval between snapshots (15 min). Prevents duplicate writes. */
+    /** Minimum interval between snapshots (10 min). Prevents duplicate writes. */
     private static final long MIN_SNAPSHOT_INTERVAL_MS = 10 * 60 * 1000L;
 
     /** Percentage threshold — apps at or below this share are grouped into "Others". */
@@ -465,6 +465,12 @@ public class BatteryStatsManager {
                     "Данные ещё не собраны. Подождите ~30 минут.");
         }
         if (previous == null) {
+            // Not enough history to cover the full requested window.
+            // Fall back to the oldest available snapshot so we can still show
+            // partial data (e.g. 20 min instead of 2 h).
+            previous = dao.getOldestSnapshot();
+        }
+        if (previous == null || previous.timestamp >= current.timestamp) {
             return new PeriodStats(Collections.emptyList(), false, 0,
                     "Недостаточно истории. Данные накапливаются — зайдите позже.");
         }

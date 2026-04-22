@@ -314,14 +314,18 @@ public class ShappkyService extends Service {
      * Fires every 15 minutes while the service is running.
      */
     private void scheduleSnapshotCollection() {
-        handler.postDelayed(new Runnable() {
+        // Take the first snapshot immediately so data is available as soon as possible,
+        // then repeat every SNAPSHOT_INTERVAL_MS.
+        Runnable snapshotRunnable = new Runnable() {
             @Override
             public void run() {
                 if (!isRunning) return;
                 batteryStatsManager.takeSnapshotAsync(null);
                 handler.postDelayed(this, SNAPSHOT_INTERVAL_MS);
             }
-        }, SNAPSHOT_INTERVAL_MS);
+        };
+        // Delay slightly (2 s) to let ShellManager finish its init before the first command.
+        handler.postDelayed(snapshotRunnable, 2_000L);
     }
 
     private void scheduleNextKill() {
