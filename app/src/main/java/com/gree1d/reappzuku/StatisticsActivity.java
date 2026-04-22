@@ -195,15 +195,15 @@ public class StatisticsActivity extends BaseActivity {
         switch (currentChartIdx) {
             case CHART_BATTERY:
                 binding.tvChartTitle.setText(getString(R.string.chart_title_battery));
-                binding.ivChartIcon.setImageResource(android.R.drawable.ic_lock_power_off);
+                binding.ivChartIcon.setImageResource(R.drawable.ic_battery_chart);
                 break;
             case CHART_CPU:
                 binding.tvChartTitle.setText(getString(R.string.chart_title_cpu));
-                binding.ivChartIcon.setImageResource(android.R.drawable.ic_menu_manage);
+                binding.ivChartIcon.setImageResource(R.drawable.ic_cpu);
                 break;
             case CHART_RAM:
                 binding.tvChartTitle.setText(getString(R.string.chart_title_ram));
-                binding.ivChartIcon.setImageResource(android.R.drawable.ic_menu_info_details);
+                binding.ivChartIcon.setImageResource(R.drawable.ic_ram);
                 break;
         }
     }
