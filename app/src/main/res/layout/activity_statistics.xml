@@ -307,7 +307,7 @@
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:src="@android:drawable/stat_sys_data_bluetooth"
+                        android:src="@drawable/ic_chart_placeholder"
                         android:layout_marginBottom="8dp" />
 
                     <TextView
@@ -400,7 +400,7 @@
                             android:id="@+id/iv_chart_icon"
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@android:drawable/ic_lock_power_off"
+                            android:src="@drawable/ic_battery_chart"
                             android:layout_marginStart="4dp"
                             android:layout_marginEnd="8dp" />
 
