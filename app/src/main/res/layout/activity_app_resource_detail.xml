@@ -155,7 +155,7 @@
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
-                            android:src="@android:drawable/ic_lock_power_off"
+                            android:src="@drawable/ic_battery_chart"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -211,7 +211,7 @@
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
-                            android:src="@android:drawable/ic_menu_manage"
+                            android:src="@drawable/ic_cpu"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
@@ -266,7 +266,7 @@
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
-                            android:src="@android:drawable/ic_menu_info_details"
+                            android:src="@drawable/ic_ram"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
