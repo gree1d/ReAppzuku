@@ -27,6 +27,10 @@ public interface ResourceSnapshotDao {
     @Query("SELECT * FROM resource_snapshots ORDER BY timestamp DESC LIMIT 1")
     ResourceSnapshot getLatestSnapshot();
 
+    /** Returns the oldest snapshot row (any package). Used as fallback when full history is unavailable. */
+    @Query("SELECT * FROM resource_snapshots ORDER BY timestamp ASC LIMIT 1")
+    ResourceSnapshot getOldestSnapshot();
+
     /**
      * Returns the snapshot whose timestamp is closest to but NOT AFTER the given time.
      * Used to find the "start boundary" of a period window.
