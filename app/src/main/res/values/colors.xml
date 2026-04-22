@@ -15,6 +15,7 @@
     <color name="divider_color">#DDDDDD</color>
     <color name="toolbar_navy">#001F5C</color>
     <color name="dialog_button_text">#1A237E</color>
+    <color name="ic_back_tint">#000000</color>
     
     <!-- Stats charts -->
     <color name="stats_battery">#FF9800</color>
