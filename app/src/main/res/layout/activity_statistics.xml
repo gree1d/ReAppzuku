@@ -39,7 +39,7 @@
             android:orientation="vertical">
 
             <!-- ═══════════════════════════════════════════════════════════════
-                 SECTION 1 — INFO CARDS (always visible, no shell required)
+                 SECTION 1 — INFO CARDS (3 tiles in one row, period-aware)
             ════════════════════════════════════════════════════════════════ -->
 
             <LinearLayout
@@ -49,167 +49,137 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- Row 1: Total kills | Total relaunches -->
+                <!-- Row: 3 tiles in one line -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="12dp">
+                    android:layout_marginBottom="10dp">
 
-                    <!-- Card: Total kills -->
+                    <!-- Card: Battery saved -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginEnd="6dp"
+                        android:layout_marginEnd="4dp"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="2dp"
-                        app:cardBackgroundColor="?attr/colorSurface">
+                        app:cardBackgroundColor="?attr/colorPrimary">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:padding="16dp">
+                            android:padding="12dp">
 
                             <TextView
-                                android:id="@+id/info_total_kills_value"
+                                android:id="@+id/info_battery_saved_value"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="—"
-                                android:textSize="28sp"
+                                android:textSize="22sp"
                                 android:textStyle="bold"
-                                android:textColor="?attr/colorPrimary" />
+                                android:textColor="?attr/colorOnPrimary" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/info_card_kills"
-                                android:textSize="12sp"
-                                android:textColor="@color/text_secondary"
+                                android:text="@string/info_card_battery_saved"
+                                android:textSize="10sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:alpha="0.75"
                                 android:layout_marginTop="2dp" />
 
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Card: Total relaunches -->
+                    <!-- Card: RAM freed -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="6dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="2dp"
-                        app:cardBackgroundColor="?attr/colorSurface">
+                        app:cardBackgroundColor="?attr/colorPrimary">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:id="@+id/info_total_relaunches_value"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="—"
-                                android:textSize="28sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/stats_warn" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/info_card_relaunches"
-                                android:textSize="12sp"
-                                android:textColor="@color/text_secondary"
-                                android:layout_marginTop="2dp" />
-
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                </LinearLayout>
-
-                <!-- Row 2: RAM recovered | ReAppzuku overhead -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="12dp">
-
-                    <!-- Card: RAM recovered -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="6dp"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:cardBackgroundColor="?attr/colorSurface">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                            android:padding="12dp">
 
                             <TextView
                                 android:id="@+id/info_ram_recovered_value"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="—"
-                                android:textSize="28sp"
+                                android:textSize="22sp"
                                 android:textStyle="bold"
-                                android:textColor="@color/stats_positive" />
+                                android:textColor="?attr/colorOnPrimary" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/info_card_ram_recovered"
-                                android:textSize="12sp"
-                                android:textColor="@color/text_secondary"
+                                android:textSize="10sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:alpha="0.75"
                                 android:layout_marginTop="2dp" />
 
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Card: ReAppzuku own drain -->
+                    <!-- Card: CPU reduced -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="6dp"
+                        android:layout_marginStart="4dp"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="2dp"
-                        app:cardBackgroundColor="?attr/colorSurface">
+                        app:cardBackgroundColor="?attr/colorPrimary">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:padding="16dp">
+                            android:padding="12dp">
 
                             <TextView
-                                android:id="@+id/info_self_drain_value"
+                                android:id="@+id/info_cpu_reduced_value"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="—"
                                 android:textSize="22sp"
                                 android:textStyle="bold"
-                                android:textColor="@color/text_primary" />
+                                android:textColor="?attr/colorOnPrimary" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/info_card_self_drain"
-                                android:textSize="12sp"
-                                android:textColor="@color/text_secondary"
+                                android:text="@string/info_card_cpu_reduced"
+                                android:textSize="10sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:alpha="0.75"
                                 android:layout_marginTop="2dp" />
 
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
                 </LinearLayout>
+
+                <!-- ReAppzuku own overhead line -->
+                <TextView
+                    android:id="@+id/tv_self_overhead"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:gravity="center"
+                    android:text="—" />
 
                 <!-- Disclaimer banner -->
                 <com.google.android.material.card.MaterialCardView
@@ -248,10 +218,10 @@
             </LinearLayout>
 
             <!-- ═══════════════════════════════════════════════════════════════
-                 SECTION 2 — RESOURCE CHARTS (pie charts with period selector)
+                 SECTION 2 — RESOURCE CHARTS (swipeable with arrows)
             ════════════════════════════════════════════════════════════════ -->
 
-            <!-- No-data state (shown when snapshots are not ready) -->
+            <!-- No-data state -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_no_data"
                 android:layout_width="match_parent"
@@ -312,13 +282,13 @@
 
             </LinearLayout>
 
-            <!-- Period selector tabs (2h / 6h / 12h / 24h) -->
+            <!-- Period selector tabs -->
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/tab_period_selector"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="8dp"
                 android:background="@android:color/transparent"
                 app:tabMode="fixed"
                 app:tabGravity="fill"
@@ -326,12 +296,11 @@
                 app:tabTextColor="@color/text_secondary"
                 app:tabSelectedTextColor="?attr/colorPrimary"
                 app:tabIndicatorColor="?attr/colorPrimary"
-                app:tabIndicatorHeight="2dp"
-                 />
+                app:tabIndicatorHeight="2dp" />
 
-            <!-- Chart: Battery consumption -->
+            <!-- Charts container card with navigation arrows -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_battery_chart"
+                android:id="@+id/card_charts_pager"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
@@ -346,7 +315,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- Header row -->
+                    <!-- Navigation row: arrow left | title + total | arrow right -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -354,13 +323,25 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="12dp">
 
+                        <ImageButton
+                            android:id="@+id/btn_chart_prev"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:src="@android:drawable/ic_media_previous"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/chart_nav_prev"
+                            android:padding="6dp" />
+
                         <ImageView
+                            android:id="@+id/iv_chart_icon"
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:src="@android:drawable/ic_lock_power_off"
+                            android:layout_marginStart="4dp"
                             android:layout_marginEnd="8dp" />
 
                         <TextView
+                            android:id="@+id/tv_chart_title"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -370,163 +351,87 @@
                             android:textColor="@color/text_primary" />
 
                         <TextView
-                            android:id="@+id/tv_battery_total"
+                            android:id="@+id/tv_chart_total"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="12sp"
-                            android:textColor="@color/text_secondary" />
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginEnd="4dp" />
+
+                        <ImageButton
+                            android:id="@+id/btn_chart_next"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:src="@android:drawable/ic_media_next"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/chart_nav_next"
+                            android:padding="6dp" />
 
                     </LinearLayout>
 
-                    <!-- Pie chart placeholder — replaced at runtime by MPAndroidChart PieChart -->
+                    <!-- Battery chart -->
                     <com.github.mikephil.charting.charts.PieChart
                         android:id="@+id/chart_battery"
                         android:layout_width="match_parent"
-                        android:layout_height="220dp" />
+                        android:layout_height="240dp"
+                        android:visibility="visible" />
 
-                    <!-- "Others" expandable list -->
+                    <!-- CPU chart -->
+                    <com.github.mikephil.charting.charts.PieChart
+                        android:id="@+id/chart_cpu"
+                        android:layout_width="match_parent"
+                        android:layout_height="240dp"
+                        android:visibility="gone" />
+
+                    <!-- RAM chart -->
+                    <com.github.mikephil.charting.charts.PieChart
+                        android:id="@+id/chart_ram"
+                        android:layout_width="match_parent"
+                        android:layout_height="240dp"
+                        android:visibility="gone" />
+
+                    <!-- Total line (kept for data, hidden from charts area) -->
+                    <TextView
+                        android:id="@+id/tv_battery_total"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/tv_cpu_total"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/tv_ram_total"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
+
+                    <!-- Others containers (hidden — dialog shown on tap) -->
                     <LinearLayout
                         android:id="@+id/layout_battery_others"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginTop="8dp"
                         android:visibility="gone" />
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Chart: CPU consumption -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_cpu_chart"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@android:drawable/ic_menu_manage"
-                            android:layout_marginEnd="8dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/chart_title_cpu"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tv_cpu_total"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="12sp"
-                            android:textColor="@color/text_secondary" />
-
-                    </LinearLayout>
-
-                    <com.github.mikephil.charting.charts.PieChart
-                        android:id="@+id/chart_cpu"
-                        android:layout_width="match_parent"
-                        android:layout_height="220dp" />
-
                     <LinearLayout
                         android:id="@+id/layout_cpu_others"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginTop="8dp"
                         android:visibility="gone" />
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Chart: RAM consumption -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_ram_chart"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@android:drawable/ic_menu_info_details"
-                            android:layout_marginEnd="8dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/chart_title_ram"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tv_ram_total"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="12sp"
-                            android:textColor="@color/text_secondary" />
-
-                    </LinearLayout>
-
-                    <com.github.mikephil.charting.charts.PieChart
-                        android:id="@+id/chart_ram"
-                        android:layout_width="match_parent"
-                        android:layout_height="220dp" />
-
                     <LinearLayout
                         android:id="@+id/layout_ram_others"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginTop="8dp"
                         android:visibility="gone" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ═══════════════════════════════════════════════════════════════
-                 SECTION 3 — EXISTING LIST ITEMS (Kill History / Top Offenders / Restriction Log)
-                 Kept as-is from original layout
+                 SECTION 3 — LIST ITEMS (Kill History / Top Offenders / Restriction Log)
             ════════════════════════════════════════════════════════════════ -->
 
             <View
