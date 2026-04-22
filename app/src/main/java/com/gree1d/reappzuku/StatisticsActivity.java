@@ -13,6 +13,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -57,8 +59,42 @@ public class StatisticsActivity extends BaseActivity {
     private static final int[] CHART_PERIODS_HOURS = { 2, 6, 12, 24 };
     private static final String[] CHART_PERIOD_LABELS = { "2ч", "6ч", "12ч", "24ч" };
 
+    /** Assumed battery capacity in mAh for converting mAh → percent. */
+    private static final double BATTERY_CAPACITY_MAH = 4000.0;
+
+    /** Chart indices */
+    private static final int CHART_BATTERY = 0;
+    private static final int CHART_CPU     = 1;
+    private static final int CHART_RAM     = 2;
+    private static final int CHART_COUNT   = 3;
+
+    /**
+     * Multicolor palette for pie slices. Designed to look distinct at all 3 chart accent bases.
+     * Last slot is always grey for "Others".
+     */
+    private static final int[] SLICE_PALETTE = {
+        0xFFE53935, // red
+        0xFF1E88E5, // blue
+        0xFF43A047, // green
+        0xFFFB8C00, // orange
+        0xFF8E24AA, // purple
+        0xFF00ACC1, // cyan
+        0xFFFFB300, // amber
+        0xFF00897B, // teal
+        0xFFF06292, // pink
+        0xFF6D4C41, // brown
+        0xFF3949AB, // indigo
+        0xFF7CB342, // light green
+        0xFFBDBDBD, // grey (Others)
+    };
+
     private String[] topOffenderFilterLabels;
     private int selectedPeriodIdx = 1;
+    private int currentChartIdx = CHART_BATTERY;
+
+    // Current period data — kept to reuse when switching charts
+    private List<BatteryStatsManager.AppResourceStats> currentSorted = null;
+    private double currentTotalHours = 0;
 
     private ActivityStatisticsBinding binding;
     private ShellManager shellManager;
@@ -86,8 +122,8 @@ public class StatisticsActivity extends BaseActivity {
         setupToolbar();
         setupBottomNavigation();
         setupPeriodTabs();
+        setupChartPager();
         setupListeners();
-        loadInfoCards();
 
         batteryStatsManager.takeSnapshotAsync(() -> loadCharts(CHART_PERIODS_HOURS[selectedPeriodIdx]));
     }
@@ -140,42 +176,44 @@ public class StatisticsActivity extends BaseActivity {
         });
     }
 
+    private void setupChartPager() {
+        binding.btnChartPrev.setOnClickListener(v -> navigateChart(-1));
+        binding.btnChartNext.setOnClickListener(v -> navigateChart(+1));
+        updateChartPagerUI();
+    }
+
+    private void navigateChart(int direction) {
+        currentChartIdx = (currentChartIdx + direction + CHART_COUNT) % CHART_COUNT;
+        updateChartPagerUI();
+        if (currentSorted != null) {
+            showActiveChart(currentSorted, currentTotalHours);
+        }
+    }
+
+    private void updateChartPagerUI() {
+        // Title + icon
+        switch (currentChartIdx) {
+            case CHART_BATTERY:
+                binding.tvChartTitle.setText(getString(R.string.chart_title_battery));
+                binding.ivChartIcon.setImageResource(android.R.drawable.ic_lock_power_off);
+                break;
+            case CHART_CPU:
+                binding.tvChartTitle.setText(getString(R.string.chart_title_cpu));
+                binding.ivChartIcon.setImageResource(android.R.drawable.ic_menu_manage);
+                break;
+            case CHART_RAM:
+                binding.tvChartTitle.setText(getString(R.string.chart_title_ram));
+                binding.ivChartIcon.setImageResource(android.R.drawable.ic_menu_info_details);
+                break;
+        }
+    }
+
     private void setupListeners() {
         binding.layoutStats.setOnClickListener(v -> showStatsDialog());
         binding.layoutTopOffenders.setOnClickListener(v -> showTopOffendersDialog());
         binding.layoutRestrictionLog.setVisibility(
                 appManager.supportsBackgroundRestriction() ? View.VISIBLE : View.GONE);
         binding.layoutRestrictionLog.setOnClickListener(v -> showBackgroundRestrictionLogDialog());
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Info cards
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private void loadInfoCards() {
-        executor.execute(() -> {
-            long since = System.currentTimeMillis() - STATS_HISTORY_DURATION_MS;
-            com.gree1d.reappzuku.db.AppStatsDao dao =
-                    com.gree1d.reappzuku.db.AppDatabase.getInstance(this).appStatsDao();
-            List<com.gree1d.reappzuku.db.AppStats> stats = dao.getAllStatsSince(since);
-
-            int totalKills = 0, totalRelaunches = 0;
-            long totalRamKb = 0;
-            for (com.gree1d.reappzuku.db.AppStats s : stats) {
-                if (s == null) continue;
-                totalKills      += s.killCount;
-                totalRelaunches += s.relaunchCount;
-                totalRamKb      += s.totalRecoveredKb;
-            }
-            final int fKills = totalKills, fRelaunches = totalRelaunches;
-            final long fRamKb = totalRamKb;
-
-            handler.post(() -> {
-                binding.infoTotalKillsValue.setText(String.valueOf(fKills));
-                binding.infoTotalRelaunchesValue.setText(String.valueOf(fRelaunches));
-                binding.infoRamRecoveredValue.setText(formatRecoveredSize(fRamKb));
-            });
-        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -189,50 +227,105 @@ public class StatisticsActivity extends BaseActivity {
             if (!periodStats.hasData) {
                 binding.cardNoData.setVisibility(View.VISIBLE);
                 binding.tvNoDataHint.setText(periodStats.dataHint);
-                setChartsVisible(false);
+                binding.cardChartsPager.setVisibility(View.GONE);
                 return;
             }
             binding.cardNoData.setVisibility(View.GONE);
-            setChartsVisible(true);
+            binding.cardChartsPager.setVisibility(View.VISIBLE);
 
             List<BatteryStatsManager.AppResourceStats> sorted = periodStats.sorted;
+            currentSorted = sorted;
+            currentTotalHours = periodStats.actualHours;
+
+            // ── Info cards (period-aware) ──────────────────────────────────
+
+            // Battery saved: sum mAh of all non-self apps killed (approximated as total
+            // consumed by background apps) → converted to % of assumed capacity.
+            double totalBatteryMah = 0;
+            double totalRamMb = 0;
+            double totalCpuFraction = 0;
+            BatteryStatsManager.AppResourceStats selfStats = null;
 
             for (BatteryStatsManager.AppResourceStats s : sorted) {
-                if (s.isSelf) {
-                    binding.infoSelfDrainValue.setText(
-                            String.format(Locale.US, "%.2f mAh/ч", s.batteryMah / periodStats.actualHours));
-                    break;
-                }
+                if (s.isSelf) { selfStats = s; continue; }
+                totalBatteryMah  += s.batteryMah;
+                totalRamMb       += s.ramMb;
+                totalCpuFraction += s.cpuFraction;
             }
 
-            double totalBattery = 0, totalRam = 0, totalCpu = 0;
-            for (BatteryStatsManager.AppResourceStats s : sorted) {
-                totalBattery += s.batteryMah;
-                totalRam     += s.ramMb;
-                totalCpu     += s.cpuFraction;
-            }
-            binding.tvBatteryTotal.setText(String.format(Locale.US, "Всего %.1f mAh", totalBattery));
-            binding.tvRamTotal.setText(String.format(Locale.US, "Ср. %.0f МБ", totalRam / Math.max(sorted.size(), 1)));
-            binding.tvCpuTotal.setText(String.format(Locale.US, "%.0f%%", totalCpu * 100));
+            // Battery saved tile: show as % of assumed capacity, floored at 0.1
+            final double finalBatMah = totalBatteryMah;
+            double batPct = (totalBatteryMah / BATTERY_CAPACITY_MAH) * 100.0;
+            String batText = batPct >= 0.1
+                    ? String.format(Locale.US, "%.1f%%", batPct)
+                    : "< 0.1%";
+            binding.infoBatterySavedValue.setText(batText);
 
+            // RAM freed tile: sum of background RAM (already period-aware via PSS snapshots)
+            binding.infoRamRecoveredValue.setText(formatRamMb(totalRamMb));
+
+            // CPU reduced tile: sum cpu fraction × 100 → show as %
+            String cpuText = String.format(Locale.US, "%.1f%%", totalCpuFraction * 100.0);
+            binding.infoCpuReducedValue.setText(cpuText);
+
+            // ── Self overhead line ────────────────────────────────────────
+            if (selfStats != null) {
+                double selfBatPct = (selfStats.batteryMah / BATTERY_CAPACITY_MAH) * 100.0;
+                String selfLine = getString(R.string.stats_self_overhead,
+                        String.format(Locale.US, "%.1f%%", selfBatPct),
+                        String.format(Locale.US, "%.1f%%", selfStats.cpuFraction * 100.0),
+                        formatRamMb(selfStats.ramMb));
+                binding.tvSelfOverhead.setText(selfLine);
+                binding.tvSelfOverhead.setVisibility(View.VISIBLE);
+            } else {
+                binding.tvSelfOverhead.setVisibility(View.GONE);
+            }
+
+            // ── Build all 3 charts ─────────────────────────────────────────
             buildPieChart(binding.chartBattery, binding.layoutBatteryOthers,
-                    sorted, ChartMetric.BATTERY, ContextCompat.getColor(this, R.color.stats_battery));
+                    sorted, ChartMetric.BATTERY);
             buildPieChart(binding.chartCpu, binding.layoutCpuOthers,
-                    sorted, ChartMetric.CPU, ContextCompat.getColor(this, R.color.stats_cpu));
+                    sorted, ChartMetric.CPU);
             buildPieChart(binding.chartRam, binding.layoutRamOthers,
-                    sorted, ChartMetric.RAM, ContextCompat.getColor(this, R.color.stats_ram));
+                    sorted, ChartMetric.RAM);
+
+            // Update total label for current chart
+            showActiveChart(sorted, periodStats.actualHours);
         });
+    }
+
+    private void showActiveChart(List<BatteryStatsManager.AppResourceStats> sorted, double actualHours) {
+        binding.chartBattery.setVisibility(currentChartIdx == CHART_BATTERY ? View.VISIBLE : View.GONE);
+        binding.chartCpu.setVisibility(currentChartIdx == CHART_CPU     ? View.VISIBLE : View.GONE);
+        binding.chartRam.setVisibility(currentChartIdx == CHART_RAM     ? View.VISIBLE : View.GONE);
+
+        double totalBat = 0, totalCpu = 0, totalRam = 0;
+        int count = 0;
+        for (BatteryStatsManager.AppResourceStats s : sorted) {
+            totalBat += s.batteryMah;
+            totalCpu += s.cpuFraction;
+            totalRam += s.ramMb;
+            count++;
+        }
+
+        switch (currentChartIdx) {
+            case CHART_BATTERY:
+                binding.tvChartTotal.setText(
+                        String.format(Locale.US, "Всего %.1f mAh", totalBat));
+                break;
+            case CHART_CPU:
+                binding.tvChartTotal.setText(
+                        String.format(Locale.US, "%.0f%%", totalCpu * 100));
+                break;
+            case CHART_RAM:
+                binding.tvChartTotal.setText(
+                        String.format(Locale.US, "Ср. %s", formatRamMb(totalRam / Math.max(count, 1))));
+                break;
+        }
     }
 
     private void showChartsLoading(boolean loading) {
         binding.layoutChartsLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
-    }
-
-    private void setChartsVisible(boolean visible) {
-        int v = visible ? View.VISIBLE : View.GONE;
-        binding.cardBatteryChart.setVisibility(v);
-        binding.cardCpuChart.setVisibility(v);
-        binding.cardRamChart.setVisibility(v);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -244,8 +337,7 @@ public class StatisticsActivity extends BaseActivity {
     private void buildPieChart(PieChart chart,
                                 android.view.ViewGroup othersContainer,
                                 List<BatteryStatsManager.AppResourceStats> sorted,
-                                ChartMetric metric,
-                                int accentColor) {
+                                ChartMetric metric) {
         double total = 0;
         for (BatteryStatsManager.AppResourceStats s : sorted) total += metricValue(s, metric);
         if (total <= 0) return;
@@ -273,7 +365,7 @@ public class StatisticsActivity extends BaseActivity {
             entries.add(new PieEntry((float) othersValue, getString(R.string.chart_others_label), "__others__"));
         }
 
-        List<Integer> colors = generatePieColors(accentColor, entries.size());
+        List<Integer> colors = buildMultiColors(entries.size());
         final double finalTotal = total;
 
         PieDataSet dataSet = new PieDataSet(entries, "");
@@ -305,9 +397,10 @@ public class StatisticsActivity extends BaseActivity {
                     showOthersDialog(othersList, metric, finalTotal);
                 } else {
                     String pkg = tag != null ? tag.toString() : pe.getLabel();
-                    float pct = (float)(metricValue(findByPkg(sorted, pkg), metric) / finalTotal * 100);
+                    BatteryStatsManager.AppResourceStats found = findByPkg(sorted, pkg);
+                    float pct = found != null ? (float)(metricValue(found, metric) / finalTotal * 100) : 0f;
                     String info = String.format(Locale.US, "%s\n%.1f%%  %s",
-                            pe.getLabel(), pct, formatMetricValue(findByPkg(sorted, pkg), metric));
+                            pe.getLabel(), pct, formatMetricValue(found, metric));
                     Toast.makeText(StatisticsActivity.this, info, Toast.LENGTH_SHORT).show();
                     openAppDetail(pkg, pe.getLabel());
                 }
@@ -316,32 +409,23 @@ public class StatisticsActivity extends BaseActivity {
         });
 
         chart.invalidate();
-        buildOthersRow(othersContainer, othersList, metric, finalTotal);
+        // Others list hidden in new design — shown via dialog on tap
+        if (othersContainer != null) othersContainer.setVisibility(View.GONE);
     }
 
-    private void buildOthersRow(android.view.ViewGroup container,
-                                 List<BatteryStatsManager.AppResourceStats> others,
-                                 ChartMetric metric, double total) {
-        container.removeAllViews();
-        if (others.isEmpty()) { container.setVisibility(View.GONE); return; }
-        container.setVisibility(View.VISIBLE);
-
-        TextView header = new TextView(this);
-        header.setText(getString(R.string.chart_others_expand, others.size()));
-        header.setTextSize(13f);
-        header.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
-        container.addView(header);
-
-        for (BatteryStatsManager.AppResourceStats s : others) {
-            TextView row = new TextView(this);
-            row.setText(String.format(Locale.US, "• %s  %.1f%%",
-                    s.appName, metricValue(s, metric) / total * 100));
-            row.setTextSize(12f);
-            row.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
-            row.setPadding(0, 4, 0, 0);
-            row.setOnClickListener(v -> openAppDetail(s.packageName, s.appName));
-            container.addView(row);
+    private List<Integer> buildMultiColors(int count) {
+        List<Integer> colors = new ArrayList<>();
+        // Always put grey last (Others slot)
+        int paletteSize = SLICE_PALETTE.length - 1; // exclude last grey
+        for (int i = 0; i < count; i++) {
+            if (i == count - 1 && count > 1) {
+                // Last entry is "Others" → grey
+                colors.add(SLICE_PALETTE[SLICE_PALETTE.length - 1]);
+            } else {
+                colors.add(SLICE_PALETTE[i % paletteSize]);
+            }
         }
+        return colors;
     }
 
     private void showOthersDialog(List<BatteryStatsManager.AppResourceStats> others,
@@ -380,7 +464,7 @@ public class StatisticsActivity extends BaseActivity {
         switch (m) {
             case BATTERY: return String.format(Locale.US, "%.2f mAh", s.batteryMah);
             case CPU:     return String.format(Locale.US, "%.1f%%", s.cpuFraction * 100);
-            case RAM:     return String.format(Locale.US, "%.0f МБ", s.ramMb);
+            case RAM:     return formatRamMb(s.ramMb);
             default:      return "";
         }
     }
@@ -393,25 +477,8 @@ public class StatisticsActivity extends BaseActivity {
         return null;
     }
 
-    private List<Integer> generatePieColors(int base, int count) {
-        List<Integer> colors = new ArrayList<>();
-        float[] hsv = new float[3];
-        Color.colorToHSV(base, hsv);
-        for (int i = 0; i < count; i++) {
-            float[] c = hsv.clone();
-            if (i == count - 1 && count > 1) {
-                colors.add(0xFFBDBDBD);
-            } else {
-                c[1] = Math.max(0.15f, hsv[1] - i * (0.55f / Math.max(count - 1, 1)));
-                c[2] = Math.min(1.0f,  hsv[2] + i * (0.25f / Math.max(count - 1, 1)));
-                colors.add(Color.HSVToColor(c));
-            }
-        }
-        return colors;
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
-    // Диалоги — оригинальные из StatisticsActivity_OLD без изменений
+    // Dialogs
     // ─────────────────────────────────────────────────────────────────────────
 
     private void showStatsDialog() {
@@ -903,6 +970,11 @@ public class StatisticsActivity extends BaseActivity {
         if (kb < 1024) return kb + " KB";
         if (kb < 1024 * 1024) return String.format(Locale.US, "%.2f MB", kb / 1024f);
         return String.format(Locale.US, "%.2f GB", kb / (1024f * 1024f));
+    }
+
+    private String formatRamMb(double mb) {
+        if (mb < 1024.0) return String.format(Locale.US, "%.0f МБ", mb);
+        return String.format(Locale.US, "%.1f ГБ", mb / 1024.0);
     }
 
     @Override
