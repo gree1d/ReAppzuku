@@ -391,7 +391,7 @@
                             android:id="@+id/btn_chart_prev"
                             android:layout_width="36dp"
                             android:layout_height="36dp"
-                            android:src="@drawable/ic_arrow_back"
+                            android:src="@drawable/ic_back"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="@string/chart_nav_prev"
                             android:padding="6dp" />
@@ -426,7 +426,7 @@
                             android:id="@+id/btn_chart_next"
                             android:layout_width="36dp"
                             android:layout_height="36dp"
-                            android:src="@drawable/ic_arrow_back"
+                            android:src="@drawable/ic_back"
                             android:scaleX="-1"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="@string/chart_nav_next"
