@@ -57,7 +57,6 @@ public class StatisticsActivity extends BaseActivity {
     };
 
     private static final int[] CHART_PERIODS_HOURS = { 2, 6, 12, 24 };
-    private static final String[] CHART_PERIOD_LABELS = { "2ч", "6ч", "12ч", "24ч" };
 
     /** Assumed battery capacity in mAh for converting mAh → percent. */
     private static final double BATTERY_CAPACITY_MAH = 4000.0;
@@ -89,6 +88,7 @@ public class StatisticsActivity extends BaseActivity {
     };
 
     private String[] topOffenderFilterLabels;
+    private String[] chartPeriodLabels;
     private int selectedPeriodIdx = 1;
     private int currentChartIdx = CHART_BATTERY;
 
@@ -114,6 +114,7 @@ public class StatisticsActivity extends BaseActivity {
         setContentView(binding.getRoot());
 
         topOffenderFilterLabels = getResources().getStringArray(R.array.settings_top_offender_filter_labels);
+        chartPeriodLabels = getResources().getStringArray(R.array.chart_period_labels);
 
         shellManager        = new ShellManager(this.getApplicationContext(), handler, executor);
         appManager          = new BackgroundAppManager(this.getApplicationContext(), handler, executor, shellManager);
@@ -164,7 +165,7 @@ public class StatisticsActivity extends BaseActivity {
 
     private void setupPeriodTabs() {
         com.google.android.material.tabs.TabLayout tabs = binding.tabPeriodSelector;
-        for (String label : CHART_PERIOD_LABELS) tabs.addTab(tabs.newTab().setText(label));
+        for (String label : chartPeriodLabels) tabs.addTab(tabs.newTab().setText(label));
         tabs.selectTab(tabs.getTabAt(selectedPeriodIdx));
         tabs.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
             @Override public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
@@ -258,7 +259,7 @@ public class StatisticsActivity extends BaseActivity {
             double batPct = (totalBatteryMah / BATTERY_CAPACITY_MAH) * 100.0;
             String batText = batPct >= 0.1
                     ? String.format(Locale.US, "%.1f%%", batPct)
-                    : "< 0.1%";
+                    : getString(R.string.stats_battery_trace);
             binding.infoBatterySavedValue.setText(batText);
 
             // RAM freed tile: sum of background RAM (already period-aware via PSS snapshots)
@@ -309,7 +310,7 @@ public class StatisticsActivity extends BaseActivity {
         switch (currentChartIdx) {
             case CHART_BATTERY:
                 binding.tvChartTotal.setText(
-                        String.format(Locale.US, "Всего %.1f mAh", totalBat));
+                        getString(R.string.stats_chart_total_battery, totalBat));
                 break;
             case CHART_CPU:
                 binding.tvChartTotal.setText(
@@ -317,7 +318,7 @@ public class StatisticsActivity extends BaseActivity {
                 break;
             case CHART_RAM:
                 binding.tvChartTotal.setText(
-                        String.format(Locale.US, "Ср. %s", formatRamMb(totalRam / Math.max(count, 1))));
+                        getString(R.string.stats_chart_total_ram, formatRamMb(totalRam / Math.max(count, 1))));
                 break;
         }
     }
@@ -965,14 +966,14 @@ public class StatisticsActivity extends BaseActivity {
     }
 
     private String formatRecoveredSize(long kb) {
-        if (kb < 1024) return kb + " KB";
-        if (kb < 1024 * 1024) return String.format(Locale.US, "%.2f MB", kb / 1024f);
-        return String.format(Locale.US, "%.2f GB", kb / (1024f * 1024f));
+        if (kb < 1024) return getString(R.string.unit_kb, kb);
+        if (kb < 1024 * 1024) return getString(R.string.unit_mb_precise, kb / 1024f);
+        return getString(R.string.unit_gb_precise, kb / (1024f * 1024f));
     }
 
     private String formatRamMb(double mb) {
-        if (mb < 1024.0) return String.format(Locale.US, "%.0f МБ", mb);
-        return String.format(Locale.US, "%.1f ГБ", mb / 1024.0);
+        if (mb < 1024.0) return getString(R.string.unit_mb, (int) mb);
+        return getString(R.string.unit_gb, mb / 1024.0);
     }
 
     @Override

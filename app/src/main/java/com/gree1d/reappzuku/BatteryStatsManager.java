@@ -462,23 +462,20 @@ public class BatteryStatsManager {
 
         if (current == null) {
             return new PeriodStats(Collections.emptyList(), false, 0,
-                    "Данные ещё не собраны. Подождите ~30 минут.");
+                    context.getString(R.string.stats_no_data_hint_no_snapshot));
         }
         if (previous == null) {
-            // Not enough history to cover the full requested window.
-            // Fall back to the oldest available snapshot so we can still show
-            // partial data (e.g. 20 min instead of 2 h).
             previous = dao.getOldestSnapshot();
         }
         if (previous == null || previous.timestamp >= current.timestamp) {
             return new PeriodStats(Collections.emptyList(), false, 0,
-                    "Недостаточно истории. Данные накапливаются — зайдите позже.");
+                    context.getString(R.string.stats_no_data_hint_no_history));
         }
 
         double actualHours = (current.timestamp - previous.timestamp) / 3600_000.0;
         if (actualHours < 0.08) {
             return new PeriodStats(Collections.emptyList(), false, 0,
-                    "Снапшоты слишком близко. Попробуйте позже.");
+                    context.getString(R.string.stats_no_data_hint_too_close));
         }
 
         // Load all snapshots in the window, ordered by (packageName, timestamp)
