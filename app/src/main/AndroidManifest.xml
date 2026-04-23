@@ -17,10 +17,6 @@
         android:supportsRtl="true" 
         android:theme="@style/AppTheme">
         <activity
-            android:name=".HelpActivity"
-            android:label="Help"
-            android:theme="@style/AppTheme" />
-        <activity
             android:name=".AppResourceDetailActivity"
             android:parentActivityName=".StatisticsActivity"
             android:theme="@style/AppTheme" />
