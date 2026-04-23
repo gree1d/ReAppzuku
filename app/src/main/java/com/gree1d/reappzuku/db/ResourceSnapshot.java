@@ -4,13 +4,7 @@ import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-/**
- * Room entity — one resource snapshot for one app at one point in time.
- *
- * A snapshot is taken every 30–60 minutes by BatteryStatsManager.
- * Period stats (2h/6h/12h/24h) are derived by diff-ing two snapshots
- * bracketing the desired time window.
- */
+
 @Entity(
     tableName = "resource_snapshots",
     indices = {
@@ -49,4 +43,19 @@ public class ResourceSnapshot {
      * To get CPU activity for a period, diff two snapshots.
      */
     public long cpuTimeMs;
+
+    /**
+     * Total CPU jiffies (all states: user+nice+system+idle+iowait+irq+softirq)
+     * across all cores, read from /proc/stat at snapshot time.
+     * 1 jiffy = 10 ms (USER_HZ = 100 on Android).
+     * Used as the denominator for accurate per-app CPU % calculation.
+     */
+    public long totalCpuJiffies;
+
+    /**
+     * Active CPU jiffies (totalCpuJiffies - idle - iowait) across all cores.
+     * Represents the "wall-clock CPU capacity actually used" baseline.
+     * appCpuPct = dAppCpuMs / (dTotalJiffies * 10) * 100
+     */
+    public long activeCpuJiffies;
 }

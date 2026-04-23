@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.annotation.NonNull;
 
-@Database(entities = {AppStats.class, ResourceSnapshot.class}, version = 3, exportSchema = true)
+@Database(entities = {AppStats.class, ResourceSnapshot.class}, version = 4, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
     private static AppDatabase instance;
 
@@ -28,6 +28,14 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE resource_snapshots ADD COLUMN totalCpuJiffies INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("ALTER TABLE resource_snapshots ADD COLUMN activeCpuJiffies INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
     public abstract AppStatsDao appStatsDao();
     public abstract ResourceSnapshotDao resourceSnapshotDao();
 
@@ -35,7 +43,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (instance == null) {
             instance = Room.databaseBuilder(context.getApplicationContext(),
                     AppDatabase.class, "appzuku_db")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build();
         }
         return instance;
