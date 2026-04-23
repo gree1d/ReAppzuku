@@ -155,20 +155,20 @@ public class BatteryStatsManager {
         public final String appName;
         /** Battery drain estimate in mAh over the period. */
         public final double batteryMah;
-        /** CPU time fraction over the period, 0.0–1.0. */
-        public final double cpuFraction;
+        /** Actual CPU usage over the period as % of wall-clock time (0–100+). */
+        public final double cpuPct;
         /** Average RAM in MB (PSS) over the period. */
         public final double ramMb;
         /** Whether this app is ReAppzuku itself. */
         public final boolean isSelf;
 
         public AppResourceStats(String packageName, String appName,
-                                double batteryMah, double cpuFraction, double ramMb,
+                                double batteryMah, double cpuPct, double ramMb,
                                 boolean isSelf) {
             this.packageName = packageName;
             this.appName     = appName;
             this.batteryMah  = batteryMah;
-            this.cpuFraction = cpuFraction;
+            this.cpuPct      = cpuPct;
             this.ramMb       = ramMb;
             this.isSelf      = isSelf;
         }
@@ -263,6 +263,11 @@ public class BatteryStatsManager {
         Map<String, Double> ramMbByPkg = new HashMap<>();
         collectProcStatsRam(24, ramMbByPkg);
 
+        // 3. System-wide CPU baseline from /proc/stat (no root required).
+        // Stored in every snapshot row so period queries can compute accurate
+        // per-app CPU% using: appCpuPct = dAppCpuMs / (dTotalJiffies * 10) * 100
+        long[] jiffies = readProcStatJiffies(); // [totalJiffies, activeJiffies]
+
         // 4. Merge into one snapshot row per package
         java.util.Set<String> allPkgs = new java.util.HashSet<>();
         allPkgs.addAll(batteryMahByPkg.keySet());
@@ -271,11 +276,13 @@ public class BatteryStatsManager {
 
         for (String pkg : allPkgs) {
             ResourceSnapshot snap = new ResourceSnapshot();
-            snap.timestamp   = now;
-            snap.packageName = pkg;
-            snap.batteryMah  = getOrZero(batteryMahByPkg, pkg);
-            snap.ramMb       = getOrZero(ramMbByPkg, pkg);
-            snap.cpuTimeMs   = cpuMsByPkg.containsKey(pkg) ? cpuMsByPkg.get(pkg) : 0L;
+            snap.timestamp       = now;
+            snap.packageName     = pkg;
+            snap.batteryMah      = getOrZero(batteryMahByPkg, pkg);
+            snap.ramMb           = getOrZero(ramMbByPkg, pkg);
+            snap.cpuTimeMs       = cpuMsByPkg.containsKey(pkg) ? cpuMsByPkg.get(pkg) : 0L;
+            snap.totalCpuJiffies  = jiffies[0];
+            snap.activeCpuJiffies = jiffies[1];
             dao.insert(snap);
         }
 
@@ -408,6 +415,55 @@ public class BatteryStatsManager {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // Private — /proc/stat CPU baseline (no root required)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Reads the first "cpu" line from /proc/stat and returns cumulative jiffies.
+     *
+     * /proc/stat first line format:
+     *   cpu  user nice system idle iowait irq softirq steal guest guest_nice
+     *
+     * All values are in USER_HZ units (jiffies). On Android, USER_HZ = 100,
+     * so 1 jiffy = 10 ms.  The values are cumulative since boot, summed across
+     * ALL cores.
+     *
+     * Returns long[2]:
+     *   [0] totalJiffies  = sum of all fields
+     *   [1] activeJiffies = totalJiffies - idle - iowait
+     *
+     * On failure returns {0, 0} — callers should treat 0 as "no data".
+     */
+    @WorkerThread
+    @NonNull
+    private long[] readProcStatJiffies() {
+        try (java.io.BufferedReader br = new java.io.BufferedReader(
+                new java.io.FileReader("/proc/stat"))) {
+            String line = br.readLine(); // first line: "cpu  ..."
+            if (line == null || !line.startsWith("cpu ")) return new long[]{0, 0};
+
+            String[] parts = line.trim().split("\\s+");
+            // parts[0] = "cpu", parts[1..] = jiffie fields
+            if (parts.length < 5) return new long[]{0, 0};
+
+            long total  = 0;
+            long idle   = 0;
+            long iowait = 0;
+            for (int i = 1; i < parts.length; i++) {
+                long v = Long.parseLong(parts[i]);
+                total += v;
+                if (i == 4) idle   = v; // field index 4 = idle
+                if (i == 5) iowait = v; // field index 5 = iowait
+            }
+            long active = total - idle - iowait;
+            return new long[]{total, active};
+        } catch (Exception e) {
+            Log.w(TAG, "readProcStatJiffies failed", e);
+            return new long[]{0, 0};
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // Private — period aggregation
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -484,19 +540,33 @@ public class BatteryStatsManager {
             }
         }
 
-        // Resolve app names and compute CPU fractions
+        // Resolve app names and compute accurate CPU %.
+        //
+        // Denominator priority:
+        //   1. dTotalJiffies from /proc/stat (stored in snapshots since v4).
+        //      Formula: cpuPct = dAppCpuMs / (dTotalJiffies * 10) * 100
+        //      dTotalJiffies * 10 converts jiffies → ms (USER_HZ=100 → 1 jiffy=10ms),
+        //      giving the total CPU-time capacity across all cores for the period.
+        //      This is the most accurate baseline: app load relative to all CPU cores.
+        //   2. Fallback to wall-clock elapsed time for snapshots without jiffies data
+        //      (rows collected before DB migration to v4, where totalCpuJiffies = 0).
         android.content.pm.PackageManager pm = context.getPackageManager();
         List<AppResourceStats> result = new ArrayList<>();
 
-        double totalCpuMs = 0;
-        for (double[] vals : perPkg.values()) totalCpuMs += vals[2];
+        // jiffies are cumulative since boot (never reset on charge), so first-vs-last is fine
+        long dTotalJiffies = current.totalCpuJiffies - previous.totalCpuJiffies;
+        // dTotalJiffies * 10 = total CPU capacity in ms across all cores for the period
+        double cpuDenominatorMs = dTotalJiffies > 0
+                ? dTotalJiffies * 10.0
+                : actualHours * 3600_000.0; // fallback: wall-clock ms (single-core equivalent)
 
         for (Map.Entry<String, double[]> e : perPkg.entrySet()) {
             String pkg = e.getKey();
             double[] v = e.getValue();
             String name = resolveAppName(pm, pkg);
-            double cpuFraction = totalCpuMs > 0 ? v[2] / totalCpuMs : 0;
-            result.add(new AppResourceStats(pkg, name, v[0], cpuFraction, v[1],
+            // v[2] = total CPU ms accumulated by this app over the period
+            double cpuPct = cpuDenominatorMs > 0 ? v[2] / cpuDenominatorMs * 100.0 : 0;
+            result.add(new AppResourceStats(pkg, name, v[0], cpuPct, v[1],
                     pkg.equals(context.getPackageName())));
         }
 
@@ -530,16 +600,19 @@ public class BatteryStatsManager {
             }
             if (prev == null || curr == null || prev == curr) continue;
 
-            double dBat = Math.max(0, curr.batteryMah - prev.batteryMah);
-            double dCpuMs = Math.max(0, curr.cpuTimeMs - prev.cpuTimeMs);
-            // Normalize CPU by actual elapsed time between these two snapshots,
-            // not the fixed 1-hour bucket. prev/curr may span multiple hours when
-            // snapshots are sparse, so dividing by 3_600_000 would over-report usage.
-            long actualElapsedMs = curr.timestamp - prev.timestamp;
-            double cpuPct = actualElapsedMs > 0
-                    ? (dCpuMs / (double) actualElapsedMs) * 100.0
+            double dBat   = Math.max(0, curr.batteryMah - prev.batteryMah);
+            double dCpuMs = Math.max(0, curr.cpuTimeMs  - prev.cpuTimeMs);
+
+            // Use /proc/stat jiffies as denominator when available (v4+ snapshots).
+            // Fallback: actual elapsed ms between the two snapshots.
+            long dTotalJiffies = curr.totalCpuJiffies - prev.totalCpuJiffies;
+            double cpuDenominatorMs = dTotalJiffies > 0
+                    ? dTotalJiffies * 10.0
+                    : (double)(curr.timestamp - prev.timestamp);
+            double cpuPct = cpuDenominatorMs > 0
+                    ? (dCpuMs / cpuDenominatorMs) * 100.0
                     : 0.0;
-            double ram    = curr.ramMb;
+            double ram = curr.ramMb;
 
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTimeInMillis(bucketStart);
