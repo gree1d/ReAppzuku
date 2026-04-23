@@ -251,7 +251,7 @@ public class StatisticsActivity extends BaseActivity {
                 if (s.isSelf) { selfStats = s; continue; }
                 totalBatteryMah  += s.batteryMah;
                 totalRamMb       += s.ramMb;
-                totalCpuFraction += s.cpuFraction;
+                totalCpuFraction += s.cpuPct;
             }
 
             // Battery saved tile: show as % of assumed capacity, floored at 0.1
@@ -266,14 +266,14 @@ public class StatisticsActivity extends BaseActivity {
             binding.infoRamRecoveredValue.setText(formatRamMb(totalRamMb));
 
             // CPU reduced tile: sum cpu fraction × 100 → show as %
-            String cpuText = String.format(Locale.US, "%.1f%%", totalCpuFraction * 100.0);
+            String cpuText = String.format(Locale.US, "%.1f%%", totalCpuFraction);
             binding.infoCpuReducedValue.setText(cpuText);
 
             // ── Self overhead row ─────────────────────────────────────────
             if (selfStats != null) {
                 double selfBatPct = (selfStats.batteryMah / BATTERY_CAPACITY_MAH) * 100.0;
                 binding.tvSelfBat.setText(String.format(Locale.US, "%.1f%%", selfBatPct));
-                binding.tvSelfCpu.setText(String.format(Locale.US, "%.1f%%", selfStats.cpuFraction * 100.0));
+                binding.tvSelfCpu.setText(String.format(Locale.US, "%.1f%%", selfStats.cpuPct));
                 binding.tvSelfRam.setText(formatRamMb(selfStats.ramMb));
                 binding.layoutSelfOverhead.setVisibility(View.VISIBLE);
             } else {
@@ -302,7 +302,7 @@ public class StatisticsActivity extends BaseActivity {
         int count = 0;
         for (BatteryStatsManager.AppResourceStats s : sorted) {
             totalBat += s.batteryMah;
-            totalCpu += s.cpuFraction;
+            totalCpu += s.cpuPct;
             totalRam += s.ramMb;
             count++;
         }
@@ -314,7 +314,7 @@ public class StatisticsActivity extends BaseActivity {
                 break;
             case CHART_CPU:
                 binding.tvChartTotal.setText(
-                        String.format(Locale.US, "%.0f%%", totalCpu * 100));
+                        String.format(Locale.US, "%.1f%%", totalCpu));
                 break;
             case CHART_RAM:
                 binding.tvChartTotal.setText(
@@ -452,7 +452,7 @@ public class StatisticsActivity extends BaseActivity {
         if (s == null) return 0;
         switch (m) {
             case BATTERY: return s.batteryMah;
-            case CPU:     return s.cpuFraction * 100;
+            case CPU:     return s.cpuPct;
             case RAM:     return s.ramMb;
             default:      return 0;
         }
@@ -462,7 +462,7 @@ public class StatisticsActivity extends BaseActivity {
         if (s == null) return "";
         switch (m) {
             case BATTERY: return String.format(Locale.US, "%.2f mAh", s.batteryMah);
-            case CPU:     return String.format(Locale.US, "%.1f%%", s.cpuFraction * 100);
+            case CPU:     return String.format(Locale.US, "%.1f%%", s.cpuPct);
             case RAM:     return formatRamMb(s.ramMb);
             default:      return "";
         }
