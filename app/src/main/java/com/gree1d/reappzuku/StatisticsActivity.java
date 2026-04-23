@@ -58,8 +58,12 @@ public class StatisticsActivity extends BaseActivity {
 
     private static final int[] CHART_PERIODS_HOURS = { 2, 6, 12, 24 };
 
-    /** Assumed battery capacity in mAh for converting mAh → percent. */
-    private static final double BATTERY_CAPACITY_MAH = 4000.0;
+    /**
+     * Real battery capacity in mAh, read from /sys/class/power_supply/battery/charge_full_design.
+     * Falls back to charge_full, then to 4000 mAh if neither is readable.
+     * Initialized once in onCreate().
+     */
+    private double batteryCapacityMah = 4000.0;
 
     /** Chart indices */
     private static final int CHART_BATTERY = 0;
@@ -126,6 +130,7 @@ public class StatisticsActivity extends BaseActivity {
         setupChartPager();
         setupListeners();
 
+        batteryCapacityMah = readBatteryCapacityMah();
         batteryStatsManager.takeSnapshotAsync(() -> loadCharts(CHART_PERIODS_HOURS[selectedPeriodIdx]));
     }
 
@@ -256,7 +261,7 @@ public class StatisticsActivity extends BaseActivity {
 
             // Battery saved tile: show as % of assumed capacity, floored at 0.1
             final double finalBatMah = totalBatteryMah;
-            double batPct = (totalBatteryMah / BATTERY_CAPACITY_MAH) * 100.0;
+            double batPct = (totalBatteryMah / batteryCapacityMah) * 100.0;
             String batText = batPct >= 0.1
                     ? String.format(Locale.US, "%.1f%%", batPct)
                     : getString(R.string.stats_battery_trace);
@@ -271,7 +276,7 @@ public class StatisticsActivity extends BaseActivity {
 
             // ── Self overhead row ─────────────────────────────────────────
             if (selfStats != null) {
-                double selfBatPct = (selfStats.batteryMah / BATTERY_CAPACITY_MAH) * 100.0;
+                double selfBatPct = (selfStats.batteryMah / batteryCapacityMah) * 100.0;
                 binding.tvSelfBat.setText(String.format(Locale.US, "%.1f%%", selfBatPct));
                 binding.tvSelfCpu.setText(String.format(Locale.US, "%.1f%%", selfStats.cpuPct));
                 binding.tvSelfRam.setText(formatRamMb(selfStats.ramMb));
@@ -974,6 +979,40 @@ public class StatisticsActivity extends BaseActivity {
     private String formatRamMb(double mb) {
         if (mb < 1024.0) return getString(R.string.unit_mb, (int) mb);
         return getString(R.string.unit_gb, mb / 1024.0);
+    }
+
+    /**
+     * Reads the real battery design capacity from the kernel power supply sysfs.
+     *
+     * Priority:
+     *   1. /sys/class/power_supply/battery/charge_full_design  (design max, most accurate)
+     *   2. /sys/class/power_supply/battery/charge_full         (current learned max)
+     *   3. 4000 mAh fallback
+     *
+     * Both files return capacity in µAh → divide by 1000 to get mAh.
+     */
+    private double readBatteryCapacityMah() {
+        String[] paths = {
+            "/sys/class/power_supply/battery/charge_full_design",
+            "/sys/class/power_supply/battery/charge_full"
+        };
+        for (String path : paths) {
+            try (java.io.BufferedReader br = new java.io.BufferedReader(
+                    new java.io.FileReader(path))) {
+                String line = br.readLine();
+                if (line != null) {
+                    long uah = Long.parseLong(line.trim());
+                    if (uah > 0) {
+                        double mah = uah / 1000.0;
+                        android.util.Log.d("StatisticsActivity",
+                                "Battery capacity from " + path + ": " + mah + " mAh");
+                        return mah;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        android.util.Log.w("StatisticsActivity", "Could not read battery capacity, using 4000 mAh fallback");
+        return 4000.0;
     }
 
     @Override
