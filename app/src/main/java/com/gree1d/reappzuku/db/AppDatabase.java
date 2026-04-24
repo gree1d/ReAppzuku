@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.annotation.NonNull;
 
-@Database(entities = {AppStats.class, ResourceSnapshot.class}, version = 5, exportSchema = true)
+@Database(entities = {AppStats.class, ResourceSnapshot.class}, version = 6, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
     private static AppDatabase instance;
 

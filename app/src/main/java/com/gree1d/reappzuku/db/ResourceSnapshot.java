@@ -68,4 +68,13 @@ public class ResourceSnapshot {
      * non-mAh units on MIUI/HyperOS.
      */
     public int batteryLevelPct;
+
+    /**
+     * Sum of raw pwi values across ALL apps in this snapshot batch.
+     * Stored once per batch (same value in every row with the same timestamp).
+     * Used in per-app hourly charts to normalize raw batteryMah → real mAh:
+     *   appMah = (snap.batteryMah / snap.totalRawPwiBatch) * drainMah
+     * 0 means not available (snapshots collected before this field was added).
+     */
+    public double totalRawPwiBatch;
 }
