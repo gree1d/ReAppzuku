@@ -195,13 +195,19 @@ public class BatteryStatsManager {
         public final boolean hasData;
         public final double actualHours;
         public final String dataHint;
+        /**
+         * True when data exists but covers less than half of the requested period.
+         * The UI should show an "Incomplete data" warning instead of hiding the chart.
+         */
+        public final boolean isPartialData;
 
         PeriodStats(List<AppResourceStats> sorted, boolean hasData,
-                    double actualHours, String dataHint) {
-            this.sorted      = sorted;
-            this.hasData     = hasData;
-            this.actualHours = actualHours;
-            this.dataHint    = dataHint;
+                    double actualHours, String dataHint, boolean isPartialData) {
+            this.sorted        = sorted;
+            this.hasData       = hasData;
+            this.actualHours   = actualHours;
+            this.dataHint      = dataHint;
+            this.isPartialData = isPartialData;
         }
     }
 
@@ -231,13 +237,29 @@ public class BatteryStatsManager {
     public void getHourlyStatsAsync(String packageName, int hours,
                                     @NonNull HourlyCallback callback) {
         executor.execute(() -> {
-            List<HourlyPoint> points = getHourlyStatsBlocking(packageName, hours);
-            handler.post(() -> callback.onResult(points));
+            HourlyResult result = getHourlyStatsBlocking(packageName, hours);
+            handler.post(() -> callback.onResult(result));
         });
     }
 
     public interface StatsCallback  { void onResult(PeriodStats stats); }
-    public interface HourlyCallback { void onResult(List<HourlyPoint> points); }
+    public interface HourlyCallback { void onResult(HourlyResult result); }
+
+    /** Result of a per-app hourly query, including partial-data metadata. */
+    public static class HourlyResult {
+        public final List<HourlyPoint> points;
+        /**
+         * True when the 2h period is requested but actual data covers less than
+         * 90% of the window. The UI should show an "Incomplete data" warning.
+         * Always false for 6h / 12h / 24h (those return empty points if not full).
+         */
+        public final boolean isPartialData;
+
+        HourlyResult(List<HourlyPoint> points, boolean isPartialData) {
+            this.points        = points;
+            this.isPartialData = isPartialData;
+        }
+    }
 
     /** One data point on the per-app hourly graph. */
     public static class HourlyPoint {
@@ -591,7 +613,7 @@ public class BatteryStatsManager {
 
         if (current == null) {
             return new PeriodStats(Collections.emptyList(), false, 0,
-                    context.getString(R.string.stats_no_data_hint_no_snapshot));
+                    context.getString(R.string.stats_no_data_hint_no_snapshot), false);
         }
 
         // Search for previous snapshot strictly before current.timestamp (not before target).
@@ -608,21 +630,32 @@ public class BatteryStatsManager {
         // would silently reuse the same oldest snapshot and show identical charts.
         if (previous == null) {
             return new PeriodStats(Collections.emptyList(), false, 0,
-                    context.getString(R.string.stats_no_data_hint_no_history));
+                    context.getString(R.string.stats_no_data_hint_no_history), false);
         }
         // If previous is newer than the requested period start, we still have
         // some data — just a shorter window than requested. That is fine; actualHours
         // will reflect the real span. Only reject if previous == current (same batch).
         if (previous.timestamp >= current.timestamp) {
             return new PeriodStats(Collections.emptyList(), false, 0,
-                    context.getString(R.string.stats_no_data_hint_no_history));
+                    context.getString(R.string.stats_no_data_hint_no_history), false);
         }
 
         double actualHours = (current.timestamp - previous.timestamp) / 3600_000.0;
         if (actualHours < 0.08) {
             return new PeriodStats(Collections.emptyList(), false, 0,
-                    context.getString(R.string.stats_no_data_hint_too_close));
+                    context.getString(R.string.stats_no_data_hint_too_close), false);
         }
+
+        // For periods > 2h: data must cover at least 90% of the requested window.
+        // Showing a "6h" chart with 1h of data would be misleading.
+        // For the 2h period: always show whatever exists — even 30 min — with isPartialData=true.
+        if (hours > 2 && actualHours < hours * 0.9) {
+            return new PeriodStats(Collections.emptyList(), false, 0,
+                    context.getString(R.string.stats_no_data_hint_no_history), false);
+        }
+
+        // 2h period: flag as partial if actual coverage is less than the full requested window.
+        boolean isPartialData = (hours == 2) && (actualHours < hours * 0.9);
 
         // Load all snapshots in the window, ordered by (packageName, timestamp)
         List<ResourceSnapshot> windowSnaps =
@@ -695,15 +728,14 @@ public class BatteryStatsManager {
         }
 
         // ── CPU denominator ──────────────────────────────────────────────────
-        // Use /proc/stat jiffies when available (v4+ snapshots), divide by core
-        // count so 100% = "one full core used", matching standard Android monitors.
+        // Denominator = total jiffies * 10ms (full all-cores capacity), no per-core
+        // division — so 100% = one full core equivalent consumed by this app.
+        // cpuTimeMs from batterystats is multi-thread sum so dividing by cores
+        // would produce values > 100% on heavily-threaded apps.
         // Fallback: wall-clock elapsed ms (single-core equivalent).
         long dTotalJiffies = current.totalCpuJiffies - previous.totalCpuJiffies;
-        int cores = getCpuCoreCount();
-        // dTotalJiffies * 10 = total CPU capacity in ms across ALL cores
-        // dividing by cores gives single-core equivalent denominator → 0-100% range
         double cpuDenominatorMs = dTotalJiffies > 0
-                ? (dTotalJiffies * 10.0) / cores
+                ? (dTotalJiffies * 10.0)
                 : actualHours * 3600_000.0;
 
         for (Map.Entry<String, double[]> e : perPkg.entrySet()) {
@@ -717,14 +749,19 @@ public class BatteryStatsManager {
             double batteryMah = batteryNormalizationValid && totalRawPwi > 0
                     ? (v[0] / totalRawPwi) * drainMah
                     : 0;
-            double cpuPct = cpuDenominatorMs > 0 ? v[2] / cpuDenominatorMs * 100.0 : 0;
+            // cpuTimeMs from batterystats is user+system ms summed across all threads,
+            // so it can exceed wall-clock on multi-core devices.
+            // Denominator = total jiffies * 10ms (all-cores capacity) — no per-core division —
+            // so 100% means "this app consumed one full core equivalent". Clamp to 100.
+            double cpuPct = Math.min(100.0,
+                    cpuDenominatorMs > 0 ? v[2] / cpuDenominatorMs * 100.0 : 0);
 
             result.add(new AppResourceStats(pkg, name, batteryMah, cpuPct, avgRamMb, peakRamMb,
                     pkg.equals(context.getPackageName())));
         }
 
         result.sort((a, b) -> Double.compare(b.batteryMah, a.batteryMah));
-        return new PeriodStats(result, true, actualHours, null);
+        return new PeriodStats(result, true, actualHours, null, isPartialData);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -733,14 +770,24 @@ public class BatteryStatsManager {
 
     @WorkerThread
     @NonNull
-    private List<HourlyPoint> getHourlyStatsBlocking(String packageName, int hours) {
+    private HourlyResult getHourlyStatsBlocking(String packageName, int hours) {
         long now   = System.currentTimeMillis();
         long start = now - (long) hours * 3600_000L;
 
         List<ResourceSnapshot> snaps =
                 dao.getSnapshotsForPackageBetween(packageName, start, now);
         List<HourlyPoint> points = new ArrayList<>();
-        if (snaps.size() < 2) return points;
+        if (snaps.size() < 2) return new HourlyResult(points, false);
+
+        // For periods > 2h: require that the oldest snapshot covers at least 90% of
+        // the window. Showing a "6h" graph with 40 min of data is misleading.
+        // For the 2h period: always render whatever exists and flag as partial if needed.
+        long firstSnapTime = snaps.get(0).timestamp;
+        double actualHours = (now - firstSnapTime) / 3600_000.0;
+        if (hours > 2 && actualHours < hours * 0.9) {
+            return new HourlyResult(points, false); // empty — caller shows no-data state
+        }
+        boolean isPartialData = (hours == 2) && (actualHours < hours * 0.9);
 
         for (int h = 0; h < hours; h++) {
             long bucketStart = start + (long) h * 3600_000L;
@@ -756,15 +803,18 @@ public class BatteryStatsManager {
             double dBatRaw = Math.max(0, curr.batteryMah - prev.batteryMah);
             double dCpuMs  = Math.max(0, curr.cpuTimeMs  - prev.cpuTimeMs);
 
-            // Use /proc/stat jiffies as denominator, divide by core count for 0-100% range.
+            // Use /proc/stat jiffies as denominator.
+            // Denominator = total jiffies * 10ms (full all-cores capacity), no per-core
+            // division — so 100% = one full core equivalent consumed by this app.
+            // cpuTimeMs from batterystats is multi-thread sum so dividing by cores
+            // would produce values > 100% on heavily-threaded apps. Clamp to 100.
             long dTotalJiffies = curr.totalCpuJiffies - prev.totalCpuJiffies;
-            int cores = getCpuCoreCount();
             double cpuDenominatorMs = dTotalJiffies > 0
-                    ? (dTotalJiffies * 10.0) / cores
+                    ? (dTotalJiffies * 10.0)
                     : (double)(curr.timestamp - prev.timestamp);
-            double cpuPct = cpuDenominatorMs > 0
+            double cpuPct = Math.min(100.0, cpuDenominatorMs > 0
                     ? (dCpuMs / cpuDenominatorMs) * 100.0
-                    : 0.0;
+                    : 0.0);
 
             // Battery: normalize raw pwi delta → real mAh using the batch-wide pwi sum
             // stored in totalRawPwiBatch (variant A — no extra DB queries needed).
@@ -788,7 +838,7 @@ public class BatteryStatsManager {
                     cal.get(java.util.Calendar.HOUR_OF_DAY));
             points.add(new HourlyPoint(label, batteryMah, cpuPct, ram));
         }
-        return points;
+        return new HourlyResult(points, isPartialData);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -26,7 +26,6 @@ import com.gree1d.reappzuku.databinding.ActivityAppResourceDetailBinding;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -140,24 +139,34 @@ public class AppResourceDetailActivity extends BaseActivity {
         binding.cardDetailCpu.setVisibility(View.GONE);
         binding.cardDetailRam.setVisibility(View.GONE);
 
-        batteryStatsManager.getHourlyStatsAsync(packageName, hours, points -> {
+        batteryStatsManager.getHourlyStatsAsync(packageName, hours, result -> {
             binding.layoutDetailLoading.setVisibility(View.GONE);
 
-            if (points == null || points.isEmpty()) {
+            if (result == null || result.points == null || result.points.isEmpty()) {
                 // No data yet — show hint in toolbar subtitle
+                binding.tvDetailPartialWarning.setVisibility(View.GONE);
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().setSubtitle(getString(R.string.stats_no_data_hint_short));
                 }
                 return;
             }
 
+            // Show "Incomplete data" warning for 2h period when not enough history yet
             if (getSupportActionBar() != null) getSupportActionBar().setSubtitle(null);
+            if (result.isPartialData) {
+                binding.tvDetailPartialWarning.setText(
+                        getString(R.string.stats_partial_data_warning));
+                binding.tvDetailPartialWarning.setVisibility(View.VISIBLE);
+            } else {
+                binding.tvDetailPartialWarning.setVisibility(View.GONE);
+            }
 
             binding.cardDetailBattery.setVisibility(View.VISIBLE);
             binding.cardDetailCpu.setVisibility(View.VISIBLE);
             binding.cardDetailRam.setVisibility(View.VISIBLE);
 
-            String[] labels = new String[points.size()];
+            List<BatteryStatsManager.HourlyPoint> points = result.points;
+            String[] labels  = new String[points.size()];
             float[]  battery = new float[points.size()];
             float[]  cpu     = new float[points.size()];
             float[]  ram     = new float[points.size()];
@@ -175,17 +184,23 @@ public class AppResourceDetailActivity extends BaseActivity {
             }
 
             int n = points.size();
-            binding.tvDetailBatteryAvg.setText(String.format(Locale.US, "Ср. %.2f mAh/ч", sumBattery / n));
-            binding.tvDetailCpuAvg.setText(String.format(Locale.US, "Ср. %.1f%%", sumCpu / n));
-            binding.tvDetailRamAvg.setText(String.format(Locale.US, "Ср. %.0f МБ", sumRam / n));
+            binding.tvDetailBatteryAvg.setText(getString(R.string.detail_avg_battery,
+                    sumBattery / n));
+            binding.tvDetailCpuAvg.setText(getString(R.string.detail_avg_cpu,
+                    sumCpu / n));
+            binding.tvDetailRamAvg.setText(getString(R.string.detail_avg_ram,
+                    sumRam / n));
 
             int colorBattery = ContextCompat.getColor(this, R.color.stats_battery);
             int colorCpu     = ContextCompat.getColor(this, R.color.stats_cpu);
             int colorRam     = ContextCompat.getColor(this, R.color.stats_ram);
 
-            buildLineChart(binding.chartDetailBattery, labels, battery, colorBattery, "mAh");
-            buildLineChart(binding.chartDetailCpu,     labels, cpu,     colorCpu,     "%");
-            buildLineChart(binding.chartDetailRam,     labels, ram,     colorRam,     "МБ");
+            buildLineChart(binding.chartDetailBattery, labels, battery, colorBattery,
+                    getString(R.string.unit_mah));
+            buildLineChart(binding.chartDetailCpu,     labels, cpu,     colorCpu,
+                    getString(R.string.unit_percent));
+            buildLineChart(binding.chartDetailRam,     labels, ram,     colorRam,
+                    getString(R.string.unit_mb_short));
         });
     }
 

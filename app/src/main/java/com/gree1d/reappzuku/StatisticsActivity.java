@@ -234,10 +234,20 @@ public class StatisticsActivity extends BaseActivity {
                 binding.cardNoData.setVisibility(View.VISIBLE);
                 binding.tvNoDataHint.setText(periodStats.dataHint);
                 binding.cardChartsPager.setVisibility(View.GONE);
+                binding.tvPartialDataWarning.setVisibility(View.GONE);
                 return;
             }
             binding.cardNoData.setVisibility(View.GONE);
             binding.cardChartsPager.setVisibility(View.VISIBLE);
+
+            // Show "Incomplete data" warning when actual coverage < 50% of requested period
+            if (periodStats.isPartialData) {
+                binding.tvPartialDataWarning.setText(
+                        getString(R.string.stats_partial_data_warning));
+                binding.tvPartialDataWarning.setVisibility(View.VISIBLE);
+            } else {
+                binding.tvPartialDataWarning.setVisibility(View.GONE);
+            }
 
             List<BatteryStatsManager.AppResourceStats> sorted = periodStats.sorted;
             currentSorted = sorted;
