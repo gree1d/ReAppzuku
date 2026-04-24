@@ -107,6 +107,21 @@
                 app:tabIndicatorHeight="2dp"
                  />
 
+            <!-- Partial data warning — shown for 2h period when history is insufficient -->
+            <TextView
+                android:id="@+id/tv_detail_partial_warning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:padding="10dp"
+                android:drawableStart="@android:drawable/ic_dialog_info"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:background="@android:color/transparent"
+                android:visibility="gone" />
+
             <!-- Loading indicator -->
             <LinearLayout
                 android:id="@+id/layout_detail_loading"
