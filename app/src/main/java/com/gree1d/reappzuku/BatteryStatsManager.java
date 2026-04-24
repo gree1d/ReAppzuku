@@ -122,6 +122,18 @@ public class BatteryStatsManager {
     private final ShellManager shellManager;
     private final ResourceSnapshotDao dao;
 
+    /**
+     * Battery design capacity in mAh, read once and cached.
+     * -1 means not yet initialized.
+     */
+    private volatile double cachedCapacityMah = -1;
+
+    /**
+     * Number of CPU cores, read once and cached.
+     * 0 means not yet initialized.
+     */
+    private volatile int cachedCpuCoreCount = 0;
+
     // ──────────────────────────────────────────────────────────────────────────
     // Public API
     // ──────────────────────────────────────────────────────────────────────────
@@ -264,11 +276,16 @@ public class BatteryStatsManager {
         collectProcStatsRam(24, ramMbByPkg);
 
         // 3. System-wide CPU baseline from /proc/stat (no root required).
-        // Stored in every snapshot row so period queries can compute accurate
-        // per-app CPU% using: appCpuPct = dAppCpuMs / (dTotalJiffies * 10) * 100
         long[] jiffies = readProcStatJiffies(); // [totalJiffies, activeJiffies]
 
-        // 4. Merge into one snapshot row per package
+        // 4. Battery level (0-100) — no root required.
+        android.os.BatteryManager bm =
+                (android.os.BatteryManager) context.getSystemService(Context.BATTERY_SERVICE);
+        int batteryLevel = bm != null
+                ? bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                : 50;
+
+        // 5. Merge into one snapshot row per package
         java.util.Set<String> allPkgs = new java.util.HashSet<>();
         allPkgs.addAll(batteryMahByPkg.keySet());
         allPkgs.addAll(ramMbByPkg.keySet());
@@ -276,13 +293,14 @@ public class BatteryStatsManager {
 
         for (String pkg : allPkgs) {
             ResourceSnapshot snap = new ResourceSnapshot();
-            snap.timestamp       = now;
-            snap.packageName     = pkg;
-            snap.batteryMah      = getOrZero(batteryMahByPkg, pkg);
-            snap.ramMb           = getOrZero(ramMbByPkg, pkg);
-            snap.cpuTimeMs       = cpuMsByPkg.containsKey(pkg) ? cpuMsByPkg.get(pkg) : 0L;
+            snap.timestamp        = now;
+            snap.packageName      = pkg;
+            snap.batteryMah       = getOrZero(batteryMahByPkg, pkg);
+            snap.ramMb            = getOrZero(ramMbByPkg, pkg);
+            snap.cpuTimeMs        = cpuMsByPkg.containsKey(pkg) ? cpuMsByPkg.get(pkg) : 0L;
             snap.totalCpuJiffies  = jiffies[0];
             snap.activeCpuJiffies = jiffies[1];
+            snap.batteryLevelPct  = batteryLevel;
             dao.insert(snap);
         }
 
@@ -293,6 +311,93 @@ public class BatteryStatsManager {
                 + "  battery=" + batteryMahByPkg.size()
                 + "  ram=" + ramMbByPkg.size()
                 + "  cpu=" + cpuMsByPkg.size());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Private — battery capacity & CPU core count (cached, no root required)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns battery design capacity in mAh, reading and caching it on first call.
+     *
+     * Priority:
+     *   1. /sys/class/power_supply/battery/charge_full_design  (µAh → /1000)
+     *   2. /sys/class/power_supply/battery/charge_full         (µAh → /1000)
+     *   3. dumpsys batterystats | grep Capacity  ("Capacity: 5100, ...")
+     *   4. 4000 mAh fallback
+     *
+     * Note: on MIUI/HyperOS the sysfs path returns Permission denied,
+     * so the dumpsys fallback is the real primary source on those devices.
+     */
+    @WorkerThread
+    public double getBatteryCapacityMah() {
+        if (cachedCapacityMah > 0) return cachedCapacityMah;
+
+        // 1 & 2: sysfs (works on stock Android, may be denied on MIUI)
+        String[] sysPaths = {
+            "/sys/class/power_supply/battery/charge_full_design",
+            "/sys/class/power_supply/battery/charge_full"
+        };
+        for (String path : sysPaths) {
+            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(path))) {
+                String line = br.readLine();
+                if (line != null) {
+                    long uah = Long.parseLong(line.trim());
+                    if (uah > 100_000) { // sanity: >100 mAh
+                        cachedCapacityMah = uah / 1000.0;
+                        Log.d(TAG, "Battery capacity from " + path + ": " + cachedCapacityMah + " mAh");
+                        return cachedCapacityMah;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 3: dumpsys batterystats — "Capacity: 5100, Computed drain: ..."
+        String output = shellManager.runCommandAndGetOutput(
+                "dumpsys batterystats | grep -m1 'Capacity:'");
+        if (output != null) {
+            java.util.regex.Matcher m =
+                    java.util.regex.Pattern.compile("Capacity:\\s*(\\d+)").matcher(output);
+            if (m.find()) {
+                double cap = Double.parseDouble(m.group(1));
+                if (cap > 100) {
+                    cachedCapacityMah = cap;
+                    Log.d(TAG, "Battery capacity from dumpsys: " + cachedCapacityMah + " mAh");
+                    return cachedCapacityMah;
+                }
+            }
+        }
+
+        Log.w(TAG, "Could not read battery capacity, using 4000 mAh fallback");
+        cachedCapacityMah = 4000.0;
+        return cachedCapacityMah;
+    }
+
+    /**
+     * Returns the number of CPU cores, reading and caching on first call.
+     *
+     * Reads /sys/devices/system/cpu/present which contains "0-N" (N+1 cores)
+     * or "0" (1 core). Falls back to Runtime.availableProcessors().
+     */
+    @WorkerThread
+    private int getCpuCoreCount() {
+        if (cachedCpuCoreCount > 0) return cachedCpuCoreCount;
+        try (java.io.BufferedReader br = new java.io.BufferedReader(
+                new java.io.FileReader("/sys/devices/system/cpu/present"))) {
+            String line = br.readLine();
+            if (line != null) {
+                String[] parts = line.trim().split("-");
+                cachedCpuCoreCount = parts.length == 2
+                        ? Integer.parseInt(parts[1]) + 1
+                        : 1;
+                Log.d(TAG, "CPU cores: " + cachedCpuCoreCount);
+                return cachedCpuCoreCount;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "readCpuCoreCount failed", e);
+        }
+        cachedCpuCoreCount = Runtime.getRuntime().availableProcessors();
+        return cachedCpuCoreCount;
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -540,33 +645,57 @@ public class BatteryStatsManager {
             }
         }
 
-        // Resolve app names and compute accurate CPU %.
-        //
-        // Denominator priority:
-        //   1. dTotalJiffies from /proc/stat (stored in snapshots since v4).
-        //      Formula: cpuPct = dAppCpuMs / (dTotalJiffies * 10) * 100
-        //      dTotalJiffies * 10 converts jiffies → ms (USER_HZ=100 → 1 jiffy=10ms),
-        //      giving the total CPU-time capacity across all cores for the period.
-        //      This is the most accurate baseline: app load relative to all CPU cores.
-        //   2. Fallback to wall-clock elapsed time for snapshots without jiffies data
-        //      (rows collected before DB migration to v4, where totalCpuJiffies = 0).
+        // Resolve app names, normalize battery mAh, compute accurate CPU %.
         android.content.pm.PackageManager pm = context.getPackageManager();
         List<AppResourceStats> result = new ArrayList<>();
 
-        // jiffies are cumulative since boot (never reset on charge), so first-vs-last is fine
+        // ── Battery normalization ──────────────────────────────────────────────
+        // On MIUI/HyperOS, pwi values from batterystats are NOT in mAh — they use
+        // an internal unit of unknown scale. To get real mAh per app, we:
+        //   1. Sum all apps' raw pwi deltas  → totalRawPwi
+        //   2. Compute actual total drain    → drainMah = dLevel/100 × capacityMah
+        //   3. Per-app mAh                  → appMah = (appRawPwi / totalRawPwi) × drainMah
+        //
+        // batteryLevelPct is stored in every snapshot (since DB v5).
+        // Rows without it (DEFAULT 0) are treated as "level unknown" → skip normalization.
+        double totalRawPwi = 0;
+        for (double[] v : perPkg.values()) totalRawPwi += v[0];
+
+        double drainMah = 0;
+        boolean batteryNormalizationValid = false;
+        if (previous.batteryLevelPct > 0 && current.batteryLevelPct > 0) {
+            double dLevel = previous.batteryLevelPct - current.batteryLevelPct;
+            if (dLevel > 0 && totalRawPwi > 0) {
+                double capacityMah = getBatteryCapacityMah();
+                drainMah = dLevel / 100.0 * capacityMah;
+                batteryNormalizationValid = true;
+            }
+        }
+
+        // ── CPU denominator ──────────────────────────────────────────────────
+        // Use /proc/stat jiffies when available (v4+ snapshots), divide by core
+        // count so 100% = "one full core used", matching standard Android monitors.
+        // Fallback: wall-clock elapsed ms (single-core equivalent).
         long dTotalJiffies = current.totalCpuJiffies - previous.totalCpuJiffies;
-        // dTotalJiffies * 10 = total CPU capacity in ms across all cores for the period
+        int cores = getCpuCoreCount();
+        // dTotalJiffies * 10 = total CPU capacity in ms across ALL cores
+        // dividing by cores gives single-core equivalent denominator → 0-100% range
         double cpuDenominatorMs = dTotalJiffies > 0
-                ? dTotalJiffies * 10.0
-                : actualHours * 3600_000.0; // fallback: wall-clock ms (single-core equivalent)
+                ? (dTotalJiffies * 10.0) / cores
+                : actualHours * 3600_000.0;
 
         for (Map.Entry<String, double[]> e : perPkg.entrySet()) {
             String pkg = e.getKey();
             double[] v = e.getValue();
             String name = resolveAppName(pm, pkg);
-            // v[2] = total CPU ms accumulated by this app over the period
+
+            // v[0] = raw pwi delta, v[2] = cpu ms delta
+            double batteryMah = batteryNormalizationValid && totalRawPwi > 0
+                    ? (v[0] / totalRawPwi) * drainMah
+                    : 0;
             double cpuPct = cpuDenominatorMs > 0 ? v[2] / cpuDenominatorMs * 100.0 : 0;
-            result.add(new AppResourceStats(pkg, name, v[0], cpuPct, v[1],
+
+            result.add(new AppResourceStats(pkg, name, batteryMah, cpuPct, v[1],
                     pkg.equals(context.getPackageName())));
         }
 
@@ -603,22 +732,26 @@ public class BatteryStatsManager {
             double dBat   = Math.max(0, curr.batteryMah - prev.batteryMah);
             double dCpuMs = Math.max(0, curr.cpuTimeMs  - prev.cpuTimeMs);
 
-            // Use /proc/stat jiffies as denominator when available (v4+ snapshots).
-            // Fallback: actual elapsed ms between the two snapshots.
+            // Use /proc/stat jiffies as denominator, divide by core count for 0-100% range.
             long dTotalJiffies = curr.totalCpuJiffies - prev.totalCpuJiffies;
+            int cores = getCpuCoreCount();
             double cpuDenominatorMs = dTotalJiffies > 0
-                    ? dTotalJiffies * 10.0
+                    ? (dTotalJiffies * 10.0) / cores
                     : (double)(curr.timestamp - prev.timestamp);
             double cpuPct = cpuDenominatorMs > 0
                     ? (dCpuMs / cpuDenominatorMs) * 100.0
                     : 0.0;
-            double ram = curr.ramMb;
+
+            // Battery: for per-app hourly chart use raw pwi delta (directional trend).
+            // Absolute mAh normalization requires sum-of-all-apps pwi per bucket,
+            // which is only available in getStatsForPeriodBlocking (pie chart).
+            double batteryMah = dBat;
 
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTimeInMillis(bucketStart);
             String label = String.format(Locale.US, "%02d:00",
                     cal.get(java.util.Calendar.HOUR_OF_DAY));
-            points.add(new HourlyPoint(label, dBat, cpuPct, ram));
+            points.add(new HourlyPoint(label, batteryMah, cpuPct, ram));
         }
         return points;
     }

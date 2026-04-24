@@ -130,7 +130,7 @@ public class StatisticsActivity extends BaseActivity {
         setupChartPager();
         setupListeners();
 
-        batteryCapacityMah = readBatteryCapacityMah();
+        batteryCapacityMah = batteryStatsManager.getBatteryCapacityMah();
         batteryStatsManager.takeSnapshotAsync(() -> loadCharts(CHART_PERIODS_HOURS[selectedPeriodIdx]));
     }
 
@@ -981,39 +981,6 @@ public class StatisticsActivity extends BaseActivity {
         return getString(R.string.unit_gb, mb / 1024.0);
     }
 
-    /**
-     * Reads the real battery design capacity from the kernel power supply sysfs.
-     *
-     * Priority:
-     *   1. /sys/class/power_supply/battery/charge_full_design  (design max, most accurate)
-     *   2. /sys/class/power_supply/battery/charge_full         (current learned max)
-     *   3. 4000 mAh fallback
-     *
-     * Both files return capacity in µAh → divide by 1000 to get mAh.
-     */
-    private double readBatteryCapacityMah() {
-        String[] paths = {
-            "/sys/class/power_supply/battery/charge_full_design",
-            "/sys/class/power_supply/battery/charge_full"
-        };
-        for (String path : paths) {
-            try (java.io.BufferedReader br = new java.io.BufferedReader(
-                    new java.io.FileReader(path))) {
-                String line = br.readLine();
-                if (line != null) {
-                    long uah = Long.parseLong(line.trim());
-                    if (uah > 0) {
-                        double mah = uah / 1000.0;
-                        android.util.Log.d("StatisticsActivity",
-                                "Battery capacity from " + path + ": " + mah + " mAh");
-                        return mah;
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-        android.util.Log.w("StatisticsActivity", "Could not read battery capacity, using 4000 mAh fallback");
-        return 4000.0;
-    }
 
     @Override
     protected void onDestroy() {
