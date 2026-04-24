@@ -303,12 +303,13 @@ public class StatisticsActivity extends BaseActivity {
         binding.chartCpu.setVisibility(currentChartIdx == CHART_CPU     ? View.VISIBLE : View.GONE);
         binding.chartRam.setVisibility(currentChartIdx == CHART_RAM     ? View.VISIBLE : View.GONE);
 
-        double totalBat = 0, totalCpu = 0, totalRam = 0;
+        double totalBat = 0, totalCpu = 0, totalRam = 0, peakRam = 0;
         int count = 0;
         for (BatteryStatsManager.AppResourceStats s : sorted) {
             totalBat += s.batteryMah;
             totalCpu += s.cpuPct;
             totalRam += s.ramMb;
+            if (s.peakRamMb > peakRam) peakRam = s.peakRamMb;
             count++;
         }
 
@@ -322,8 +323,11 @@ public class StatisticsActivity extends BaseActivity {
                         String.format(Locale.US, "%.1f%%", totalCpu));
                 break;
             case CHART_RAM:
-                binding.tvChartTotal.setText(
-                        getString(R.string.stats_chart_total_ram, formatRamMb(totalRam / Math.max(count, 1))));
+                // Show both average and peak PSS
+                binding.tvChartTotal.setText(String.format(Locale.US,
+                        "Ср. %s / Пик %s",
+                        formatRamMb(totalRam / Math.max(count, 1)),
+                        formatRamMb(peakRam)));
                 break;
         }
     }
@@ -468,7 +472,8 @@ public class StatisticsActivity extends BaseActivity {
         switch (m) {
             case BATTERY: return String.format(Locale.US, "%.2f mAh", s.batteryMah);
             case CPU:     return String.format(Locale.US, "%.1f%%", s.cpuPct);
-            case RAM:     return formatRamMb(s.ramMb);
+            case RAM:     return String.format(Locale.US, "Ср. %s / Пик %s",
+                              formatRamMb(s.ramMb), formatRamMb(s.peakRamMb));
             default:      return "";
         }
     }

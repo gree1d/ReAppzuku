@@ -171,17 +171,20 @@ public class BatteryStatsManager {
         public final double cpuPct;
         /** Average RAM in MB (PSS) over the period. */
         public final double ramMb;
+        /** Peak RAM in MB (max PSS snapshot) over the period. */
+        public final double peakRamMb;
         /** Whether this app is ReAppzuku itself. */
         public final boolean isSelf;
 
         public AppResourceStats(String packageName, String appName,
                                 double batteryMah, double cpuPct, double ramMb,
-                                boolean isSelf) {
+                                double peakRamMb, boolean isSelf) {
             this.packageName = packageName;
             this.appName     = appName;
             this.batteryMah  = batteryMah;
             this.cpuPct      = cpuPct;
             this.ramMb       = ramMb;
+            this.peakRamMb   = peakRamMb;
             this.isSelf      = isSelf;
         }
     }
@@ -619,29 +622,27 @@ public class BatteryStatsManager {
         //     • Charge-reset step:        negative delta → clamped to 0; only that
         //                                one step is lost; both pre- and post-charge
         //                                contributions are correctly counted.
-        Map<String, double[]> perPkg    = new HashMap<>(); // [batteryMah, ramMb, cpuMs]
+        Map<String, double[]> perPkg    = new HashMap<>(); // [batteryMah, ramSum, cpuMs, peakRam, snapCount]
         Map<String, ResourceSnapshot> prevByPkg = new HashMap<>();
 
         for (ResourceSnapshot snap : windowSnaps) {
             String pkg = snap.packageName;
             if (!prevByPkg.containsKey(pkg)) {
                 prevByPkg.put(pkg, snap);
+                // Initialize with first snapshot's RAM so peak is seeded correctly
+                perPkg.put(pkg, new double[]{ 0, snap.ramMb, 0, snap.ramMb, 1 });
             } else {
                 ResourceSnapshot prev = prevByPkg.get(pkg);
                 double dBat = Math.max(0, snap.batteryMah - prev.batteryMah);
                 double dCpu = Math.max(0, snap.cpuTimeMs  - prev.cpuTimeMs);
-                double dRam = snap.ramMb; // PSS is already an average — use latest value
 
                 double[] acc = perPkg.get(pkg);
-                if (acc == null) {
-                    acc = new double[]{ dBat, dRam, dCpu };
-                } else {
-                    acc[0] += dBat;
-                    acc[1]  = dRam;
-                    acc[2] += dCpu;
-                }
-                perPkg.put(pkg, acc);
-                prevByPkg.put(pkg, snap); // advance the sliding window
+                acc[0] += dBat;
+                acc[1] += snap.ramMb;          // accumulate for average
+                acc[2] += dCpu;
+                acc[3]  = Math.max(acc[3], snap.ramMb); // peak
+                acc[4] += 1;                   // snapshot count
+                prevByPkg.put(pkg, snap);
             }
         }
 
@@ -689,13 +690,15 @@ public class BatteryStatsManager {
             double[] v = e.getValue();
             String name = resolveAppName(pm, pkg);
 
-            // v[0] = raw pwi delta, v[2] = cpu ms delta
+            // v[1] = sum of PSS, v[3] = peak PSS, v[4] = snapshot count
+            double avgRamMb  = v[4] > 0 ? v[1] / v[4] : 0;
+            double peakRamMb = v[3];
             double batteryMah = batteryNormalizationValid && totalRawPwi > 0
                     ? (v[0] / totalRawPwi) * drainMah
                     : 0;
             double cpuPct = cpuDenominatorMs > 0 ? v[2] / cpuDenominatorMs * 100.0 : 0;
 
-            result.add(new AppResourceStats(pkg, name, batteryMah, cpuPct, v[1],
+            result.add(new AppResourceStats(pkg, name, batteryMah, cpuPct, avgRamMb, peakRamMb,
                     pkg.equals(context.getPackageName())));
         }
 
@@ -746,6 +749,7 @@ public class BatteryStatsManager {
             // Absolute mAh normalization requires sum-of-all-apps pwi per bucket,
             // which is only available in getStatsForPeriodBlocking (pie chart).
             double batteryMah = dBat;
+            double ram = curr.ramMb;
 
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTimeInMillis(bucketStart);
