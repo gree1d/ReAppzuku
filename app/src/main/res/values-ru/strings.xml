@@ -511,4 +511,17 @@
     <string name="unit_mb_precise">%.2f МБ</string>
     <string name="unit_gb">%.1f ГБ</string>
     <string name="unit_gb_precise">%.2f ГБ</string>
+
+    <!-- Предупреждение о неполных данных (период 2ч, данных меньше ~2ч) -->
+    <string name="stats_partial_data_warning">⚠ Неполные данные: история ещё накапливается</string>
+
+    <!-- Единицы измерения для графиков (detail activity) -->
+    <string name="unit_mah">mAh</string>
+    <string name="unit_percent">%</string>
+    <string name="unit_mb_short">МБ</string>
+
+    <!-- Средние значения для detail activity -->
+    <string name="detail_avg_battery">Ср. %.2f mAh/ч</string>
+    <string name="detail_avg_cpu">Ср. %.1f%%</string>
+    <string name="detail_avg_ram">Ср. %.0f МБ</string>
 </resources>
