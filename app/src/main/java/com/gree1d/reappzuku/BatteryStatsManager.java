@@ -294,6 +294,11 @@ public class BatteryStatsManager {
         allPkgs.addAll(ramMbByPkg.keySet());
         allPkgs.addAll(cpuMsByPkg.keySet());
 
+        // Pre-compute batch-wide sum of raw pwi values so hourly charts can
+        // normalize per-app batteryMah → real mAh without extra DB queries.
+        double totalRawPwiBatch = 0;
+        for (double v : batteryMahByPkg.values()) totalRawPwiBatch += v;
+
         for (String pkg : allPkgs) {
             ResourceSnapshot snap = new ResourceSnapshot();
             snap.timestamp        = now;
@@ -304,6 +309,7 @@ public class BatteryStatsManager {
             snap.totalCpuJiffies  = jiffies[0];
             snap.activeCpuJiffies = jiffies[1];
             snap.batteryLevelPct  = batteryLevel;
+            snap.totalRawPwiBatch = totalRawPwiBatch;
             dao.insert(snap);
         }
 
@@ -581,18 +587,33 @@ public class BatteryStatsManager {
         long now    = System.currentTimeMillis();
         long target = now - (long) hours * 3600_000L;
 
-        ResourceSnapshot current  = dao.getLatestSnapshot();
-        ResourceSnapshot previous = dao.getClosestSnapshotBefore(target);
+        ResourceSnapshot current = dao.getLatestSnapshot();
 
         if (current == null) {
             return new PeriodStats(Collections.emptyList(), false, 0,
                     context.getString(R.string.stats_no_data_hint_no_snapshot));
         }
+
+        // Search for previous snapshot strictly before current.timestamp (not before target).
+        // This avoids a false "no data" when all snapshots in the DB share the same timestamp
+        // (i.e. only one batch was ever collected): getClosestSnapshotBefore(target) would
+        // return a row from that same batch, giving previous.timestamp == current.timestamp.
+        // Using (current.timestamp - 1) guarantees we get a genuinely earlier batch.
+        // We then check that previous falls within the requested period window.
+        ResourceSnapshot previous = dao.getClosestSnapshotBefore(current.timestamp - 1);
+
         // No fallback to getOldestSnapshot() — if there is no snapshot before the
         // requested period boundary, report "no data" for this period.
         // Without this guard every period with insufficient history (6h, 12h, 24h)
         // would silently reuse the same oldest snapshot and show identical charts.
-        if (previous == null || previous.timestamp >= current.timestamp) {
+        if (previous == null) {
+            return new PeriodStats(Collections.emptyList(), false, 0,
+                    context.getString(R.string.stats_no_data_hint_no_history));
+        }
+        // If previous is newer than the requested period start, we still have
+        // some data — just a shorter window than requested. That is fine; actualHours
+        // will reflect the real span. Only reject if previous == current (same batch).
+        if (previous.timestamp >= current.timestamp) {
             return new PeriodStats(Collections.emptyList(), false, 0,
                     context.getString(R.string.stats_no_data_hint_no_history));
         }
@@ -732,8 +753,8 @@ public class BatteryStatsManager {
             }
             if (prev == null || curr == null || prev == curr) continue;
 
-            double dBat   = Math.max(0, curr.batteryMah - prev.batteryMah);
-            double dCpuMs = Math.max(0, curr.cpuTimeMs  - prev.cpuTimeMs);
+            double dBatRaw = Math.max(0, curr.batteryMah - prev.batteryMah);
+            double dCpuMs  = Math.max(0, curr.cpuTimeMs  - prev.cpuTimeMs);
 
             // Use /proc/stat jiffies as denominator, divide by core count for 0-100% range.
             long dTotalJiffies = curr.totalCpuJiffies - prev.totalCpuJiffies;
@@ -745,10 +766,20 @@ public class BatteryStatsManager {
                     ? (dCpuMs / cpuDenominatorMs) * 100.0
                     : 0.0;
 
-            // Battery: for per-app hourly chart use raw pwi delta (directional trend).
-            // Absolute mAh normalization requires sum-of-all-apps pwi per bucket,
-            // which is only available in getStatsForPeriodBlocking (pie chart).
-            double batteryMah = dBat;
+            // Battery: normalize raw pwi delta → real mAh using the batch-wide pwi sum
+            // stored in totalRawPwiBatch (variant A — no extra DB queries needed).
+            // On MIUI/HyperOS pwi values are not in mAh, so without this normalization
+            // the chart would show values in the hundreds of millions.
+            double batteryMah = 0;
+            if (dBatRaw > 0
+                    && curr.totalRawPwiBatch > 0
+                    && prev.batteryLevelPct > 0
+                    && curr.batteryLevelPct > 0
+                    && prev.batteryLevelPct > curr.batteryLevelPct) {
+                double dLevel   = prev.batteryLevelPct - curr.batteryLevelPct;
+                double drainMah = dLevel / 100.0 * getBatteryCapacityMah();
+                batteryMah = (dBatRaw / curr.totalRawPwiBatch) * drainMah;
+            }
             double ram = curr.ramMb;
 
             java.util.Calendar cal = java.util.Calendar.getInstance();
