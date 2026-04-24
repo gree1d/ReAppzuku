@@ -58,4 +58,14 @@ public class ResourceSnapshot {
      * appCpuPct = dAppCpuMs / (dTotalJiffies * 10) * 100
      */
     public long activeCpuJiffies;
+
+    /**
+     * Battery level percentage (0–100) at the time of this snapshot.
+     * Read from BatteryManager.BATTERY_PROPERTY_CAPACITY (no root required).
+     * Used to compute actual drain in mAh between two snapshots:
+     *   drainMah = (prev.batteryLevelPct - curr.batteryLevelPct) / 100.0 * capacityMah
+     * This normalizes the raw pwi values from batterystats which may be in
+     * non-mAh units on MIUI/HyperOS.
+     */
+    public int batteryLevelPct;
 }
