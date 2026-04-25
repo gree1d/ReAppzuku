@@ -803,20 +803,19 @@ public class BatteryStatsManager {
                 dao.getSnapshotsForPackageBetween(packageName, start, now);
         List<HourlyPoint> points = new ArrayList<>();
 
-        // Determine partial-data flag before any size guard.
-        // Even with only 1 snapshot (or 0) we can tell whether the period
-        // is the 2h window and whether the DB simply hasn't accumulated enough yet.
-        long firstSnapTime = snaps.isEmpty() ? now : snaps.get(0).timestamp;
-        double actualHours = (now - firstSnapTime) / 3600_000.0;
-        boolean isPartialData = (hours == 2) && (actualHours < hours * 0.9);
+        // Determine partial-data flag using the GLOBAL oldest snapshot for this package,
+        // not the first snapshot within the current window. If the app was killed and
+        // restarted within the window, the in-window first snapshot would be recent,
+        // incorrectly marking data as partial even though collection has been running long.
+        ResourceSnapshot oldestForPkg = dao.getOldestSnapshotForPackage(packageName);
+        long oldestPkgTime = oldestForPkg != null ? oldestForPkg.timestamp : now;
+        double pkgAgeHours = (now - oldestPkgTime) / 3600_000.0;
+        boolean isPartialData = (hours == 2) && (pkgAgeHours < hours * 0.9);
 
         if (snaps.size() < 2) return new HourlyResult(points, isPartialData);
 
-        // For periods > 2h: require that the oldest snapshot covers at least 90% of
-        // the window. Showing a "6h" graph with 40 min of data is misleading.
-        // For the 2h period: always render whatever exists and flag as partial if needed.
-        if (hours > 2 && actualHours < hours * 0.9) {
-            return new HourlyResult(points, false); // empty — caller shows no-data state
+        if (hours > 2 && pkgAgeHours < hours * 0.9) {
+            return new HourlyResult(points, false);
         }
 
         for (int h = 0; h < hours; h++) {
