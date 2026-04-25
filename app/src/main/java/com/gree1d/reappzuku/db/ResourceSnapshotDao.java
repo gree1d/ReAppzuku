@@ -48,6 +48,12 @@ public interface ResourceSnapshotDao {
            "ORDER BY packageName, timestamp ASC")
     List<ResourceSnapshot> getSnapshotsBetween(long startTime, long endTime);
 
+    /** Returns the oldest snapshot for a specific package (any time). Used to determine
+     *  how long data has been collected for this package, regardless of current window. */
+    @Query("SELECT * FROM resource_snapshots WHERE packageName = :packageName " +
+           "ORDER BY timestamp ASC LIMIT 1")
+    ResourceSnapshot getOldestSnapshotForPackage(String packageName);
+
     /**
      * Returns all snapshots for a specific package within a time window.
      * Used for the per-app resource consumption graph.
