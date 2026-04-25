@@ -661,41 +661,42 @@ public class BatteryStatsManager {
         List<ResourceSnapshot> windowSnaps =
                 dao.getSnapshotsBetween(previous.timestamp, current.timestamp);
 
-        // Build per-package deltas using consecutive snapshot pairs.
+        // ── Per-package delta accumulation ────────────────────────────────────
+        // batterystats --charged accumulates pwi since the last charge reset (≥90%).
+        // snap.batteryMah is the ABSOLUTE cumulative value at snapshot time.
         //
-        // Why consecutive pairs instead of first-vs-last:
-        //   batteryMah and cpuTimeMs are cumulative since the last charge event.
-        //   If the device was charged in the middle of the window, the counter resets
-        //   to near-zero. With first-vs-last, a pre-charge first snapshot and a
-        //   post-charge last snapshot produce a large negative delta that is clamped
-        //   to 0 — losing ALL data for that window (e.g. 12h showing 0 while 6h
-        //   shows real data because it falls entirely after the charge event).
+        // Per-app delta between two consecutive snapshots:
+        //   • Normal (no reset):  curr >= prev  →  delta = curr - prev
+        //   • After reset:        curr <  prev  →  counter was cleared (device charged
+        //                         to ≥90%); use curr directly — it already represents
+        //                         everything accumulated since the reset, exactly as
+        //                         the system battery screen does.
         //
-        //   With consecutive pairs:
-        //     • Normal step (no charge):  positive delta → accumulated correctly.
-        //     • Charge-reset step:        negative delta → clamped to 0; only that
-        //                                one step is lost; both pre- and post-charge
-        //                                contributions are correctly counted.
-        Map<String, double[]> perPkg    = new HashMap<>(); // [batteryMah, ramSum, cpuMs, peakRam, snapCount]
+        // This means a charge event in the middle of the window is handled correctly:
+        //   pre-reset steps  → normal deltas (accumulate drain before charge)
+        //   post-reset steps → curr value used directly (accumulate drain after charge)
+        //   both halves are summed → full window drain is captured.
+        Map<String, double[]> perPkg     = new HashMap<>(); // [batteryRaw, ramSum, cpuMs, peakRam, snapCount]
         Map<String, ResourceSnapshot> prevByPkg = new HashMap<>();
 
         for (ResourceSnapshot snap : windowSnaps) {
             String pkg = snap.packageName;
             if (!prevByPkg.containsKey(pkg)) {
                 prevByPkg.put(pkg, snap);
-                // Initialize with first snapshot's RAM so peak is seeded correctly
                 perPkg.put(pkg, new double[]{ 0, snap.ramMb, 0, snap.ramMb, 1 });
             } else {
                 ResourceSnapshot prev = prevByPkg.get(pkg);
-                double dBat = Math.max(0, snap.batteryMah - prev.batteryMah);
-                double dCpu = Math.max(0, snap.cpuTimeMs  - prev.cpuTimeMs);
+                double dBat = snap.batteryMah >= prev.batteryMah
+                        ? snap.batteryMah - prev.batteryMah   // normal step
+                        : snap.batteryMah;                    // post-reset: use absolute value
+                double dCpu = Math.max(0, snap.cpuTimeMs - prev.cpuTimeMs);
 
                 double[] acc = perPkg.get(pkg);
                 acc[0] += dBat;
-                acc[1] += snap.ramMb;          // accumulate for average
+                acc[1] += snap.ramMb;
                 acc[2] += dCpu;
-                acc[3]  = Math.max(acc[3], snap.ramMb); // peak
-                acc[4] += 1;                   // snapshot count
+                acc[3]  = Math.max(acc[3], snap.ramMb);
+                acc[4] += 1;
                 prevByPkg.put(pkg, snap);
             }
         }
@@ -705,97 +706,33 @@ public class BatteryStatsManager {
         List<AppResourceStats> result = new ArrayList<>();
 
         // ── Battery normalization ──────────────────────────────────────────────
-        // On MIUI/HyperOS, pwi values from batterystats are NOT in mAh — they use
-        // an internal unit of unknown scale. To get real mAh per app, we:
-        //   1. Sum all apps' raw pwi deltas  → totalRawPwi
-        //   2. Compute actual total drain    → drainMah = dLevel/100 × capacityMah
-        //   3. Per-app mAh                  → appMah = (appRawPwi / totalRawPwi) × drainMah
+        // totalRawPwi = sum of all per-app deltas (vendor-unit, not mAh on MIUI).
+        // drainMah    = level drop × capacity → real mAh drained in the window.
+        // appMah      = (appDelta / totalRawPwi) × drainMah
         //
-        // batteryLevelPct is stored in every snapshot (since DB v5).
-        // Rows without it (DEFAULT 0) are treated as "level unknown" → skip normalization.
+        // For the level drop we use the FULL window (previous → current), not
+        // just a post-charge slice. This is correct because:
+        //   • pre-reset pwi deltas  → represent pre-charge drain
+        //   • post-reset pwi deltas → represent post-charge drain
+        //   • their sum proportionally maps to the full window level drop
+        //
+        // If dLevel ≤ 0 (device was charging the whole window) battery chart
+        // shows 0 — there was no net drain to measure.
         double totalRawPwi = 0;
         for (double[] v : perPkg.values()) totalRawPwi += v[0];
 
         double drainMah = 0;
         boolean batteryNormalizationValid = false;
-
-        // Declared before the normalization block so the post-charge branch can override.
         long dTotalJiffies = current.totalCpuJiffies - previous.totalCpuJiffies;
 
-        if (previous.batteryLevelPct > 0 && current.batteryLevelPct > 0) {
+        if (previous.batteryLevelPct > 0 && current.batteryLevelPct > 0
+                && totalRawPwi > 0) {
             double dLevel = previous.batteryLevelPct - current.batteryLevelPct;
-            if (dLevel > 0 && totalRawPwi > 0) {
-                // Normal case: battery drained during the window.
-                double capacityMah = getBatteryCapacityMah();
-                drainMah = dLevel / 100.0 * capacityMah;
+            if (dLevel > 0) {
+                drainMah = dLevel / 100.0 * getBatteryCapacityMah();
                 batteryNormalizationValid = true;
-            } else if (dLevel <= 0 && totalRawPwi > 0) {
-                // Device was charged during the window (level went up or stayed flat).
-                // Find the snapshot where the level last started rising — that is the
-                // charge event boundary. Collect per-package deltas only from snapshots
-                // after that boundary, then re-normalize against the post-charge drain.
-                //
-                // Strategy: scan windowSnaps in order, detect the last timestamp where
-                // batteryLevelPct increases (charge started), then recompute perPkg
-                // using only snapshots after that point.
-                long chargeEventTimestamp = -1;
-                int prevLevel = -1;
-                for (ResourceSnapshot s : windowSnaps) {
-                    if (prevLevel > 0 && s.batteryLevelPct > prevLevel) {
-                        chargeEventTimestamp = s.timestamp;
-                    }
-                    if (s.batteryLevelPct > 0) prevLevel = s.batteryLevelPct;
-                }
-
-                if (chargeEventTimestamp > 0) {
-                    // Recompute perPkg deltas using only post-charge snapshots
-                    Map<String, double[]> postChargePkg = new HashMap<>();
-                    Map<String, ResourceSnapshot> postPrevByPkg = new HashMap<>();
-                    ResourceSnapshot postChargeFirst = null, postChargeLast = null;
-
-                    for (ResourceSnapshot s : windowSnaps) {
-                        if (s.timestamp < chargeEventTimestamp) continue;
-                        if (postChargeFirst == null) postChargeFirst = s;
-                        postChargeLast = s;
-
-                        String pkg = s.packageName;
-                        if (!postPrevByPkg.containsKey(pkg)) {
-                            postPrevByPkg.put(pkg, s);
-                            postChargePkg.put(pkg, new double[]{ 0, s.ramMb, 0, s.ramMb, 1 });
-                        } else {
-                            ResourceSnapshot pp = postPrevByPkg.get(pkg);
-                            double dBat = Math.max(0, s.batteryMah - pp.batteryMah);
-                            double dCpu = Math.max(0, s.cpuTimeMs  - pp.cpuTimeMs);
-                            double[] acc = postChargePkg.get(pkg);
-                            acc[0] += dBat;
-                            acc[1] += s.ramMb;
-                            acc[2] += dCpu;
-                            acc[3]  = Math.max(acc[3], s.ramMb);
-                            acc[4] += 1;
-                            postPrevByPkg.put(pkg, s);
-                        }
-                    }
-
-                    if (postChargeFirst != null && postChargeLast != null
-                            && postChargeFirst != postChargeLast) {
-                        double postLevel = postChargeFirst.batteryLevelPct
-                                         - postChargeLast.batteryLevelPct;
-                        double postRawPwi = 0;
-                        for (double[] v : postChargePkg.values()) postRawPwi += v[0];
-
-                        if (postLevel > 0 && postRawPwi > 0) {
-                            // Replace perPkg and totalRawPwi with post-charge data
-                            perPkg     = postChargePkg;
-                            totalRawPwi = postRawPwi;
-                            drainMah   = postLevel / 100.0 * getBatteryCapacityMah();
-                            batteryNormalizationValid = true;
-                            // Recalculate CPU denominator with post-charge jiffies
-                            dTotalJiffies = postChargeLast.totalCpuJiffies
-                                          - postChargeFirst.totalCpuJiffies;
-                        }
-                    }
-                }
             }
+            // dLevel ≤ 0: device was charging the whole window — no drain to show.
         }
 
         // ── CPU denominator ──────────────────────────────────────────────────
