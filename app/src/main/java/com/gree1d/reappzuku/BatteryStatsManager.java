@@ -718,18 +718,38 @@ public class BatteryStatsManager {
         double totalRawPwi = 0;
         for (double[] v : perPkg.values()) totalRawPwi += v[0];
 
+        // ── Real drain accumulation ────────────────────────────────────────────
+        // Instead of dLevel = previous.level - current.level (wrong when charged
+        // in the middle), sum only the drain steps where level actually fell.
+        // This correctly handles: charge events, partial charging, multiple cycles.
+        //
+        // windowSnaps is ordered by (packageName, timestamp) — extract unique
+        // timestamps and their batteryLevelPct to build a chronological level series.
+        java.util.TreeMap<Long, Integer> levelByTime = new java.util.TreeMap<>();
+        for (ResourceSnapshot s : windowSnaps) {
+            if (s.batteryLevelPct > 0) {
+                levelByTime.put(s.timestamp, s.batteryLevelPct);
+            }
+        }
+
         double drainMah = 0;
         boolean batteryNormalizationValid = false;
         long dTotalJiffies = current.totalCpuJiffies - previous.totalCpuJiffies;
 
-        if (previous.batteryLevelPct > 0 && current.batteryLevelPct > 0
-                && totalRawPwi > 0) {
-            double dLevel = previous.batteryLevelPct - current.batteryLevelPct;
-            if (dLevel > 0) {
-                drainMah = dLevel / 100.0 * getBatteryCapacityMah();
+        if (totalRawPwi > 0 && levelByTime.size() >= 2) {
+            double capacityMah = getBatteryCapacityMah();
+            double totalDrainPct = 0;
+            Integer prevLevel = null;
+            for (Integer lvl : levelByTime.values()) {
+                if (prevLevel != null && lvl < prevLevel) {
+                    totalDrainPct += prevLevel - lvl; // only count drops, skip charge steps
+                }
+                prevLevel = lvl;
+            }
+            if (totalDrainPct > 0) {
+                drainMah = totalDrainPct / 100.0 * capacityMah;
                 batteryNormalizationValid = true;
             }
-            // dLevel ≤ 0: device was charging the whole window — no drain to show.
         }
 
         // ── CPU denominator ──────────────────────────────────────────────────
@@ -813,7 +833,7 @@ public class BatteryStatsManager {
             int    bucketRamCount = 0;
             long   bucketJiffies = 0;
             long   bucketFirstTs = -1, bucketLastTs = -1;
-            int    bucketFirstLevel = 0, bucketLastLevel = 0;
+            double bucketDrainPct = 0;
             double bucketFirstRawBatch = 0, bucketLastRawBatch = 0;
 
             for (int i = 1; i < snaps.size(); i++) {
@@ -831,13 +851,18 @@ public class BatteryStatsManager {
                 bucketRamSum  += curr.ramMb;
                 bucketRamCount++;
 
+                // Accumulate only drain steps (level drops) for normalization —
+                // same approach as getStatsForPeriodBlocking to handle charge events.
+                if (prev.batteryLevelPct > 0 && curr.batteryLevelPct > 0
+                        && curr.batteryLevelPct < prev.batteryLevelPct) {
+                    bucketDrainPct += prev.batteryLevelPct - curr.batteryLevelPct;
+                }
+
                 if (bucketFirstTs < 0) {
-                    bucketFirstTs    = prev.timestamp;
-                    bucketFirstLevel = prev.batteryLevelPct;
+                    bucketFirstTs       = prev.timestamp;
                     bucketFirstRawBatch = curr.totalRawPwiBatch;
                 }
-                bucketLastTs    = curr.timestamp;
-                bucketLastLevel = curr.batteryLevelPct;
+                bucketLastTs       = curr.timestamp;
                 bucketLastRawBatch = curr.totalRawPwiBatch;
             }
 
@@ -851,14 +876,9 @@ public class BatteryStatsManager {
                     : 0.0);
 
             double batteryMah = 0;
-            if (bucketBatRaw > 0
-                    && bucketLastRawBatch > 0
-                    && bucketFirstLevel > 0
-                    && bucketLastLevel > 0
-                    && bucketFirstLevel > bucketLastLevel) {
-                double dLevel = bucketFirstLevel - bucketLastLevel;
+            if (bucketBatRaw > 0 && bucketLastRawBatch > 0 && bucketDrainPct > 0) {
                 batteryMah = (bucketBatRaw / bucketLastRawBatch)
-                        * (dLevel / 100.0 * getBatteryCapacityMah());
+                        * (bucketDrainPct / 100.0 * getBatteryCapacityMah());
             }
 
             double ram = bucketRamCount > 0 ? bucketRamSum / bucketRamCount : 0;
