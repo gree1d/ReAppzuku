@@ -796,20 +796,23 @@ public class BatteryStatsManager {
     @WorkerThread
     @NonNull
     private HourlyResult getHourlyStatsBlocking(String packageName, int hours) {
-        long now   = System.currentTimeMillis();
-        long start = now - (long) hours * 3600_000L;
+        // Round current time DOWN to the nearest hour boundary so buckets are
+        // always aligned to clock hours: [19:00,20:00), [20:00,21:00), etc.
+        // 21:45 → endAligned = 21:00, so the incomplete current hour is excluded.
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.set(java.util.Calendar.MINUTE, 0);
+        cal.set(java.util.Calendar.SECOND, 0);
+        cal.set(java.util.Calendar.MILLISECOND, 0);
+        long endAligned   = cal.getTimeInMillis();                             // current full hour
+        long startAligned = endAligned - (long) hours * 3600_000L;
 
         List<ResourceSnapshot> snaps =
-                dao.getSnapshotsForPackageBetween(packageName, start, now);
+                dao.getSnapshotsForPackageBetween(packageName, startAligned, endAligned);
         List<HourlyPoint> points = new ArrayList<>();
 
-        // Determine partial-data flag using the GLOBAL oldest snapshot for this package,
-        // not the first snapshot within the current window. If the app was killed and
-        // restarted within the window, the in-window first snapshot would be recent,
-        // incorrectly marking data as partial even though collection has been running long.
         ResourceSnapshot oldestForPkg = dao.getOldestSnapshotForPackage(packageName);
-        long oldestPkgTime = oldestForPkg != null ? oldestForPkg.timestamp : now;
-        double pkgAgeHours = (now - oldestPkgTime) / 3600_000.0;
+        long oldestPkgTime = oldestForPkg != null ? oldestForPkg.timestamp : endAligned;
+        double pkgAgeHours = (endAligned - oldestPkgTime) / 3600_000.0;
         boolean isPartialData = (hours == 2) && (pkgAgeHours < hours * 0.9);
 
         if (snaps.size() < 2) return new HourlyResult(points, isPartialData);
@@ -819,7 +822,7 @@ public class BatteryStatsManager {
         }
 
         for (int h = 0; h < hours; h++) {
-            long bucketStart = start + (long) h * 3600_000L;
+            long bucketStart = startAligned + (long) h * 3600_000L;
             long bucketEnd   = bucketStart + 3600_000L;
 
             // Accumulate deltas from all consecutive snapshot pairs that fall within
