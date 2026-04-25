@@ -820,14 +820,12 @@ public class BatteryStatsManager {
             }
             if (prev == null || curr == null || prev == curr) continue;
 
-            double dBatRaw = Math.max(0, curr.batteryMah - prev.batteryMah);
-            double dCpuMs  = Math.max(0, curr.cpuTimeMs  - prev.cpuTimeMs);
+            // Handle pwi counter reset (charge event): same logic as getStatsForPeriodBlocking.
+            double dBatRaw = curr.batteryMah >= prev.batteryMah
+                    ? curr.batteryMah - prev.batteryMah
+                    : curr.batteryMah;
+            double dCpuMs  = Math.max(0, curr.cpuTimeMs - prev.cpuTimeMs);
 
-            // Use /proc/stat jiffies as denominator.
-            // Denominator = total jiffies * 10ms (full all-cores capacity), no per-core
-            // division — so 100% = one full core equivalent consumed by this app.
-            // cpuTimeMs from batterystats is multi-thread sum so dividing by cores
-            // would produce values > 100% on heavily-threaded apps. Clamp to 100.
             long dTotalJiffies = curr.totalCpuJiffies - prev.totalCpuJiffies;
             double cpuDenominatorMs = dTotalJiffies > 0
                     ? (dTotalJiffies * 10.0)
@@ -836,19 +834,15 @@ public class BatteryStatsManager {
                     ? (dCpuMs / cpuDenominatorMs) * 100.0
                     : 0.0);
 
-            // Battery: normalize raw pwi delta → real mAh using the batch-wide pwi sum
-            // stored in totalRawPwiBatch (variant A — no extra DB queries needed).
-            // On MIUI/HyperOS pwi values are not in mAh, so without this normalization
-            // the chart would show values in the hundreds of millions.
             double batteryMah = 0;
             if (dBatRaw > 0
                     && curr.totalRawPwiBatch > 0
                     && prev.batteryLevelPct > 0
                     && curr.batteryLevelPct > 0
                     && prev.batteryLevelPct > curr.batteryLevelPct) {
-                double dLevel   = prev.batteryLevelPct - curr.batteryLevelPct;
-                double drainMah = dLevel / 100.0 * getBatteryCapacityMah();
-                batteryMah = (dBatRaw / curr.totalRawPwiBatch) * drainMah;
+                double dLevel = prev.batteryLevelPct - curr.batteryLevelPct;
+                batteryMah = (dBatRaw / curr.totalRawPwiBatch)
+                        * (dLevel / 100.0 * getBatteryCapacityMah());
             }
             double ram = curr.ramMb;
 
