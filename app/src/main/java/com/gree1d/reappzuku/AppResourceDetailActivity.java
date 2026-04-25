@@ -143,16 +143,9 @@ public class AppResourceDetailActivity extends BaseActivity {
         batteryStatsManager.getHourlyStatsAsync(packageName, hours, result -> {
             binding.layoutDetailLoading.setVisibility(View.GONE);
 
-            if (result == null || result.points == null || result.points.isEmpty()) {
-                // No data yet — show hint in toolbar subtitle
-                binding.tvDetailPartialWarning.setVisibility(View.GONE);
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setSubtitle(getString(R.string.stats_no_data_hint_short));
-                }
-                return;
-            }
-
-            // Show "Incomplete data" warning for 2h period when not enough history yet
+            // Always apply partial data warning first — regardless of whether points
+            // is empty or not. When isPartialData=true but points is empty it means
+            // data is accumulating but we haven't collected two snapshots yet.
             if (getSupportActionBar() != null) getSupportActionBar().setSubtitle(null);
             if (result.isPartialData) {
                 binding.tvDetailPartialWarning.setText(
@@ -160,6 +153,12 @@ public class AppResourceDetailActivity extends BaseActivity {
                 binding.tvDetailPartialWarning.setVisibility(View.VISIBLE);
             } else {
                 binding.tvDetailPartialWarning.setVisibility(View.GONE);
+            }
+
+            if (result.points == null || result.points.isEmpty()) {
+                // isPartialData warning is already visible if applicable.
+                // No chart to draw — keep cards hidden.
+                return;
             }
 
             binding.cardDetailBattery.setVisibility(View.VISIBLE);

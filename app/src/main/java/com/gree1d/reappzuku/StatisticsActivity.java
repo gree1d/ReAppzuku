@@ -330,7 +330,7 @@ public class StatisticsActivity extends BaseActivity {
                 break;
             case CHART_CPU:
                 binding.tvChartTotal.setText(
-                        String.format(Locale.US, "%.1f%%", totalCpu));
+                        String.format(Locale.US, "%.1f%%", Math.min(100.0, totalCpu)));
                 break;
             case CHART_RAM:
                 // Show both average and peak PSS

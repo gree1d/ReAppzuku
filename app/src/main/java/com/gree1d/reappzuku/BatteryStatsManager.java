@@ -777,26 +777,38 @@ public class BatteryStatsManager {
         List<ResourceSnapshot> snaps =
                 dao.getSnapshotsForPackageBetween(packageName, start, now);
         List<HourlyPoint> points = new ArrayList<>();
-        if (snaps.size() < 2) return new HourlyResult(points, false);
+
+        // Determine partial-data flag before any size guard.
+        // Even with only 1 snapshot (or 0) we can tell whether the period
+        // is the 2h window and whether the DB simply hasn't accumulated enough yet.
+        long firstSnapTime = snaps.isEmpty() ? now : snaps.get(0).timestamp;
+        double actualHours = (now - firstSnapTime) / 3600_000.0;
+        boolean isPartialData = (hours == 2) && (actualHours < hours * 0.9);
+
+        if (snaps.size() < 2) return new HourlyResult(points, isPartialData);
 
         // For periods > 2h: require that the oldest snapshot covers at least 90% of
         // the window. Showing a "6h" graph with 40 min of data is misleading.
         // For the 2h period: always render whatever exists and flag as partial if needed.
-        long firstSnapTime = snaps.get(0).timestamp;
-        double actualHours = (now - firstSnapTime) / 3600_000.0;
         if (hours > 2 && actualHours < hours * 0.9) {
             return new HourlyResult(points, false); // empty — caller shows no-data state
         }
-        boolean isPartialData = (hours == 2) && (actualHours < hours * 0.9);
 
         for (int h = 0; h < hours; h++) {
             long bucketStart = start + (long) h * 3600_000L;
             long bucketEnd   = bucketStart + 3600_000L;
 
+            // For partial 2h: buckets before the first snapshot will always have
+            // prev==null and get skipped. Use the first snapshot timestamp as the
+            // effective bucket start so we always produce at least one point.
+            long effectiveBucketStart = isPartialData
+                    ? Math.max(bucketStart, firstSnapTime)
+                    : bucketStart;
+
             ResourceSnapshot prev = null, curr = null;
             for (ResourceSnapshot s : snaps) {
-                if (s.timestamp <= bucketStart) prev = s;
-                if (s.timestamp <= bucketEnd)   curr = s;
+                if (s.timestamp <= effectiveBucketStart) prev = s;
+                if (s.timestamp <= bucketEnd)            curr = s;
             }
             if (prev == null || curr == null || prev == curr) continue;
 
