@@ -718,12 +718,83 @@ public class BatteryStatsManager {
 
         double drainMah = 0;
         boolean batteryNormalizationValid = false;
+
+        // Declared before the normalization block so the post-charge branch can override.
+        long dTotalJiffies = current.totalCpuJiffies - previous.totalCpuJiffies;
+
         if (previous.batteryLevelPct > 0 && current.batteryLevelPct > 0) {
             double dLevel = previous.batteryLevelPct - current.batteryLevelPct;
             if (dLevel > 0 && totalRawPwi > 0) {
+                // Normal case: battery drained during the window.
                 double capacityMah = getBatteryCapacityMah();
                 drainMah = dLevel / 100.0 * capacityMah;
                 batteryNormalizationValid = true;
+            } else if (dLevel <= 0 && totalRawPwi > 0) {
+                // Device was charged during the window (level went up or stayed flat).
+                // Find the snapshot where the level last started rising — that is the
+                // charge event boundary. Collect per-package deltas only from snapshots
+                // after that boundary, then re-normalize against the post-charge drain.
+                //
+                // Strategy: scan windowSnaps in order, detect the last timestamp where
+                // batteryLevelPct increases (charge started), then recompute perPkg
+                // using only snapshots after that point.
+                long chargeEventTimestamp = -1;
+                int prevLevel = -1;
+                for (ResourceSnapshot s : windowSnaps) {
+                    if (prevLevel > 0 && s.batteryLevelPct > prevLevel) {
+                        chargeEventTimestamp = s.timestamp;
+                    }
+                    if (s.batteryLevelPct > 0) prevLevel = s.batteryLevelPct;
+                }
+
+                if (chargeEventTimestamp > 0) {
+                    // Recompute perPkg deltas using only post-charge snapshots
+                    Map<String, double[]> postChargePkg = new HashMap<>();
+                    Map<String, ResourceSnapshot> postPrevByPkg = new HashMap<>();
+                    ResourceSnapshot postChargeFirst = null, postChargeLast = null;
+
+                    for (ResourceSnapshot s : windowSnaps) {
+                        if (s.timestamp < chargeEventTimestamp) continue;
+                        if (postChargeFirst == null) postChargeFirst = s;
+                        postChargeLast = s;
+
+                        String pkg = s.packageName;
+                        if (!postPrevByPkg.containsKey(pkg)) {
+                            postPrevByPkg.put(pkg, s);
+                            postChargePkg.put(pkg, new double[]{ 0, s.ramMb, 0, s.ramMb, 1 });
+                        } else {
+                            ResourceSnapshot pp = postPrevByPkg.get(pkg);
+                            double dBat = Math.max(0, s.batteryMah - pp.batteryMah);
+                            double dCpu = Math.max(0, s.cpuTimeMs  - pp.cpuTimeMs);
+                            double[] acc = postChargePkg.get(pkg);
+                            acc[0] += dBat;
+                            acc[1] += s.ramMb;
+                            acc[2] += dCpu;
+                            acc[3]  = Math.max(acc[3], s.ramMb);
+                            acc[4] += 1;
+                            postPrevByPkg.put(pkg, s);
+                        }
+                    }
+
+                    if (postChargeFirst != null && postChargeLast != null
+                            && postChargeFirst != postChargeLast) {
+                        double postLevel = postChargeFirst.batteryLevelPct
+                                         - postChargeLast.batteryLevelPct;
+                        double postRawPwi = 0;
+                        for (double[] v : postChargePkg.values()) postRawPwi += v[0];
+
+                        if (postLevel > 0 && postRawPwi > 0) {
+                            // Replace perPkg and totalRawPwi with post-charge data
+                            perPkg     = postChargePkg;
+                            totalRawPwi = postRawPwi;
+                            drainMah   = postLevel / 100.0 * getBatteryCapacityMah();
+                            batteryNormalizationValid = true;
+                            // Recalculate CPU denominator with post-charge jiffies
+                            dTotalJiffies = postChargeLast.totalCpuJiffies
+                                          - postChargeFirst.totalCpuJiffies;
+                        }
+                    }
+                }
             }
         }
 
@@ -733,7 +804,7 @@ public class BatteryStatsManager {
         // cpuTimeMs from batterystats is multi-thread sum so dividing by cores
         // would produce values > 100% on heavily-threaded apps.
         // Fallback: wall-clock elapsed ms (single-core equivalent).
-        long dTotalJiffies = current.totalCpuJiffies - previous.totalCpuJiffies;
+        // Declared here so the post-charge branch in normalization can override it.
         double cpuDenominatorMs = dTotalJiffies > 0
                 ? (dTotalJiffies * 10.0)
                 : actualHours * 3600_000.0;
