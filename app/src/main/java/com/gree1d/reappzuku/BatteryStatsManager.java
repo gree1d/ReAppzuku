@@ -888,10 +888,10 @@ public class BatteryStatsManager {
 
             double ram = bucketRamCount > 0 ? bucketRamSum / bucketRamCount : 0;
 
-            java.util.Calendar cal = java.util.Calendar.getInstance();
-            cal.setTimeInMillis(bucketStart);
+            java.util.Calendar labelCal = java.util.Calendar.getInstance();
+            labelCal.setTimeInMillis(bucketStart);
             String label = String.format(Locale.US, "%02d:00",
-                    cal.get(java.util.Calendar.HOUR_OF_DAY));
+                    labelCal.get(java.util.Calendar.HOUR_OF_DAY));
             points.add(new HourlyPoint(label, batteryMah, cpuPct, ram));
         }
         return new HourlyResult(points, isPartialData);
