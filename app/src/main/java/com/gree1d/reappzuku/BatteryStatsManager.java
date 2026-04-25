@@ -616,26 +616,25 @@ public class BatteryStatsManager {
                     context.getString(R.string.stats_no_data_hint_no_snapshot), false);
         }
 
-        // Search for previous snapshot strictly before current.timestamp (not before target).
-        // This avoids a false "no data" when all snapshots in the DB share the same timestamp
-        // (i.e. only one batch was ever collected): getClosestSnapshotBefore(target) would
-        // return a row from that same batch, giving previous.timestamp == current.timestamp.
-        // Using (current.timestamp - 1) guarantees we get a genuinely earlier batch.
-        // We then check that previous falls within the requested period window.
-        ResourceSnapshot previous = dao.getClosestSnapshotBefore(current.timestamp - 1);
+        // Find the snapshot closest to the requested period start (target).
+        // We want the boundary snapshot that best represents "start of window":
+        //   - Prefer a snapshot AT or BEFORE target (getClosestSnapshotBefore)
+        //   - Must be a genuinely different batch from current (timestamp < current)
+        //
+        // Original bug: using getClosestSnapshotBefore(current.timestamp - 1) always
+        // returned the most recent previous batch (~30 min ago), making actualHours≈0.5
+        // which failed the 90% coverage check for 6h/12h/24h periods.
+        ResourceSnapshot previous = dao.getClosestSnapshotBefore(target);
 
-        // No fallback to getOldestSnapshot() — if there is no snapshot before the
-        // requested period boundary, report "no data" for this period.
-        // Without this guard every period with insufficient history (6h, 12h, 24h)
-        // would silently reuse the same oldest snapshot and show identical charts.
         if (previous == null) {
-            return new PeriodStats(Collections.emptyList(), false, 0,
-                    context.getString(R.string.stats_no_data_hint_no_history), false);
+            // No snapshot at or before target — try the oldest one we have.
+            // This handles the case where data collection started after target
+            // but we still have enough history (e.g. started collecting 5.5h ago
+            // for a 6h period — close enough).
+            previous = dao.getOldestSnapshot();
         }
-        // If previous is newer than the requested period start, we still have
-        // some data — just a shorter window than requested. That is fine; actualHours
-        // will reflect the real span. Only reject if previous == current (same batch).
-        if (previous.timestamp >= current.timestamp) {
+
+        if (previous == null || previous.timestamp >= current.timestamp) {
             return new PeriodStats(Collections.emptyList(), false, 0,
                     context.getString(R.string.stats_no_data_hint_no_history), false);
         }
@@ -806,45 +805,65 @@ public class BatteryStatsManager {
             long bucketStart = start + (long) h * 3600_000L;
             long bucketEnd   = bucketStart + 3600_000L;
 
-            // For partial 2h: buckets before the first snapshot will always have
-            // prev==null and get skipped. Use the first snapshot timestamp as the
-            // effective bucket start so we always produce at least one point.
-            long effectiveBucketStart = isPartialData
-                    ? Math.max(bucketStart, firstSnapTime)
-                    : bucketStart;
+            // Accumulate deltas from all consecutive snapshot pairs that fall within
+            // this hour bucket. A pair (prev, curr) belongs to bucket h when curr
+            // falls inside [bucketStart, bucketEnd). This avoids the boundary-lookup
+            // bug where prev==null (first snapshot after bucketStart) caused the whole
+            // bucket to be skipped, eating the first and last hours of data.
+            double bucketBatRaw = 0, bucketCpuMs = 0;
+            double bucketRamSum = 0;
+            int    bucketRamCount = 0;
+            long   bucketJiffies = 0;
+            long   bucketFirstTs = -1, bucketLastTs = -1;
+            int    bucketFirstLevel = 0, bucketLastLevel = 0;
+            double bucketFirstRawBatch = 0, bucketLastRawBatch = 0;
 
-            ResourceSnapshot prev = null, curr = null;
-            for (ResourceSnapshot s : snaps) {
-                if (s.timestamp <= effectiveBucketStart) prev = s;
-                if (s.timestamp <= bucketEnd)            curr = s;
+            for (int i = 1; i < snaps.size(); i++) {
+                ResourceSnapshot prev = snaps.get(i - 1);
+                ResourceSnapshot curr = snaps.get(i);
+                // Assign pair to the bucket containing curr.timestamp
+                if (curr.timestamp <= bucketStart || curr.timestamp > bucketEnd) continue;
+
+                double dBat = curr.batteryMah >= prev.batteryMah
+                        ? curr.batteryMah - prev.batteryMah
+                        : curr.batteryMah;
+                bucketBatRaw += dBat;
+                bucketCpuMs  += Math.max(0, curr.cpuTimeMs - prev.cpuTimeMs);
+                bucketJiffies += Math.max(0, curr.totalCpuJiffies - prev.totalCpuJiffies);
+                bucketRamSum  += curr.ramMb;
+                bucketRamCount++;
+
+                if (bucketFirstTs < 0) {
+                    bucketFirstTs    = prev.timestamp;
+                    bucketFirstLevel = prev.batteryLevelPct;
+                    bucketFirstRawBatch = curr.totalRawPwiBatch;
+                }
+                bucketLastTs    = curr.timestamp;
+                bucketLastLevel = curr.batteryLevelPct;
+                bucketLastRawBatch = curr.totalRawPwiBatch;
             }
-            if (prev == null || curr == null || prev == curr) continue;
 
-            // Handle pwi counter reset (charge event): same logic as getStatsForPeriodBlocking.
-            double dBatRaw = curr.batteryMah >= prev.batteryMah
-                    ? curr.batteryMah - prev.batteryMah
-                    : curr.batteryMah;
-            double dCpuMs  = Math.max(0, curr.cpuTimeMs - prev.cpuTimeMs);
+            if (bucketRamCount == 0) continue; // no pairs in this bucket
 
-            long dTotalJiffies = curr.totalCpuJiffies - prev.totalCpuJiffies;
-            double cpuDenominatorMs = dTotalJiffies > 0
-                    ? (dTotalJiffies * 10.0)
-                    : (double)(curr.timestamp - prev.timestamp);
+            double cpuDenominatorMs = bucketJiffies > 0
+                    ? (bucketJiffies * 10.0)
+                    : (double)(bucketLastTs - bucketFirstTs);
             double cpuPct = Math.min(100.0, cpuDenominatorMs > 0
-                    ? (dCpuMs / cpuDenominatorMs) * 100.0
+                    ? (bucketCpuMs / cpuDenominatorMs) * 100.0
                     : 0.0);
 
             double batteryMah = 0;
-            if (dBatRaw > 0
-                    && curr.totalRawPwiBatch > 0
-                    && prev.batteryLevelPct > 0
-                    && curr.batteryLevelPct > 0
-                    && prev.batteryLevelPct > curr.batteryLevelPct) {
-                double dLevel = prev.batteryLevelPct - curr.batteryLevelPct;
-                batteryMah = (dBatRaw / curr.totalRawPwiBatch)
+            if (bucketBatRaw > 0
+                    && bucketLastRawBatch > 0
+                    && bucketFirstLevel > 0
+                    && bucketLastLevel > 0
+                    && bucketFirstLevel > bucketLastLevel) {
+                double dLevel = bucketFirstLevel - bucketLastLevel;
+                batteryMah = (bucketBatRaw / bucketLastRawBatch)
                         * (dLevel / 100.0 * getBatteryCapacityMah());
             }
-            double ram = curr.ramMb;
+
+            double ram = bucketRamCount > 0 ? bucketRamSum / bucketRamCount : 0;
 
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTimeInMillis(bucketStart);
