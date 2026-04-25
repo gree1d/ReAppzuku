@@ -617,21 +617,19 @@ public class BatteryStatsManager {
         }
 
         // Find the snapshot closest to the requested period start (target).
-        // We want the boundary snapshot that best represents "start of window":
-        //   - Prefer a snapshot AT or BEFORE target (getClosestSnapshotBefore)
-        //   - Must be a genuinely different batch from current (timestamp < current)
-        //
-        // Original bug: using getClosestSnapshotBefore(current.timestamp - 1) always
-        // returned the most recent previous batch (~30 min ago), making actualHours≈0.5
-        // which failed the 90% coverage check for 6h/12h/24h periods.
         ResourceSnapshot previous = dao.getClosestSnapshotBefore(target);
 
         if (previous == null) {
             // No snapshot at or before target — try the oldest one we have.
-            // This handles the case where data collection started after target
-            // but we still have enough history (e.g. started collecting 5.5h ago
-            // for a 6h period — close enough).
-            previous = dao.getOldestSnapshot();
+            // Only use it if it's close enough to target (within 10% of the period).
+            ResourceSnapshot oldest = dao.getOldestSnapshot();
+            if (oldest != null && oldest.timestamp < current.timestamp) {
+                double oldestHoursFromTarget =
+                        (oldest.timestamp - target) / 3600_000.0; // positive = newer than target
+                if (hours == 2 || oldestHoursFromTarget <= hours * 0.1) {
+                    previous = oldest;
+                }
+            }
         }
 
         if (previous == null || previous.timestamp >= current.timestamp) {
