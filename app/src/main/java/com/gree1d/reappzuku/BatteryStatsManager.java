@@ -838,8 +838,11 @@ public class BatteryStatsManager {
             for (int i = 1; i < snaps.size(); i++) {
                 ResourceSnapshot prev = snaps.get(i - 1);
                 ResourceSnapshot curr = snaps.get(i);
-                // Assign pair to the bucket containing curr.timestamp
-                if (curr.timestamp <= bucketStart || curr.timestamp > bucketEnd) continue;
+                // Assign pair to the bucket containing curr.timestamp.
+                // Use strict < for lower bound so a snapshot exactly on the hour
+                // boundary (e.g. 19:00:00) is included in bucket [19:00, 20:00),
+                // not skipped because it equals bucketStart of the next bucket.
+                if (curr.timestamp < bucketStart || curr.timestamp > bucketEnd) continue;
 
                 double dBat = curr.batteryMah >= prev.batteryMah
                         ? curr.batteryMah - prev.batteryMah
