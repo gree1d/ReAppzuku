@@ -18,31 +18,14 @@ public final class SleepModeLogManager {
     private static final int MAX_ENTRIES    = 200;
     private static final int MAX_DETAIL_LEN = 180;
 
-    /** Single background thread for all DB writes — avoids main thread violations. */
     private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
 
     private SleepModeLogManager() {}
 
-    // =========================================================================
-    // Write
-    // =========================================================================
-
-    /**
-     * Log a freeze event.
-     *
-     * @param packageName app package name
-     * @param succeeded   result of shellManager.freezePackage()
-     */
     public static void logFreeze(Context context, String packageName, boolean succeeded) {
         append(context, packageName, "freeze", succeeded ? "ok" : "error");
     }
 
-    /**
-     * Log an unfreeze event.
-     *
-     * @param packageName app package name
-     * @param succeeded   result of shellManager.unfreezePackage()
-     */
     public static void logUnfreeze(Context context, String packageName, boolean succeeded) {
         append(context, packageName, "unfreeze", succeeded ? "ok" : "error");
     }
@@ -61,17 +44,12 @@ public final class SleepModeLogManager {
             SleepModeLog.Dao dao = AppDatabase.getInstance(context).sleepModeLogDao();
             dao.insert(entry);
 
-            // Trim to MAX_ENTRIES — delete oldest if over limit
             int count = dao.getCount();
             if (count > MAX_ENTRIES) {
                 dao.deleteOldest(count - MAX_ENTRIES);
             }
         });
     }
-
-    // =========================================================================
-    // Read
-    // =========================================================================
 
     public static String readDisplayText(Context context) {
         List<LogEntry> entries = readEntries(context);
@@ -86,7 +64,6 @@ public final class SleepModeLogManager {
         return sb.toString();
     }
 
-    /** Returns entries sorted newest first (DAO orders by timestamp DESC). */
     public static List<LogEntry> readEntries(Context context) {
         List<SleepModeLog> rows =
                 AppDatabase.getInstance(context).sleepModeLogDao().getRecent(MAX_ENTRIES);
@@ -102,19 +79,11 @@ public final class SleepModeLogManager {
         return result;
     }
 
-    // =========================================================================
-    // Clear
-    // =========================================================================
-
     public static void clear(Context context) {
         if (context == null) return;
         DB_EXECUTOR.execute(() ->
                 AppDatabase.getInstance(context).sleepModeLogDao().clearAll());
     }
-
-    // =========================================================================
-    // Helpers
-    // =========================================================================
 
     private static String formatTimestamp(long millis) {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date(millis));
@@ -130,10 +99,6 @@ public final class SleepModeLogManager {
         return s.length() > MAX_DETAIL_LEN ? s.substring(0, MAX_DETAIL_LEN - 3) + "..." : s;
     }
 
-    // =========================================================================
-    // LogEntry
-    // =========================================================================
-
     public static final class LogEntry {
         public final String timestamp;
         public final String action;
@@ -148,7 +113,6 @@ public final class SleepModeLogManager {
         }
 
         public String toDisplayLine() {
-            // Format: 2025-01-15 14:32:01 | freeze | com.example.app | ok
             return timestamp + " | " + action + " | " + packageName + " | " + outcome;
         }
     }

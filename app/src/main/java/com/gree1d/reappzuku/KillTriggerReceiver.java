@@ -15,7 +15,6 @@ public class KillTriggerReceiver extends BroadcastReceiver {
     private static final String WAKELOCK_TAG = "reappzuku:AutoKillWakeLock";
     private static final long WAKELOCK_TIMEOUT_MS = 10_000L;
 
-    // Static — чтобы ShappkyService мог освободить его после завершения kill
     static volatile PowerManager.WakeLock autoKillWakeLock;
 
     @Override
@@ -35,8 +34,7 @@ public class KillTriggerReceiver extends BroadcastReceiver {
                     context.startService(serviceIntent);
                 }
             }
-
-            // Notify service to start idle freeze timer regardless of kill setting
+            
             Intent freezeIntent = new Intent(context, ShappkyService.class);
             freezeIntent.setAction("SCREEN_OFF");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -46,7 +44,6 @@ public class KillTriggerReceiver extends BroadcastReceiver {
             }
 
         } else if (Intent.ACTION_SCREEN_ON.equals(action)) {
-            // Notify service — it will check keyguard state after a short delay
             Intent unfreezeIntent = new Intent(context, ShappkyService.class);
             unfreezeIntent.setAction("SCREEN_ON");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -56,7 +53,6 @@ public class KillTriggerReceiver extends BroadcastReceiver {
             }
         } else if (ShappkyService.ACTION_IDLE_FREEZE.equals(action)) {
             Log.d(TAG, "Idle freeze alarm received, forwarding to service");
-            // Triggered by AlarmManager after idle threshold — forward to service
             Log.d(TAG, "Idle freeze alarm received, forwarding to service");
             Intent freezeIntent = new Intent(context, ShappkyService.class);
             freezeIntent.setAction("IDLE_FREEZE");
@@ -69,13 +65,11 @@ public class KillTriggerReceiver extends BroadcastReceiver {
     }
 
     static void acquireAutoKillWakeLock(Context context) {
-        // Освобождаем предыдущий если вдруг остался (защита от двойного acquire)
         releaseAutoKillWakeLock();
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         if (pm == null) return;
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG);
         wl.setReferenceCounted(false);
-        // Таймаут 15 сек — auto-release если kill зависнет
         wl.acquire(WAKELOCK_TIMEOUT_MS);
         autoKillWakeLock = wl;
         Log.d(TAG, "AutoKill WakeLock acquired (timeout 15s)");

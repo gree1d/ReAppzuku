@@ -22,10 +22,6 @@ import rikka.shizuku.ShizukuRemoteProcess;
 import rikka.shizuku.SystemServiceHelper;
 
 
-/**
- * Manages shell command execution via Root or Shizuku.
- * Prioritizes Root access over Shizuku when both are available.
- */
 public class ShellManager {
     private static final String TAG = "ShellManager";
 
@@ -33,11 +29,11 @@ public class ShellManager {
     private final Handler handler;
     private final ExecutorService executor;
 
-    // Root access state - use AtomicBoolean for thread safety
+
     private volatile Boolean hasRoot = null;
     private final AtomicBoolean rootCheckInProgress = new AtomicBoolean(false);
 
-    // Called on main thread once root check completes
+
     private volatile Runnable onRootCheckComplete;
 
     @SuppressWarnings("deprecation")
@@ -48,14 +44,11 @@ public class ShellManager {
         this.handler = handler;
         this.executor = executor;
 
-        // Start root check in background immediately
+
         initializeRootCheck();
     }
 
-    /**
-     * Initialize root access check in background.
-     * This prevents blocking the main thread.
-     */
+
     private void initializeRootCheck() {
         if (rootCheckInProgress.compareAndSet(false, true)) {
             executor.execute(() -> {
@@ -74,11 +67,7 @@ public class ShellManager {
         }
     }
 
-    /**
-     * Calls {@code listener} once the root check is complete.
-     * If the check has already finished, calls {@code listener} immediately on the current thread.
-     * Safe to call from any thread.
-     */
+
     public void setOnRootCheckCompleteListener(Runnable listener) {
         if (hasRoot != null) {
             listener.run();
@@ -87,12 +76,7 @@ public class ShellManager {
         }
     }
 
-    /**
-     * Blocking check for root access. Should only be called from background thread.
-     * Uses "id -u" to verify the actual UID after su — returns true only if uid=0.
-     * This correctly handles cases where su exists but permission was denied by
-     * the root manager (Magisk, KernelSU, APatch, etc.).
-     */
+
     private boolean checkRootAccessBlocking() {
         Process process = null;
         DataOutputStream os = null;
@@ -123,55 +107,40 @@ public class ShellManager {
         }
     }
 
-    /**
-     * Set the permission listener for Shizuku.
-     */
+
     public void setShizukuPermissionListener(Shizuku.OnRequestPermissionResultListener listener) {
         this.shizukuPermissionListener = listener;
         Shizuku.addRequestPermissionResultListener(shizukuPermissionListener);
     }
 
-    /**
-     * Remove the Shizuku permission listener.
-     */
+
     public void removeShizukuPermissionListener() {
         if (shizukuPermissionListener != null) {
             Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener);
         }
     }
 
-    /**
-     * Returns true if the app has root access but Shizuku is NOT available/granted.
-     * In this mode SELinux restrictions limit full functionality, so the UI should
-     * show a warning banner prompting the user to install and grant Shizuku.
-     */
+
     public boolean hasRootOnlyMode() {
         return hasRootAccess() && !hasShizukuPermission();
     }
 
-    /**
-     * Check if the device has root access.
-     * Returns cached result if available, otherwise returns false (check may still
-     * be in progress).
-     * For blocking check, use from background thread only.
-     */
+
     public boolean hasRootAccess() {
         if (hasRoot == null) {
-            // If called before check completes, do blocking check on current thread
-            // This should only happen if called from background thread
+
+
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 hasRoot = checkRootAccessBlocking();
             } else {
-                // On main thread, return false and let Shizuku be used
+
                 return false;
             }
         }
         return hasRoot;
     }
 
-    /**
-     * Check if Shizuku is available and has necessary permissions.
-     */
+
     public boolean hasShizukuPermission() {
         try {
             return Shizuku.pingBinder() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED;
@@ -181,11 +150,7 @@ public class ShellManager {
         }
     }
 
-    /**
-     * Check for shell permissions and request Shizuku if needed.
-     * Shizuku permission is requested for all users, including root,
-     * because SELinux restrictions prevent full functionality with root alone.
-     */
+
     public void checkShellPermissions() {
         if (hasRoot != null && hasRoot) {
             Log.d(TAG, "Root access available, skipping Shizuku permission request");
@@ -202,24 +167,17 @@ public class ShellManager {
         }
     }
 
-    /**
-     * Check if any shell permission (Root or Shizuku) is available.
-     * This is non-blocking and will return true if Shizuku is available
-     * even if root check hasn't completed yet.
-     */
+
     public boolean hasAnyShellPermission() {
-        // Check Shizuku first (non-blocking)
+
         if (hasShizukuPermission()) {
             return true;
         }
-        // Check cached root result (null means check in progress)
+
         return hasRoot != null && hasRoot;
     }
 
-    /**
-     * Resolve shell permission from a background thread.
-     * This performs a blocking root check if needed, while leaving Shizuku checks unchanged.
-     */
+
     public boolean resolveAnyShellPermission() {
         if (hasShizukuPermission()) {
             return true;
@@ -227,18 +185,12 @@ public class ShellManager {
         return hasRootAccess();
     }
 
-    /**
-     * Run a shell command prioritizing Root, then Shizuku.
-     * Executes on background thread and posts callback to main handler.
-     */
+
     public void runShellCommand(String command, Runnable onSuccess) {
         runShellCommand(command, onSuccess, null);
     }
 
-    /**
-     * Run a shell command with separate success/failure callbacks.
-     * Executes on background thread and posts callbacks to main handler.
-     */
+
     public void runShellCommand(String command, Runnable onSuccess, Runnable onFailure) {
         executor.execute(() -> {
             boolean succeeded = runShellCommandBlocking(command);
@@ -253,10 +205,7 @@ public class ShellManager {
         });
     }
 
-    /**
-     * Run a shell command synchronously and return whether it succeeded.
-     * This method is blocking and should only be called from a background thread.
-     */
+
     public boolean runShellCommandBlocking(String command) {
         return runShellCommandForResult(command).succeeded();
     }
@@ -278,9 +227,7 @@ public class ShellManager {
         return rootResult != null ? rootResult : new ShellResult(false, -1, "No Root or Shizuku permission available");
     }
 
-    /**
-     * Run a shell command and process its output line by line.
-     */
+
     public void runShellCommandWithOutput(String command, Consumer<String> outputProcessor) {
         executor.execute(() -> {
             boolean executed = false;
@@ -293,10 +240,7 @@ public class ShellManager {
         });
     }
 
-    /**
-     * Run a shell command and return the full output.
-     * This method is blocking and should be called from a background thread.
-     */
+
     public String runShellCommandAndGetFullOutput(String command) {
         if (hasRootAccess()) {
             return executeRootCommandAndGetFullOutput(command);
@@ -306,11 +250,7 @@ public class ShellManager {
         return null;
     }
 
-    /**
-     * Runs a command via Root or Shizuku and returns the full stdout as a String.
-     * Blocking — must be called from a background thread.
-     * Returns null on failure.
-     */
+
     @androidx.annotation.WorkerThread
     @androidx.annotation.Nullable
     public String runCommandAndGetOutput(String command) {
@@ -322,33 +262,19 @@ public class ShellManager {
         return null;
     }
 
-    /**
-     * Freeze a package via Shizuku Binder API using reflection.
-     * Sets COMPONENT_ENABLED_STATE_DISABLED_USER so the app cannot restart until unfrozen.
-     * Should only be called from a background thread.
-     *
-     * @return true if freeze succeeded
-     */
+
     public boolean freezePackage(String packageName) {
         if (packageName == null || packageName.isEmpty()) return false;
         return setPackageEnabledState(packageName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER);
     }
 
-    /**
-     * Unfreeze a package via Shizuku Binder API using reflection.
-     * Should only be called from a background thread.
-     *
-     * @return true if unfreeze succeeded
-     */
+
     public boolean unfreezePackage(String packageName) {
         if (packageName == null || packageName.isEmpty()) return false;
         return setPackageEnabledState(packageName, PackageManager.COMPONENT_ENABLED_STATE_DEFAULT);
     }
 
-    /**
-     * Sets the enabled state of a package via IPackageManager using reflection,
-     * mirroring the approach used by Hail (github.com/aistra0528/Hail).
-     */
+
     private boolean setPackageEnabledState(String packageName, int newState) {
         if (!hasShizukuPermission()) {
             Log.w(TAG, "setPackageEnabledState: Shizuku not available");
@@ -366,7 +292,7 @@ public class ShellManager {
                     packageName,
                     newState,
                     0,
-                    0, // userId
+                    0,
                     context.getPackageName()
             );
             Log.d(TAG, "setPackageEnabledState(" + newState + ") ok: " + packageName);
@@ -377,7 +303,6 @@ public class ShellManager {
         }
     }
 
-    // --- Private helper methods ---
 
     private boolean executeRootCommand(String command, Consumer<String> outputProcessor) {
         Process process = null;
@@ -432,7 +357,7 @@ public class ShellManager {
             remote = Shizuku.newProcess(new String[] { "sh", "-c", command }, null, "/");
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(remote.getInputStream()))) {
                 while (reader.readLine() != null) {
-                    // Consume output
+
                 }
             }
 

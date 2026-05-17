@@ -31,21 +31,6 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Displays per-app resource stats for a single app.
- *
- * Shows:
- *   • Min / Avg / Max tiles for Battery, CPU, RAM
- *   • Activity chart (30-min slots, Y axis: None / Low / Medium / High)
- *
- * Period tabs: 2h / 6h / 12h / 24h
- *
- * Extras:
- *   EXTRA_PACKAGE_NAME    — package name of the target app
- *   EXTRA_APP_NAME        — display name
- *   EXTRA_TOTAL_CPU_PCT   — sum of cpuPct across ALL apps for current period
- *   EXTRA_TOTAL_RAM_MB    — sum of ramMb  across ALL apps for current period
- */
 public class AppResourceDetailActivity extends BaseActivity {
 
     public static final String EXTRA_PACKAGE_NAME  = "extra_package_name";
@@ -55,9 +40,7 @@ public class AppResourceDetailActivity extends BaseActivity {
     public static final String EXTRA_PERIOD_IDX    = "extra_period_idx";
 
     private static final int[]    PERIODS_HOURS  = { 2, 6, 12, 24 };
-    private static final String[] PERIOD_LABELS  = { "2ч", "6ч", "12ч", "24ч" };
 
-    // Y-axis values for activity levels
     private static final float Y_NONE   = 0f;
     private static final float Y_LOW    = 1f;
     private static final float Y_MEDIUM = 2f;
@@ -73,9 +56,7 @@ public class AppResourceDetailActivity extends BaseActivity {
     private String appName;
     private double totalAllAppsCpuPct;
     private double totalAllAppsRamMb;
-    private int selectedPeriodIdx = 1; // default 6h
-
-    // ─────────────────────────────────────────────────────────────────────────
+    private int selectedPeriodIdx = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,7 +68,6 @@ public class AppResourceDetailActivity extends BaseActivity {
         appName            = getIntent().getStringExtra(EXTRA_APP_NAME);
         totalAllAppsCpuPct = getIntent().getDoubleExtra(EXTRA_TOTAL_CPU_PCT, 0);
         totalAllAppsRamMb  = getIntent().getDoubleExtra(EXTRA_TOTAL_RAM_MB, 0);
-        // Inherit the period that was active on the charts screen (default 0 = 2h)
         selectedPeriodIdx  = getIntent().getIntExtra(EXTRA_PERIOD_IDX, 0);
         if (packageName == null) { finish(); return; }
 
@@ -99,8 +79,6 @@ public class AppResourceDetailActivity extends BaseActivity {
         setupPeriodTabs();
         loadData(PERIODS_HOURS[selectedPeriodIdx]);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void setupToolbar() {
         setSupportActionBar(binding.toolbar);
@@ -131,7 +109,8 @@ public class AppResourceDetailActivity extends BaseActivity {
     }
 
     private void setupPeriodTabs() {
-        for (String label : PERIOD_LABELS) {
+        String[] labels = getResources().getStringArray(R.array.chart_period_labels);
+        for (String label : labels) {
             binding.tabDetailPeriod.addTab(binding.tabDetailPeriod.newTab().setText(label));
         }
         binding.tabDetailPeriod.selectTab(binding.tabDetailPeriod.getTabAt(selectedPeriodIdx));
@@ -145,10 +124,6 @@ public class AppResourceDetailActivity extends BaseActivity {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Data loading
-    // ─────────────────────────────────────────────────────────────────────────
-
     private void loadData(int hours) {
         binding.layoutDetailLoading.setVisibility(View.VISIBLE);
         binding.cardDetailStats.setVisibility(View.GONE);
@@ -159,7 +134,6 @@ public class AppResourceDetailActivity extends BaseActivity {
 
             binding.layoutDetailLoading.setVisibility(View.GONE);
 
-            // Partial data warning
             if (result.isPartialData) {
                 binding.tvDetailPartialWarning.setText(getString(R.string.stats_partial_data_warning));
                 binding.tvDetailPartialWarning.setVisibility(View.VISIBLE);
@@ -172,7 +146,6 @@ public class AppResourceDetailActivity extends BaseActivity {
             binding.cardDetailStats.setVisibility(View.VISIBLE);
             binding.cardDetailActivity.setVisibility(View.VISIBLE);
 
-            // ── Min / Avg / Max tiles ────────────────────────────────────────
             BatteryStatsManager.HourlyPeriodStats s = result.stats;
 
             binding.tvBatteryMin.setText(String.format(Locale.US, "%.1f mAh", s.minBatteryMah));
@@ -187,14 +160,10 @@ public class AppResourceDetailActivity extends BaseActivity {
             binding.tvRamAvg.setText(String.format(Locale.US, "%.0f МБ", s.avgRamMb));
             binding.tvRamMax.setText(String.format(Locale.US, "%.0f МБ", s.maxRamMb));
 
-            // ── Activity chart ───────────────────────────────────────────────
             buildActivityChart(result.slices);
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Activity chart
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void buildActivityChart(List<BatteryStatsManager.ActivitySlice> slices) {
         int h = hours();
@@ -220,22 +189,15 @@ public class AppResourceDetailActivity extends BaseActivity {
             String timeLabel = timeFormat.format(new java.util.Date(slice.slotTimestamp));
 
             if (!sparseLabels) {
-                // 2h / 6h: show all labels
                 labels[i] = timeLabel;
             } else {
-                // 12h / 24h: for half-hour slots (odd index = :30 slot)
-                // hide the label only if BOTH neighbors (prev and next on-the-hour slots) are active.
-                // i%2==0 → on-the-hour slot → always show if active, hide if not.
-                // i%2==1 → :30 slot → show if prev (i-1) or next (i+1) neighbor is inactive.
                 boolean isHalfHour = (i % 2 == 1);
                 boolean showLabel;
                 if (!active) {
                     showLabel = false;
                 } else if (!isHalfHour) {
-                    // On-the-hour slot with activity → always show
                     showLabel = true;
                 } else {
-                    // :30 slot — show unless both neighbors are active
                     boolean prevActive = i > 0
                             && slices.get(i - 1).level != BatteryStatsManager.ActivityLevel.NONE;
                     boolean nextActive = i < slices.size() - 1
@@ -246,7 +208,6 @@ public class AppResourceDetailActivity extends BaseActivity {
             }
         }
 
-        // Colors: graph line → stats_ram (blue), fill same
         int color = ContextCompat.getColor(this, R.color.stats_ram);
 
         LineDataSet dataSet = new LineDataSet(entries, "");
@@ -256,7 +217,7 @@ public class AppResourceDetailActivity extends BaseActivity {
         dataSet.setCircleRadius(3f);
         dataSet.setDrawCircleHole(false);
         dataSet.setDrawValues(false);
-        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);   // smooth waves
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         dataSet.setDrawFilled(true);
         dataSet.setFillAlpha(40);
         dataSet.setFillColor(color);
@@ -264,7 +225,6 @@ public class AppResourceDetailActivity extends BaseActivity {
         dataSet.setHighlightLineWidth(1f);
         dataSet.enableDashedHighlightLine(6f, 3f, 0f);
 
-        // X axis
         XAxis xAxis = binding.chartDetailActivity.getXAxis();
         xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -276,7 +236,6 @@ public class AppResourceDetailActivity extends BaseActivity {
         xAxis.setDrawAxisLine(false);
         xAxis.setLabelRotationAngle(-30f);
 
-        // Y axis — fixed 0..3 with custom labels
         YAxis leftAxis = binding.chartDetailActivity.getAxisLeft();
         leftAxis.setAxisMinimum(0f);
         leftAxis.setAxisMaximum(3.5f);
@@ -345,8 +304,6 @@ public class AppResourceDetailActivity extends BaseActivity {
     private int hours() {
         return PERIODS_HOURS[selectedPeriodIdx];
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

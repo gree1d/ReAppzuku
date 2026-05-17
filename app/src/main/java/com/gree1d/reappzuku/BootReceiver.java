@@ -10,10 +10,6 @@ import androidx.core.content.ContextCompat;
 
 import static com.gree1d.reappzuku.PreferenceKeys.KEY_AUTO_KILL_ENABLED;
 import static com.gree1d.reappzuku.PreferenceKeys.PREFERENCES_NAME;
-/**
- * Broadcast receiver for Boot Completed.
- * Restores automation state after reboot.
- */
 public class BootReceiver extends BroadcastReceiver {
     private static final String TAG = "BootReceiver";
 
@@ -23,9 +19,6 @@ public class BootReceiver extends BroadcastReceiver {
             SharedPreferences prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
             boolean automationEnabled = prefs.getBoolean(KEY_AUTO_KILL_ENABLED, false);
 
-            // Always reschedule restriction alarms — AlarmManager resets on reboot.
-            // If the service is starting anyway, its onCreate() will also call scheduleNext(),
-            // but scheduleNext() is idempotent so the double call is harmless.
             RestrictionsScheduler.scheduleNextStatic(context);
 
             if (automationEnabled) {

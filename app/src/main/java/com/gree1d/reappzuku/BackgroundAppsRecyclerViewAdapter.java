@@ -35,22 +35,19 @@ public class BackgroundAppsRecyclerViewAdapter extends RecyclerView.Adapter<Back
         this.actionListener = listener;
     }
 
-    /** Заменяет список и перерисовывает всё */
     public void submitList(List<AppModel> list) {
         items.clear();
         if (list != null) items.addAll(list);
         selectionMode = items.stream().anyMatch(AppModel::isSelected);
         notifyDataSetChanged();
     }
-
-    /** Обновляет порядок и CPU без полной перезагрузки данных */
+    
     public void updateCpu(List<AppModel> list) {
         items.clear();
         if (list != null) items.addAll(list);
         notifyDataSetChanged();
     }
 
-    /** Возвращает текущий список */
     public List<AppModel> getCurrentList() {
         return items;
     }

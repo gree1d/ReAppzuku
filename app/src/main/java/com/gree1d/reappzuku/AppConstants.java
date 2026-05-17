@@ -1,11 +1,7 @@
 package com.gree1d.reappzuku;
 
-/**
- * Centralized constants for timing, thresholds, and other magic numbers.
- */
 public final class AppConstants {
         private AppConstants() {
-                // Prevent instantiation
         }
 
         // Kill Intervals (milliseconds)
@@ -17,16 +13,16 @@ public final class AppConstants {
         public static final int[] RAM_THRESHOLD_VALUES = { 75, 80, 85, 90, 95, 100 };
 
         // Stats & History
-        public static final long STATS_HISTORY_DURATION_MS = 12 * 60 * 60 * 1000L; // 12 hours
+        public static final long STATS_HISTORY_DURATION_MS = 12 * 60 * 60 * 1000L;
         public static final int STATS_MAX_COUNT = 10_000;
-        public static final int RELAUNCH_GREEDY_THRESHOLD = 3; // Consider app "greedy" if relaunched more than this
+        public static final int RELAUNCH_GREEDY_THRESHOLD = 3
 
         // Delays
-        public static final int RELAUNCH_CHECK_DELAY_MS = 2000; // 2 seconds delay before checking relaunches
-        public static final int ROOT_CHECK_TIMEOUT_MS = 1000; // 1 second timeout for root check
+        public static final int RELAUNCH_CHECK_DELAY_MS = 2000;
+        public static final int ROOT_CHECK_TIMEOUT_MS = 1000;
 
         // RAM Monitor
-        public static final int RAM_MONITOR_UPDATE_INTERVAL_MS = 2000; // 2 seconds
+        public static final int RAM_MONITOR_UPDATE_INTERVAL_MS = 2000;
 
         // Notification IDs
         public static final int NOTIFICATION_ID_SERVICE = 1;
@@ -53,29 +49,30 @@ public final class AppConstants {
         };
 
         // Accent values
-        public static final int ACCENT_SYSTEM    = 0;  // Системный (DynamicColors)
-        public static final int ACCENT_INDIGO    = 1;  // Индиго (по умолчанию)
-        public static final int ACCENT_CRIMSON   = 2;  // Алый
-        public static final int ACCENT_FOREST    = 3;  // Лесной зелёный
-        public static final int ACCENT_SLATE     = 4;  // Сланцево-синий
-        public static final int ACCENT_ROSE      = 5;  // Пыльная роза
-        public static final int ACCENT_AMBER     = 6;  // Янтарный
-        public static final int ACCENT_TEAL      = 7;  // Морская волна
-        public static final int ACCENT_TERRACOTA = 8;  // Терракота
-        public static final int ACCENT_MOCHA     = 9;  // Мокко
-        public static final int ACCENT_OLIVE     = 10; // Оливковый
-        public static final int ACCENT_STEEL     = 11; // Стальной
-        public static final int ACCENT_APRICOT      = 12;  // Абрикосовый
-        public static final int ACCENT_SKY          = 13;  // Небесный
-        public static final int ACCENT_PAPAYA       = 14;  // Папайя
-        public static final int ACCENT_LAVENDER     = 15;  // Лаванда
-        public static final int ACCENT_MINT         = 16;  // Мятный
-        public static final int ACCENT_PEACH        = 17;  // Персиковый
-        public static final int ACCENT_POWDER       = 18;  // Пудровый
-        public static final int ACCENT_FOG          = 19;  // Туманный
+        public static final int ACCENT_SYSTEM    = 0;
+        public static final int ACCENT_INDIGO    = 1;
+        public static final int ACCENT_CRIMSON   = 2;
+        public static final int ACCENT_FOREST    = 3;
+        public static final int ACCENT_SLATE     = 4; 
+        public static final int ACCENT_ROSE      = 5;
+        public static final int ACCENT_AMBER     = 6;
+        public static final int ACCENT_TEAL      = 7;
+        public static final int ACCENT_TERRACOTA = 8;
+        public static final int ACCENT_MOCHA     = 9;
+        public static final int ACCENT_OLIVE     = 10;
+        public static final int ACCENT_STEEL     = 11;
+        // light accents
+        public static final int ACCENT_APRICOT      = 12;
+        public static final int ACCENT_SKY          = 13;
+        public static final int ACCENT_PAPAYA       = 14;
+        public static final int ACCENT_LAVENDER     = 15;
+        public static final int ACCENT_MINT         = 16;
+        public static final int ACCENT_PEACH        = 17;
+        public static final int ACCENT_POWDER       = 18;
+        public static final int ACCENT_FOG          = 19;
 
         // Sleep Mode
-        public static final long DEFAULT_SLEEP_MODE_DELAY_MS = 60 * 60 * 1000L; // 60 minutes
+        public static final long DEFAULT_SLEEP_MODE_DELAY_MS = 60 * 60 * 1000L;
         public static final long[] SLEEP_MODE_DELAYS_MS = {
                 5 * 60 * 1000L,
                 10 * 60 * 1000L,
@@ -86,5 +83,5 @@ public final class AppConstants {
         };
 
         // Shizuku monitoring
-        public static final long SHIZUKU_POLL_INTERVAL_MS = 15_000; // 15 seconds
+        public static final long SHIZUKU_POLL_INTERVAL_MS = 15_000;
 }

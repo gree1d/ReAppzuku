@@ -18,14 +18,9 @@ public final class BackgroundRestrictionLog {
     private static final int MAX_ENTRIES    = 200;
     private static final int MAX_DETAIL_LEN = 180;
 
-    /** Single background thread for all DB writes — avoids main thread violations. */
     private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
 
     private BackgroundRestrictionLog() {}
-
-    // =========================================================================
-    // Write
-    // =========================================================================
 
     public static void log(Context context, String packageName,
                            String action, String outcome, String detail) {
@@ -42,17 +37,12 @@ public final class BackgroundRestrictionLog {
             BgRestrictionLog.Dao dao = AppDatabase.getInstance(context).bgRestrictionLogDao();
             dao.insert(entry);
 
-            // Trim to MAX_ENTRIES
             int count = dao.getCount();
             if (count > MAX_ENTRIES) {
                 dao.deleteOldest(count - MAX_ENTRIES);
             }
         });
     }
-
-    // =========================================================================
-    // Read
-    // =========================================================================
 
     public static String readDisplayText(Context context) {
         List<LogEntry> entries = readEntries(context);
@@ -67,7 +57,6 @@ public final class BackgroundRestrictionLog {
         return display.toString();
     }
 
-    /** Returns entries sorted newest first (DAO orders by timestamp DESC). */
     public static List<LogEntry> readEntries(Context context) {
         List<BgRestrictionLog> rows =
                 AppDatabase.getInstance(context).bgRestrictionLogDao().getRecent(MAX_ENTRIES);
@@ -84,19 +73,11 @@ public final class BackgroundRestrictionLog {
         return result;
     }
 
-    // =========================================================================
-    // Clear
-    // =========================================================================
-
     public static void clear(Context context) {
         if (context == null) return;
         DB_EXECUTOR.execute(() ->
                 AppDatabase.getInstance(context).bgRestrictionLogDao().clearAll());
     }
-
-    // =========================================================================
-    // Helpers
-    // =========================================================================
 
     private static String formatTimestamp(long millis) {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date(millis));
@@ -111,10 +92,6 @@ public final class BackgroundRestrictionLog {
                         .trim();
         return s.length() > MAX_DETAIL_LEN ? s.substring(0, MAX_DETAIL_LEN - 3) + "..." : s;
     }
-
-    // =========================================================================
-    // LogEntry (public API — unchanged)
-    // =========================================================================
 
     public static final class LogEntry {
         public final String timestamp;

@@ -13,119 +13,91 @@ import java.util.Set;
 
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 
-/**
- * Centralized list of protected apps that should never be killed.
- * These are critical system apps that would cause device instability if
- * stopped.
- */
 public final class ProtectedApps {
 
     private ProtectedApps() {
-        // Prevent instantiation
     }
 
-    /**
-     * Hardcoded list of protected package names.
-     * These apps are critical for device operation.
-     */
     private static final Set<String> PROTECTED_PACKAGES = new HashSet<>(Arrays.asList(
-            // --- Core & Development ---
-            "com.gree1d.reappzuku", // Self
-            "com.google.android.gms", // Google Play Services
-            "com.google.android.gsf", // Google Services Framework
-            "com.android.systemui", // System UI
-            "com.android.settings", // Settings
-            "com.android.phone", // Phone / Dialer
-            "com.android.contacts", // Contacts
-            "com.android.mms", // SMS Service
-            "com.android.server.telecom", // Telecom Server
-            "com.android.bluetooth", // Bluetooth
-            "com.android.externalstorage", // External Storage
-            "com.google.android.providers.media.module", // Media Module
-            "com.google.android.packageinstaller", // Package Installer
-            "com.google.android.permissioncontroller", // Permission Controller
-            "com.google.android.inputmethod.latin", // Gboard
-            "rikka.shizuku.common", // Shizuku
-            "moe.shizuku.privileged.api", // Shizuku thedjchi fork
-            "com.android.shell",                          // Service for ADB/Shizuku
-            "com.android.keychain",                       // Keychain. Can break TLS/VPN/Wi-Fi
-            "com.android.packageinstaller",               // AOSP Package Installer
-            "com.android.permissioncontroller",           // AOSP Permission Controller
-            "com.android.providers.settings",            // Android settings
-            "com.android.providers.telephony",           // Provider SMS/MMS
-            "com.android.nfc",                            // NFC
-            "com.android.networkstack",                   // Network Stack
-            "com.android.networkstack.tethering",        // Tethering stack
-            "com.android.net.resolv",                     // DNS resolver
-            "com.android.vpndialogs",                    // VPN dialogs
+            "com.gree1d.reappzuku",
+            "com.google.android.gms",
+            "com.google.android.gsf",
+            "com.android.systemui", 
+            "com.android.settings",
+            "com.android.phone", 
+            "com.android.contacts", 
+            "com.android.mms",
+            "com.android.server.telecom",
+            "com.android.bluetooth",
+            "com.android.externalstorage",
+            "com.google.android.providers.media.module",
+            "com.google.android.packageinstaller",
+            "com.google.android.permissioncontroller",
+            "com.google.android.inputmethod.latin",
+            "rikka.shizuku.common",
+            "moe.shizuku.privileged.api",
+            "com.android.shell",
+            "com.android.keychain",
+            "com.android.packageinstaller", 
+            "com.android.permissioncontroller",
+            "com.android.providers.settings", 
+            "com.android.providers.telephony", 
+            "com.android.nfc", 
+            "com.android.networkstack", 
+            "com.android.networkstack.tethering",
+            "com.android.net.resolv", 
+            "com.android.vpndialogs",
 
-            // --- Xiaomi / Poco / Redmi (MIUI & HyperOS) ---
-            "com.miui.securitycenter", // Security App
-            "com.miui.home", // MIUI Launcher
-            "com.miui.miwallpaper", // MIUI Wallpaper
-            "com.android.camera", // Camera
-            "com.miui.guardprovider", // Security Guard
-            "com.miui.core",                              // MIUI Core Services
-            "com.miui.powerkeeper",                     // MIUI PowerKeeper - very capricious app 
+            "com.miui.securitycenter",
+            "com.miui.home",
+            "com.miui.miwallpaper",
+            "com.android.camera",
+            "com.miui.guardprovider",
+            "com.miui.core", 
+            "com.miui.powerkeeper",
 
-            // --- Samsung (One UI) ---
-            "com.samsung.android.lool", // Device Care
-            "com.samsung.android.sm.devicesecurity", // Device Security
-            "com.sec.android.app.launcher", // One UI Home
-            "com.samsung.android.app.telephonyui",       // Phone UI Samsung
+            "com.samsung.android.lool",
+            "com.samsung.android.sm.devicesecurity",
+            "com.sec.android.app.launcher",
+            "com.samsung.android.app.telephonyui",
             "com.samsung.android.server.telecom",   
 
-            // --- Oppo / Realme / OnePlus (ColorOS & derivatives) ---
-            "com.coloros.safecenter", // Phone Manager
-            "com.oppo.launcher", // System Launcher
-            "com.coloros.assistantscreen", // Smart Assistant
+            "com.coloros.safecenter", 
+            "com.oppo.launcher",
+            "com.coloros.assistantscreen",
 
-            // --- Vivo / iQOO (Funtouch OS / OriginOS) ---
-            "com.iqoo.secure", // iManager
-            "com.bbk.launcher2", // Vivo Launcher
+            "com.iqoo.secure",
+            "com.bbk.launcher2",
 
-            // --- Huawei / Honor (EMUI / MagicOS) ---
-            "com.huawei.systemmanager", // Optimizer
-            "com.huawei.android.launcher", // Huawei Home
-            "com.hihonor.systemmanager", // Honor System Manager
+            "com.huawei.systemmanager",
+            "com.huawei.android.launcher",
+            "com.hihonor.systemmanager",
             
-            // --- Root Managers ---
-            "com.topjohnwu.magisk", // Magisk
-            "me.weishu.kernelsu", // KernelSU
-            "com.rifsxd.ksunext", // KernelSU Next
-            "me.bmax.apatch", // APatch
-            "com.suki.suki", // SukiSU
-            "com.suki.suki_ultra", // SukiSU Ultra
-            "org.sukisu.manager" // SukiSU (Alternative/New builds)
+            "com.topjohnwu.magisk",
+            "me.weishu.kernelsu", 
+            "com.rifsxd.ksunext",
+            "me.bmax.apatch",
+            "com.suki.suki",
+            "com.suki.suki_ultra",
+            "org.sukisu.manager"
             
     ));
 
 
-    /**
-     * Check if a package is protected from being killed.
-     * This includes both system-protected apps and user-whitelisted apps.
-     *
-     * @param context     Application context
-     * @param packageName Package name to check
-     * @return true if the package should not be killed
-     */
     public static boolean isProtected(Context context, String packageName) {
         if (packageName == null) {
             return false;
         }
 
-        // Check hardcoded list
         if (PROTECTED_PACKAGES.contains(packageName)) {
             return true;
         }
 
-        // Check if it's the current keyboard
         String currentKeyboard = getCurrentKeyboardPackage(context);
         if (packageName.equals(currentKeyboard)) {
             return true;
         }
 
-        // Check if it's the current launcher
         String currentLauncher = getCurrentLauncherPackage(context);
         if (packageName.equals(currentLauncher)) {
             return true;
@@ -134,13 +106,6 @@ public final class ProtectedApps {
         return false;
     }
 
-    /**
-     * Check if a package is whitelisted by the user (never kill).
-     *
-     * @param context     Application context
-     * @param packageName Package name to check
-     * @return true if the package is in the user's whitelist
-     */
     public static boolean isWhitelisted(Context context, String packageName) {
         if (packageName == null) {
             return false;
@@ -150,9 +115,6 @@ public final class ProtectedApps {
         return whitelisted.contains(packageName);
     }
 
-    /**
-     * Get the current keyboard/input method package name.
-     */
     public static String getCurrentKeyboardPackage(Context context) {
         String rawKeyboard = Settings.Secure.getString(
                 context.getContentResolver(),
@@ -163,9 +125,6 @@ public final class ProtectedApps {
         return rawKeyboard;
     }
 
-    /**
-     * Get the current launcher/home app package name.
-     */
     public static String getCurrentLauncherPackage(Context context) {
         Intent launcherIntent = new Intent(Intent.ACTION_MAIN);
         launcherIntent.addCategory(Intent.CATEGORY_HOME);

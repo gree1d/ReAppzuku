@@ -133,11 +133,11 @@ public class AutoKillManager {
                                 Log.d(TAG, "SKIP (foreground): " + pkg);
                                 return false;
                             }
-                            if (killMode == 1) { // Blacklist Mode (Default)
+                            if (killMode == 1) {
                                 boolean inBlacklist = blacklistedApps.contains(pkg);
                                 Log.d(TAG, (inBlacklist ? "KILL (blacklist): " : "SKIP (not in blacklist): ") + pkg);
                                 return inBlacklist;
-                            } else { // Whitelist Mode
+                            } else {
                                 if (whitelistedApps.contains(pkg)) {
                                     Log.d(TAG, "SKIP (whitelisted): " + pkg);
                                     return false;
@@ -161,7 +161,7 @@ public class AutoKillManager {
                 for (String pkg : toKill) {
                     long rssKb = psRssMap.getOrDefault(pkg, 0L);
                     if (rssKb == 0) {
-                        // Fallback: попытка взять из currentAppsList (ручной вызов)
+
                         for (AppModel app : currentAppsList) {
                             if (app.getPackageName().equals(pkg)) {
                                 rssKb = app.getAppRamBytes();
@@ -467,7 +467,6 @@ public class AutoKillManager {
             return String.format(java.util.Locale.US, "%.2f GB", kb / (1024f * 1024f));
     }
 
-    // --- Preferences ---
 
     public Set<String> getHiddenApps() {
         return new HashSet<>(sharedpreferences.getStringSet(KEY_HIDDEN_APPS, new HashSet<>()));

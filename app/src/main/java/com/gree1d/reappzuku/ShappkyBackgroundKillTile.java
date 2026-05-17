@@ -12,7 +12,6 @@ import android.widget.Toast;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-// Quick Settings tile to run the configured whitelist/blacklist background kill
 public class ShappkyBackgroundKillTile extends TileService {
 
     private ShellManager shellManager;

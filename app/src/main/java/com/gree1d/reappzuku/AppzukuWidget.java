@@ -23,7 +23,6 @@ public class AppzukuWidget extends AppWidgetProvider {
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
-        // Intent for clean action
         Intent intent = new Intent(context, ShappkyService.class);
         intent.setAction("TRIGGER_KILL");
 
@@ -44,7 +43,7 @@ public class AppzukuWidget extends AppWidgetProvider {
             long availableRam = 0;
             try (java.io.RandomAccessFile reader = new java.io.RandomAccessFile("/proc/meminfo", "r")) {
                 totalRam = Long.parseLong(reader.readLine().replaceAll("\\D+", "")) / 1024;
-                reader.readLine(); // Free
+                reader.readLine();
                 availableRam = Long.parseLong(reader.readLine().replaceAll("\\D+", "")) / 1024;
             } catch (Exception ignored) {
             }

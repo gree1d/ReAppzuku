@@ -60,7 +60,6 @@ public class CpuMonitor {
         }
     }
 
-    /** Обновляет список без сброса baseline — вызывать при каждом loadBackgroundApps */
     public void refreshAppsList(List<AppModel> newList) {
         synchronized (appsLock) {
             this.appsList = newList != null ? newList : Collections.emptyList();
@@ -87,10 +86,8 @@ public class CpuMonitor {
         handler.removeCallbacks(pollRunnable);
     }
 
-    // -------------------------------------------------------------------------
 
     private void pollCpu() {
-        // Один shell-вызов: /proc/stat + все нужные /proc/[pid]/stat
         List<AppModel> snapshot;
         synchronized (appsLock) {
             snapshot = new ArrayList<>(appsList);
@@ -98,14 +95,13 @@ public class CpuMonitor {
 
         Log.d(TAG, "pollCpu: apps=" + snapshot.size() + " prevTotalCpu=" + prevTotalCpu);
 
-        // Собираем команду: сначала /proc/stat, потом /proc/[pid]/stat для каждого приложения
         StringBuilder cmd = new StringBuilder("cat /proc/stat");
         for (AppModel app : snapshot) {
             int pid = app.getPid();
             if (pid > 0) {
                 cmd.append("; echo ---; cat /proc/").append(pid).append("/stat");
             } else {
-                cmd.append("; echo ---");  // пустой разделитель чтобы сохранить порядок
+                cmd.append("; echo ---");
             }
         }
 
@@ -116,7 +112,6 @@ public class CpuMonitor {
         }
 
         String[] sections = output.split("---");
-        // sections[0] = /proc/stat, sections[1..n] = /proc/[pid]/stat по порядку
 
         long totalCpu = parseTotalCpuTicks(sections[0]);
         if (totalCpu < 0) {

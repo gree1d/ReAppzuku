@@ -39,62 +39,31 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Handles GitHub release update checking for ReAppzuku.
- *
- * Auto-check: once per day via {@link #checkForUpdatesAuto(Context)}.
- *   - Silently skipped if no internet or app is in background.
- *   - Posts a notification if a new version is found.
- *
- * Manual check: triggered by the "Check for updates" button.
- *   - Shows "No internet connection" if offline.
- *   - Shows a changelog dialog with "Close" / "Download" if a new version is found.
- *   - Shows "You're up to date" toast if already on latest.
- */
 public class UpdateChecker {
 
     private static final String TAG = "UpdateChecker";
 
-    // ── GitHub config ──────────────────────────────────────────────────────────
     private static final String GITHUB_API_URL =
             "https://api.github.com/repos/gree1d/ReAppzuku/releases/latest";
     private static final String RELEASES_URL =
             "https://github.com/gree1d/ReAppzuku/releases";
 
-    // ── Notification ───────────────────────────────────────────────────────────
     private static final String CHANNEL_ID   = "reappzuku_updates";
     private static final int    NOTIF_ID     = 9001;
 
-    // ── Prefs for auto-check throttle ──────────────────────────────────────────
     private static final String PREFS_NAME         = "update_checker_prefs";
     private static final String KEY_LAST_CHECK_MS  = "last_check_ms";
     private static final long   CHECK_INTERVAL_MS  = 24 * 60 * 60 * 1000L; // 1 day
 
-    // ── Network timeouts ───────────────────────────────────────────────────────
     private static final int CONNECT_TIMEOUT_MS = 8_000;
     private static final int READ_TIMEOUT_MS    = 8_000;
 
-    // ── Public API ─────────────────────────────────────────────────────────────
-
-    /**
-     * Perform a background auto-check (once per 24 h).
-     * Silently skipped if:
-     *   - within throttle window
-     *   - no internet connection
-     *   - app is in background (not on screen)
-     *
-     * Call from e.g. {@code MainActivity.onResume()} or a periodic handler.
-     * Do NOT call from a background service — the foreground guard will skip it,
-     * but it is semantically wrong to do so.
-     */
     public static void checkForUpdatesAuto(Context context) {
-        // ① Guard: only run when app is on screen
         if (!isAppInForeground(context)) {
             Log.d(TAG, "Auto-check skipped: app is in background");
             return;
         }
 
-        // ② Throttle: once per day
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         long lastCheck = prefs.getLong(KEY_LAST_CHECK_MS, 0);
         if (System.currentTimeMillis() - lastCheck < CHECK_INTERVAL_MS) {
@@ -102,7 +71,6 @@ public class UpdateChecker {
             return;
         }
 
-        // ③ Guard: no internet
         if (!isConnected(context)) {
             Log.d(TAG, "Auto-check skipped: no internet");
             return;
@@ -113,7 +81,7 @@ public class UpdateChecker {
         ExecutorService exec = Executors.newSingleThreadExecutor();
         exec.execute(() -> {
             ReleaseInfo info = fetchLatestRelease();
-            if (info == null) return; // network error already logged — silent fallback
+            if (info == null) return;
 
             String currentVersion = getAppVersion(context);
             if (isNewer(info.tagName, currentVersion)) {
@@ -125,10 +93,6 @@ public class UpdateChecker {
         });
     }
 
-    /**
-     * Perform a manual check triggered by a UI button.
-     * Must be called from the main thread; {@code context} should be an Activity.
-     */
     public static void checkForUpdatesManual(Context context) {
         if (!isConnected(context)) {
             showToast(context, "No internet");
@@ -156,12 +120,6 @@ public class UpdateChecker {
         });
     }
 
-    // ── Internal helpers ───────────────────────────────────────────────────────
-
-    /**
-     * Returns true if this app's process is currently in the foreground
-     * (i.e. visible on screen). Uses ActivityManager — no extra dependencies.
-     */
     private static boolean isAppInForeground(Context context) {
         android.app.ActivityManager am =
                 (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -175,10 +133,6 @@ public class UpdateChecker {
         return false;
     }
 
-    /**
-     * Fetches the latest GitHub release via the REST API.
-     * Returns null on any network or parse error (all failures are logged).
-     */
     private static ReleaseInfo fetchLatestRelease() {
         HttpURLConnection conn = null;
         try {
@@ -206,7 +160,6 @@ public class UpdateChecker {
             String body    = json.optString("body", "");
             String htmlUrl = json.optString("html_url", RELEASES_URL);
 
-            // Collect APK download URL from assets (first .apk asset if present)
             String downloadUrl = htmlUrl;
             JSONArray assets = json.optJSONArray("assets");
             if (assets != null) {
@@ -223,7 +176,6 @@ public class UpdateChecker {
             return new ReleaseInfo(tagName, body.trim(), downloadUrl, htmlUrl);
 
         } catch (UnknownHostException e) {
-            // DNS failed — no internet despite connectivity check (can happen on captive portals)
             Log.w(TAG, "No route to GitHub (DNS failed): " + e.getMessage());
             return null;
         } catch (SocketTimeoutException e) {
@@ -242,10 +194,6 @@ public class UpdateChecker {
         }
     }
 
-    /**
-     * Compares two semantic version strings (e.g. "1.5.0" > "1.4.0").
-     * Returns true if {@code remote} is strictly newer than {@code local}.
-     */
     static boolean isNewer(String remote, String local) {
         if (remote == null || remote.isEmpty()) return false;
         try {
@@ -282,10 +230,6 @@ public class UpdateChecker {
         }
     }
 
-    /**
-     * Checks for an active internet connection.
-     * Uses NetworkCapabilities on API 23+ to avoid the deprecated NetworkInfo API.
-     */
     @SuppressWarnings("deprecation")
     private static boolean isConnected(Context context) {
         ConnectivityManager cm =
@@ -300,7 +244,6 @@ public class UpdateChecker {
                     && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                     && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
         } else {
-            // Legacy path for API < 23
             NetworkInfo ni = cm.getActiveNetworkInfo();
             return ni != null && ni.isConnected();
         }
@@ -312,7 +255,6 @@ public class UpdateChecker {
                         android.widget.Toast.LENGTH_SHORT).show());
     }
 
-    // ── Notification ───────────────────────────────────────────────────────────
 
     private static void postUpdateNotification(Context context, ReleaseInfo info) {
         NotificationManager nm =
@@ -356,14 +298,12 @@ public class UpdateChecker {
         nm.notify(NOTIF_ID, builder.build());
     }
 
-    // ── Update dialog (manual check) ───────────────────────────────────────────
 
     private static void showUpdateDialog(Context context, ReleaseInfo info) {
         String bodyMd = info.changelog.isEmpty()
                 ? "Version " + info.tagName + " is available."
                 : "Version " + info.tagName + " is available.\n\n" + stripGitHubAlerts(info.changelog);
 
-        // TextView с Markwon-разметкой
         Markwon markwon = Markwon.create(context);
         TextView messageView = new TextView(context);
         int px16 = (int) (16 * context.getResources().getDisplayMetrics().density);
@@ -377,7 +317,6 @@ public class UpdateChecker {
             messageView.setText(bodyMd);
         }
 
-        // ScrollView на случай длинного changelog
         ScrollView scrollView = new ScrollView(context);
         scrollView.addView(messageView);
 
@@ -410,29 +349,21 @@ public class UpdateChecker {
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(btnColor);
     }
 
-    /**
-     * Strips GitHub Alerts (> [!NOTE], > [!WARNING], etc.) and their blockquote body
-     * from Markdown text, then normalises excessive blank lines.
-     */
     private static String stripGitHubAlerts(String markdown) {
         if (markdown == null) return "";
         return markdown
-                // Удаляем заголовок алерта: > [!NOTE] / > [!WARNING] / > [!TIP] / > [!IMPORTANT] / > [!CAUTION]
                 .replaceAll("(?m)^> \\[!(NOTE|WARNING|TIP|IMPORTANT|CAUTION)][ \\t]*\\r?\\n?", "")
-                // Убираем маркер цитаты у тела алерта (строки, начинающиеся с "> ")
                 .replaceAll("(?m)^> ?", "")
-                // Схлопываем 3+ подряд пустых строк в 2
                 .replaceAll("\\n{3,}", "\\n\\n")
                 .trim();
     }
 
-    // ── Data class ─────────────────────────────────────────────────────────────
 
     private static class ReleaseInfo {
         final String tagName;
         final String changelog;
-        final String downloadUrl;    // direct APK asset URL (fallback: release page)
-        final String releasePageUrl; // always the HTML release page
+        final String downloadUrl;
+        final String releasePageUrl;
 
         ReleaseInfo(String tagName, String changelog, String downloadUrl, String releasePageUrl) {
             this.tagName        = tagName;

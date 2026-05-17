@@ -221,7 +221,7 @@ public class SettingsActivity extends BaseActivity {
         binding.layoutKillInterval.setOnClickListener(v -> showKillIntervalDialog());
         binding.layoutHiddenApps.setOnClickListener(v -> showHiddenAppsDialog());
 
-        // Whitelist / Blacklist — требуют включённого сервиса
+
         binding.layoutWhitelist.setOnClickListener(v -> {
             if (!isServiceEnabled()) { showServiceRequiredToast(); return; }
             showWhitelistDialog();
@@ -231,7 +231,7 @@ public class SettingsActivity extends BaseActivity {
             showBlacklistDialog();
         });
 
-        // Background Restrictions — требуют включённого сервиса
+
         binding.layoutBackgroundRestriction.setVisibility(
                 appManager.supportsBackgroundRestriction() ? View.VISIBLE : View.GONE);
         binding.layoutBackgroundRestriction.setOnClickListener(v -> {
@@ -254,7 +254,7 @@ public class SettingsActivity extends BaseActivity {
             showRestrictionsSchedulerDialog();
         });
 
-        // Sleep Mode — переключатель и под-опции требуют включённого сервиса
+
         binding.switchSleepMode.setChecked(sleepModeManager.isSleepModeEnabled());
         binding.switchSleepMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked && !isServiceEnabled()) {
@@ -287,7 +287,7 @@ public class SettingsActivity extends BaseActivity {
             showSleepModeDelayDialog();
         });
 
-        // Kill Mode / Kill Type — требуют включённого сервиса
+
         binding.layoutKillMode.setOnClickListener(v -> {
             if (!isServiceEnabled()) { showServiceRequiredToast(); return; }
             showKillModeDialog();
@@ -322,42 +322,39 @@ public class SettingsActivity extends BaseActivity {
         binding.layoutWhitelist.setVisibility(mode == 0 ? View.VISIBLE : View.GONE);
     }
 
-    /** Есть ли Root или Shizuku. */
+
     private boolean hasPrivilege() {
         return shellManager.hasShizukuPermission() || shellManager.resolveAnyShellPermission();
     }
 
-    /** Включён ли фоновый сервис в настройках. */
+
     private boolean isServiceEnabled() {
         return sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false);
     }
 
-    /** Toast "Включите фоновый сервис". */
+
     private void showServiceRequiredToast() {
         Toast.makeText(this, getString(R.string.settings_requires_service_enabled), Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * Применяет визуальное состояние (alpha) элементов, которые требуют активного сервиса.
-     * Вызывается при инициализации и при переключении switchAutoKill.
-     */
+
     private void applyServiceDependentState(boolean serviceEnabled) {
         float alpha = serviceEnabled ? 1.0f : 0.5f;
 
-        // Kill Mode / Kill Type / Whitelist / Blacklist
+
         binding.layoutKillMode.setAlpha(alpha);
         binding.layoutAutoKillType.setAlpha(alpha);
         binding.layoutWhitelist.setAlpha(alpha);
         binding.layoutBlacklist.setAlpha(alpha);
 
-        // Background Restrictions
+
         if (appManager.supportsBackgroundRestriction()) {
             binding.layoutBackgroundRestriction.setAlpha(alpha);
             binding.layoutReapplyRestrictions.setAlpha(alpha);
             binding.layoutRestrictionsScheduler.setAlpha(alpha);
         }
 
-        // Sleep Mode
+
         binding.switchSleepMode.setEnabled(serviceEnabled);
         binding.layoutSleepModeApps.setAlpha(alpha);
         binding.layoutSleepModeDelay.setAlpha(alpha);
@@ -377,10 +374,10 @@ public class SettingsActivity extends BaseActivity {
             handler.post(() -> {
                 binding.textShellMode.setText(text);
                 if (!privileged) {
-                    // Нет привилегий — блокируем переключатель сервиса
+
                     binding.switchAutoKill.setEnabled(false);
                     binding.switchAutoKill.setAlpha(0.5f);
-                    // Если сервис каким-то образом был включён — принудительно выключаем
+
                     if (sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false)) {
                         sharedPreferences.edit().putBoolean(KEY_AUTO_KILL_ENABLED, false).apply();
                         binding.switchAutoKill.setChecked(false);
@@ -702,12 +699,12 @@ public class SettingsActivity extends BaseActivity {
                 Set<String> manualPackages = filterAdapter.getManualRestrictedPackages();
                 java.util.Map<String, Integer> opsMasks = filterAdapter.getManualOpsMasks();
 
-                // Сохраняем маски ops для Manual-пакетов
+
                 for (java.util.Map.Entry<String, Integer> e : opsMasks.entrySet()) {
                     appManager.saveManualOpsMask(e.getKey(), e.getValue());
                 }
 
-                // Сохраняем актуальный Manual-set (пакеты сменившие тип исключены)
+
                 Set<String> newManualSet = new java.util.HashSet<>(manualPackages);
                 newManualSet.retainAll(targetPackages);
                 appManager.saveManualRestrictedApps(newManualSet);
@@ -1191,7 +1188,7 @@ public class SettingsActivity extends BaseActivity {
                     btnTo.setText(formatTime(h, m, use24h));
                 }, endHour[0], endMinute[0], use24h).show());
 
-        // componentName хранит выбранный компонент: "package/ClassName" или null
+
         String[] selectedComponent = { src != null ? src.componentName : null };
         int[]    selectedCompType  = { src != null ? src.onActivateAction : RestrictionsScheduler.ON_ACTIVATE_NOTHING };
 
@@ -1199,7 +1196,7 @@ public class SettingsActivity extends BaseActivity {
         LinearLayout componentContainer   = dialogView.findViewById(R.id.scheduler_component_container);
         TextView btnComponent             = dialogView.findViewById(R.id.scheduler_btn_component);
 
-        // Восстанавливаем начальное состояние
+
         boolean hadLaunch = onActivateAction[0] != RestrictionsScheduler.ON_ACTIVATE_NOTHING
                 && selectedComponent[0] != null;
         rgAction.check(hadLaunch ? R.id.scheduler_rb_launch : R.id.scheduler_rb_none);
@@ -1211,7 +1208,7 @@ public class SettingsActivity extends BaseActivity {
         rgAction.setOnCheckedChangeListener((rg, id) -> {
             if (id == R.id.scheduler_rb_launch) {
                 componentContainer.setVisibility(View.VISIBLE);
-                // Тип по умолчанию — ACTIVITY, можно сменить в диалоге выбора
+
                 if (selectedCompType[0] == RestrictionsScheduler.ON_ACTIVATE_NOTHING) {
                     selectedCompType[0] = RestrictionsScheduler.ON_ACTIVATE_ACTIVITY;
                 }
@@ -1291,18 +1288,15 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
-    /**
-     * Диалог выбора компонента приложения (Activity / Service / Receiver).
-     * Показывает сгруппированный список из манифеста пакета.
-     */
+
     private void showComponentPickerDialog(String packageName,
                                            String[] selectedComponent,
                                            int[] selectedCompType,
                                            int[] onActivateAction,
                                            TextView btnComponent) {
         executor.execute(() -> {
-            // Собираем компоненты из манифеста
-            List<String[]> items = new ArrayList<>(); // [0]=label, [1]=fullName, [2]=typeInt
+
+            List<String[]> items = new ArrayList<>();
             try {
                 PackageInfo pi = getPackageManager().getPackageInfo(packageName,
                         PackageManager.GET_ACTIVITIES |
@@ -1374,7 +1368,7 @@ public class SettingsActivity extends BaseActivity {
         });
     }
 
-    /** Возвращает короткое имя компонента: "ru.vk.store/.push.FCMReceiver" → "FCMReceiver" */
+
     private String shortComponentName(String componentName) {
         if (componentName == null) return "";
         int dot = componentName.lastIndexOf('.');

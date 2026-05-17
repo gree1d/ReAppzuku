@@ -128,8 +128,8 @@ public class MainActivity extends BaseActivity {
         setupListeners();
         setupBottomNavigation();
         setupFabInsets();
-        // Ограничиваем высоту SwipeRefreshLayout: экран минус nav bar (64dp хардкод).
-        // post() гарантирует что вью уже отрисованы и getHeight() возвращает реальные значения.
+
+
         binding.swiperefreshlayout1.post(this::recalculateListHeight);
         loadSettingsAndApplyToManager();
 
@@ -170,8 +170,8 @@ public class MainActivity extends BaseActivity {
     }
 
     private void setupFabInsets() {
-        // Запоминаем высоту системной навигации при dispatch insets.
-        // Применяем margin каждый раз перед show() через applyFabMargin().
+
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.fab, (v, insets) -> {
             fabNavBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
             return insets;
@@ -222,10 +222,7 @@ public class MainActivity extends BaseActivity {
         cpuMonitor.stopMonitoring();
     }
 
-    /**
-     * Запускает ShappkyService если он был включён в настройках, но сейчас не работает.
-     * Heartbeat — вызывается при каждом открытии приложения.
-     */
+
     private void ensureServiceRunning() {
         if (sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false)
                 && !ShappkyService.isRunning()) {
@@ -378,9 +375,6 @@ public class MainActivity extends BaseActivity {
                 .show();
     }
 
-    // -------------------------------------------------------------------------
-    // App Triggers dialog
-    // -------------------------------------------------------------------------
 
     private void showAppTriggersDialog(AppModel app) {
         AlertDialog loadingDialog = new AlertDialog.Builder(this)
@@ -409,7 +403,7 @@ public class MainActivity extends BaseActivity {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_app_triggers, null);
         LinearLayout container = dialogView.findViewById(R.id.triggers_container);
 
-        // Status row — hidden if status could not be resolved
+
         if (status != null) {
             String statusLabel;
             switch (status) {
@@ -434,7 +428,7 @@ public class MainActivity extends BaseActivity {
             container.addView(statusView);
         }
 
-        // Split into three groups
+
         List<AppTriggersAnalyzer.TriggerInfo> activeNow = new ArrayList<>();
         List<AppTriggersAnalyzer.TriggerInfo> canWake   = new ArrayList<>();
         List<AppTriggersAnalyzer.TriggerInfo> other     = new ArrayList<>();
@@ -513,9 +507,6 @@ public class MainActivity extends BaseActivity {
         return tv.data;
     }
 
-    // -------------------------------------------------------------------------
-    // List membership / restrictions
-    // -------------------------------------------------------------------------
 
     private void toggleListMembership(AppModel app, String listType) {
         String packageName = app.getPackageName();
@@ -634,9 +625,6 @@ public class MainActivity extends BaseActivity {
         return getString(R.string.main_restriction_menu_default);
     }
 
-    // -------------------------------------------------------------------------
-    // App list loading / filtering
-    // -------------------------------------------------------------------------
 
     private void loadBackgroundApps() {
         binding.swiperefreshlayout1.setRefreshing(true);

@@ -56,10 +56,6 @@ public class SleepModeManager {
         sharedpreferences.edit().putBoolean(KEY_SLEEP_MODE_ENABLED, enabled).apply();
     }
 
-    /**
-     * Loads all non-system installed apps for Sleep Mode selection.
-     * System apps are excluded because shell cannot freeze them.
-     */
     public void loadSleepModeApps(Consumer<List<AppModel>> callback) {
         executor.execute(() -> {
             PackageManager pm = context.getPackageManager();
@@ -87,11 +83,6 @@ public class SleepModeManager {
         });
     }
 
-    /**
-     * Freeze all apps that are in the Sleep Mode list.
-     * Uses pm disable-user via Shizuku Binder API.
-     * Should be called after the device has been idle for 1+ hour.
-     */
     public void freezeBackgroundRestrictedApps(Runnable onComplete) {
         Set<String> packages = getSleepModeApps();
         if (packages.isEmpty()) {
@@ -108,11 +99,6 @@ public class SleepModeManager {
         });
     }
 
-    /**
-     * Unfreeze all apps that are in the Sleep Mode list.
-     * Uses pm enable-user via Shizuku Binder API.
-     * Should be called when the screen turns on.
-     */
     public void unfreezeBackgroundRestrictedApps(Runnable onComplete) {
         Set<String> packages = getSleepModeApps();
         if (packages.isEmpty()) {

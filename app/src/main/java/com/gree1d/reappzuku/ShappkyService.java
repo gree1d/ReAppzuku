@@ -26,9 +26,6 @@ import android.content.IntentFilter;
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 import static com.gree1d.reappzuku.AppConstants.*;
 
-/**
- * A foreground service that periodically kills background applications
- */
 public class ShappkyService extends Service {
 
     private static final String TAG = "ShappkyService";
@@ -48,31 +45,20 @@ public class ShappkyService extends Service {
     private KillTriggerReceiver screenOffReceiver;
     private RestrictionsWatchdogManager watchdog;
 
-    // True if background restricted apps are currently frozen
     private boolean isFrozen = false;
 
-    // True if Shizuku lost notification is currently shown
     private boolean shizukuLostNotificationShown = false;
 
     public static boolean isRunning() {
         return isRunning;
     }
 
-    /**
-     * Returns true if non-critical (informational) notifications are allowed
-     * based on the user's notification mode preference.
-     */
     private boolean isAllNotificationsEnabled() {
         SharedPreferences prefs = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         int mode = prefs.getInt(KEY_NOTIFICATION_MODE, NOTIFICATION_MODE_ALL);
         return mode == NOTIFICATION_MODE_ALL;
     }
 
-    /**
-     * Updates the persistent foreground notification text.
-     * Called after each auto-kill to show how many apps were stopped.
-     * Only updates if the user has enabled all notifications.
-     */
     public static void updateNotification(Context context, String title, String text) {
         SharedPreferences prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         int mode = prefs.getInt(KEY_NOTIFICATION_MODE, NOTIFICATION_MODE_ALL);
@@ -105,7 +91,6 @@ public class ShappkyService extends Service {
         watchdog = new RestrictionsWatchdogManager(this, handler, appManager, shellManager, scheduler);
         createNotificationChannel();
 
-        // The foreground service notification is always shown (critical — keeps the service alive).
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID_SERVICE)
                 .setContentTitle(getString(R.string.service_notification_title))
                 .setContentText(getString(R.string.service_notification_text))
@@ -116,7 +101,6 @@ public class ShappkyService extends Service {
         startForeground(NOTIFICATION_ID_SERVICE, notification);
         isRunning = true;
 
-        // Register screen off/on receiver
         screenOffReceiver = new KillTriggerReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
@@ -146,7 +130,6 @@ public class ShappkyService extends Service {
 
         switch (action) {
             case "TRIGGER_KILL":
-                // Screen lock kill - respect RAM threshold if enabled
                 executor.execute(() -> {
                     SharedPreferences prefs = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                     boolean ramThresholdEnabled = prefs.getBoolean(KEY_RAM_THRESHOLD_ENABLED, false);
@@ -165,8 +148,6 @@ public class ShappkyService extends Service {
                 break;
 
             case "SCREEN_OFF":
-                // Schedule exact alarm to fire after idle threshold
-                // AlarmManager.setExactAndAllowWhileIdle works even in Doze mode
                 if (sleepModeManager.isSleepModeEnabled()) {
                     scheduleIdleFreezeAlarm();
                     long delayMs = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
@@ -176,7 +157,6 @@ public class ShappkyService extends Service {
                 break;
 
             case "SCREEN_ON":
-                // Delay 1500ms to allow HyperOS keyguard state to update after unlock
                 handler.postDelayed(() -> {
                     android.app.KeyguardManager km = (android.app.KeyguardManager)
                             getSystemService(Context.KEYGUARD_SERVICE);
@@ -197,7 +177,6 @@ public class ShappkyService extends Service {
                 break;
 
             case "IDLE_FREEZE":
-                // Triggered by KillTriggerReceiver when AlarmManager alarm fires
                 if (!sleepModeManager.isSleepModeEnabled()) {
                     Log.d(TAG, "Sleep mode disabled, skipping freeze");
                     break;
@@ -217,19 +196,12 @@ public class ShappkyService extends Service {
         return START_STICKY;
     }
 
-    /**
-     * Periodically checks Shizuku availability.
-     * If Shizuku permission is lost, shows a persistent notification (always critical — shown in any mode).
-     * Cancels the notification once access is restored.
-     * Root users are not affected — check is skipped if root is available.
-     */
     private void scheduleShizukuCheck() {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (!isRunning) return;
 
-                // Root users don't rely on Shizuku — skip check
                 if (shellManager.hasRootAccess()) {
                     handler.postDelayed(this, SHIZUKU_POLL_INTERVAL_MS);
                     return;
@@ -258,10 +230,6 @@ public class ShappkyService extends Service {
         }, 0); 
     }
 
-    /**
-     * Sends a persistent notification informing the user that Shizuku access is lost.
-     * This is a critical notification — always shown regardless of notification mode.
-     */
     private void sendShizukuLostNotification() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_ACTIONS)
                 .setContentTitle(getString(R.string.service_shizuku_lost_title))
@@ -276,9 +244,6 @@ public class ShappkyService extends Service {
         }
     }
 
-    /**
-     * Cancels the Shizuku lost notification.
-     */
     private void cancelShizukuLostNotification() {
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm != null) {
@@ -286,10 +251,6 @@ public class ShappkyService extends Service {
         }
     }
 
-    /**
-     * Schedules an exact alarm to trigger freeze after the configured delay.
-     * Uses setExactAndAllowWhileIdle to work even in Doze mode.
-     */
     private void scheduleIdleFreezeAlarm() {
         cancelIdleFreezeAlarm();
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -305,9 +266,6 @@ public class ShappkyService extends Service {
         }
     }
 
-    /**
-     * Cancels the pending freeze alarm if it exists.
-     */
     private void cancelIdleFreezeAlarm() {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
@@ -326,17 +284,10 @@ public class ShappkyService extends Service {
         );
     }
 
-    private static final long SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000L; // 15 minutes
-    private static final long UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L; // 24 hours
+    private static final long SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000L;
+    private static final long UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L;
 
-    /**
-     * Periodically collects battery/RAM snapshots so that Statistics history
-     * is populated even when the user never opens the Statistics screen.
-     * Fires every 15 minutes while the service is running.
-     */
     private void scheduleSnapshotCollection() {
-        // Take the first snapshot immediately so data is available as soon as possible,
-        // then repeat every SNAPSHOT_INTERVAL_MS.
         Runnable snapshotRunnable = new Runnable() {
             @Override
             public void run() {
@@ -345,15 +296,9 @@ public class ShappkyService extends Service {
                 handler.postDelayed(this, SNAPSHOT_INTERVAL_MS);
             }
         };
-        // Delay slightly (2 s) to let ShellManager finish its init before the first command.
         handler.postDelayed(snapshotRunnable, 2_000L);
     }
 
-    /**
-     * Schedules a periodic update check every 24 hours while the service is running.
-     * Covers the case where the service stays alive for a long time without restarting.
-     * The throttle inside UpdateChecker prevents duplicate requests on restarts.
-     */
     private void schedulePeriodicUpdateCheck() {
         handler.postDelayed(new Runnable() {
             @Override
@@ -376,7 +321,6 @@ public class ShappkyService extends Service {
             if (!isRunning)
                 return;
 
-            // Move logic to background thread to avoid Main Thread I/O
             executor.execute(() -> {
                 boolean autoKillEnabled = prefs.getBoolean(KEY_AUTO_KILL_ENABLED, false);
                 boolean periodicKillEnabled = prefs.getBoolean(KEY_PERIODIC_KILL_ENABLED, false);
@@ -404,8 +348,8 @@ public class ShappkyService extends Service {
         try (java.io.RandomAccessFile reader = new java.io.RandomAccessFile("/proc/meminfo", "r")) {
             String load = reader.readLine();
             long totalRam = Long.parseLong(load.replaceAll("\\D+", ""));
-            load = reader.readLine(); // Free
-            load = reader.readLine(); // Available
+            load = reader.readLine();
+            load = reader.readLine();
             long availableRam = Long.parseLong(load.replaceAll("\\D+", ""));
             return (int) ((totalRam - availableRam) * 100 / totalRam);
         } catch (IOException | NumberFormatException e) {

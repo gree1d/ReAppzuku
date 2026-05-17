@@ -57,45 +57,38 @@ public class StatisticsActivity extends BaseActivity {
 
     private static final int[] CHART_PERIODS_HOURS = { 2, 6, 12, 24 };
 
-    /**
-     * Real battery capacity in mAh, read from /sys/class/power_supply/battery/charge_full_design.
-     * Falls back to charge_full, then to 4000 mAh if neither is readable.
-     * Initialized once in onCreate().
-     */
+
     private double batteryCapacityMah = 4000.0;
 
-    /** Chart indices */
+
     private static final int CHART_BATTERY = 0;
     private static final int CHART_CPU     = 1;
     private static final int CHART_RAM     = 2;
     private static final int CHART_COUNT   = 3;
 
-    /**
-     * Multicolor palette for pie slices. Designed to look distinct at all 3 chart accent bases.
-     * Last slot is always grey for "Others".
-     */
+
     private static final int[] SLICE_PALETTE = {
-        0xFFE53935, // red
-        0xFF1E88E5, // blue
-        0xFF43A047, // green
-        0xFFFB8C00, // orange
-        0xFF8E24AA, // purple
-        0xFF00ACC1, // cyan
-        0xFFFFB300, // amber
-        0xFF00897B, // teal
-        0xFFF06292, // pink
-        0xFF6D4C41, // brown
-        0xFF3949AB, // indigo
-        0xFF7CB342, // light green
-        0xFFBDBDBD, // grey (Others)
+        0xFFE53935,
+        0xFF1E88E5,
+        0xFF43A047,
+        0xFFFB8C00,
+        0xFF8E24AA,
+        0xFF00ACC1,
+        0xFFFFB300,
+        0xFF00897B,
+        0xFFF06292,
+        0xFF6D4C41,
+        0xFF3949AB,
+        0xFF7CB342,
+        0xFFBDBDBD,
     };
 
     private String[] topOffenderFilterLabels;
     private String[] chartPeriodLabels;
-    private int selectedPeriodIdx = 0; // default 2h
+    private int selectedPeriodIdx = 0;
     private int currentChartIdx = CHART_BATTERY;
 
-    // Current period data — kept to reuse when switching charts
+
     private List<BatteryStatsManager.AppResourceStats> currentSorted = null;
     private double currentTotalHours = 0;
 
@@ -106,9 +99,6 @@ public class StatisticsActivity extends BaseActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Lifecycle
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,9 +123,6 @@ public class StatisticsActivity extends BaseActivity {
         batteryStatsManager.takeSnapshotAsync(() -> loadCharts(CHART_PERIODS_HOURS[selectedPeriodIdx]));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Setup
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void setupToolbar() {
         setSupportActionBar(binding.toolbar);
@@ -188,7 +175,7 @@ public class StatisticsActivity extends BaseActivity {
         updateChartPagerUI();
     }
 
-    // Per-chart legend data — populated in buildPieChart, reused when switching
+
     @SuppressWarnings("unchecked")
     private List<PieEntry>[] chartEntries   = new List[CHART_COUNT];
     @SuppressWarnings("unchecked")
@@ -206,7 +193,7 @@ public class StatisticsActivity extends BaseActivity {
         if (currentSorted != null) {
             showActiveChart(currentSorted, currentTotalHours);
         }
-        // Rebuild legend for newly visible chart
+
         if (chartEntries[currentChartIdx] != null) {
             buildChartLegend(
                     chartEntries[currentChartIdx],
@@ -219,7 +206,7 @@ public class StatisticsActivity extends BaseActivity {
     }
 
     private void updateChartPagerUI() {
-        // Title + icon
+
         switch (currentChartIdx) {
             case CHART_BATTERY:
                 binding.tvChartTitle.setText(getString(R.string.chart_title_battery));
@@ -246,14 +233,11 @@ public class StatisticsActivity extends BaseActivity {
         binding.layoutSchedulerLog.setOnClickListener(v -> showSchedulerLogDialog());
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Chart loading
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void loadCharts(int hours) {
         if (binding == null) return;
-        // Stats are only collected while the background service is running.
-        // If the service is off, show a prompt and hide the charts area.
+
+
         if (!ShappkyService.isRunning()) {
             showChartsLoading(false);
             binding.cardNoData.setVisibility(View.VISIBLE);
@@ -277,7 +261,7 @@ public class StatisticsActivity extends BaseActivity {
             binding.cardNoData.setVisibility(View.GONE);
             binding.cardChartsPager.setVisibility(View.VISIBLE);
 
-            // Show "Incomplete data" warning when actual coverage < 50% of requested period
+
             if (periodStats.isPartialData) {
                 binding.tvPartialDataWarning.setText(
                         getString(R.string.stats_partial_data_warning));
@@ -290,13 +274,13 @@ public class StatisticsActivity extends BaseActivity {
             currentSorted = sorted;
             currentTotalHours = periodStats.actualHours;
 
-            // ── Find self entry for overhead row ──────────────────────────
+
             BatteryStatsManager.AppResourceStats selfStats = null;
             for (BatteryStatsManager.AppResourceStats s : sorted) {
                 if (s.isSelf) { selfStats = s; break; }
             }
 
-            // ── Build all 3 charts ─────────────────────────────────────────
+
             buildPieChart(binding.chartBattery, binding.layoutBatteryOthers,
                     sorted, ChartMetric.BATTERY, CHART_BATTERY);
             buildPieChart(binding.chartCpu, binding.layoutCpuOthers,
@@ -304,7 +288,7 @@ public class StatisticsActivity extends BaseActivity {
             buildPieChart(binding.chartRam, binding.layoutRamOthers,
                     sorted, ChartMetric.RAM, CHART_RAM);
 
-            // ── Self overhead row — uses same totals as pie charts ─────────
+
             if (selfStats != null) {
                 double totalBat = chartTotals[CHART_BATTERY];
                 double totalCpu = chartTotals[CHART_CPU];
@@ -318,7 +302,7 @@ public class StatisticsActivity extends BaseActivity {
                 binding.layoutSelfOverhead.setVisibility(View.GONE);
             }
 
-            // Update total label for current chart
+
             showActiveChart(sorted, periodStats.actualHours);
         });
     }
@@ -349,7 +333,7 @@ public class StatisticsActivity extends BaseActivity {
                         String.format(Locale.US, "%.1f%%", Math.min(100.0, totalCpu)));
                 break;
             case CHART_RAM:
-                // Show both average and peak PSS
+
                 binding.tvChartTotal.setText(String.format(Locale.US,
                         "Ср. %s / Пик %s",
                         formatRamMb(totalRam / Math.max(count, 1)),
@@ -363,9 +347,6 @@ public class StatisticsActivity extends BaseActivity {
         binding.layoutChartsLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Pie chart builder
-    // ─────────────────────────────────────────────────────────────────────────
 
     private enum ChartMetric { BATTERY, CPU, RAM }
 
@@ -391,7 +372,7 @@ public class StatisticsActivity extends BaseActivity {
             float pct = (float)(val / total * 100);
             boolean forceShow = i < BatteryStatsManager.MIN_TOP_SLICES;
             if (forceShow || pct > BatteryStatsManager.OTHERS_THRESHOLD_PCT) {
-                // Store package name as data tag; label left empty — shown only in legend panel
+
                 entries.add(new PieEntry((float) val, "", s.packageName));
             } else {
                 othersValue += val;
@@ -399,7 +380,7 @@ public class StatisticsActivity extends BaseActivity {
             }
         }
         if (othersValue > 0) {
-            // Empty label — text shown only in legend, not on the chart slice
+
             entries.add(new PieEntry((float) othersValue, "", "__others__"));
         }
 
@@ -422,35 +403,35 @@ public class StatisticsActivity extends BaseActivity {
         chart.getDescription().setEnabled(false);
         chart.getLegend().setEnabled(false);
         chart.setRotationEnabled(false);
-        // Remove internal padding so chart aligns flush with the top of legend
+
         chart.setExtraOffsets(0f, 0f, 0f, 0f);
-        // Clicks handled by legend rows — disable tap on slices
+
         chart.setHighlightPerTapEnabled(false);
         chart.setOnChartValueSelectedListener(null);
         chart.animateY(800, Easing.EaseInOutQuad);
 
         chart.invalidate();
-        // Others list hidden in new design — shown via dialog on tap
+
         if (othersContainer != null) othersContainer.setVisibility(View.GONE);
 
-        // Save legend data for this chart index (used when switching charts)
+
         chartEntries[chartIdx]        = entries;
         chartSortedByMetric[chartIdx] = byCurrent;
         chartOthers[chartIdx]         = othersList;
         chartColors[chartIdx]         = colors;
         chartTotals[chartIdx]         = total;
 
-        // Populate legend panel only for the currently visible chart
+
         if (chartIdx == currentChartIdx) {
             buildChartLegend(entries, byCurrent, othersList, colors, metric, total);
-            // After layout pass: align legend top to actual pie circle top inside the chart view
+
             chart.getViewTreeObserver().addOnGlobalLayoutListener(
                     new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override public void onGlobalLayout() {
                     chart.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     com.github.mikephil.charting.utils.MPPointF center = chart.getCenterCircleBox();
                     float radius = chart.getRadius();
-                    // Top of the pie circle in chart-local px
+
                     float circleTopPx = center.y - radius;
                     android.widget.LinearLayout.LayoutParams lp =
                             (android.widget.LinearLayout.LayoutParams)
@@ -462,10 +443,7 @@ public class StatisticsActivity extends BaseActivity {
         }
     }
 
-    /**
-     * Fills layout_chart_legend with one row per slice:
-     *   [colored dot]  XX.X% — App Name
-     */
+
     private void buildChartLegend(
             List<PieEntry> entries,
             List<BatteryStatsManager.AppResourceStats> byCurrent,
@@ -488,7 +466,7 @@ public class StatisticsActivity extends BaseActivity {
             int color = colors.get(i);
             float pct = total > 0 ? (float)(pe.getValue() / total * 100) : 0f;
 
-            // Determine app name and package
+
             String name;
             final String pkg;
             Object tag = pe.getData();
@@ -505,7 +483,7 @@ public class StatisticsActivity extends BaseActivity {
             final List<BatteryStatsManager.AppResourceStats> finalOthers = othersList;
             final double finalTotal = total;
 
-            // Row container
+
             android.widget.LinearLayout row = new android.widget.LinearLayout(this);
             android.widget.LinearLayout.LayoutParams rowLp =
                     new android.widget.LinearLayout.LayoutParams(
@@ -528,7 +506,7 @@ public class StatisticsActivity extends BaseActivity {
                 }
             });
 
-            // Colored dot
+
             android.widget.TextView dot = new android.widget.TextView(this);
             android.widget.LinearLayout.LayoutParams dotLp =
                     new android.widget.LinearLayout.LayoutParams(dotSizePx, dotSizePx);
@@ -540,7 +518,7 @@ public class StatisticsActivity extends BaseActivity {
             circle.setColor(color);
             dot.setBackground(circle);
 
-            // Label: "XX.X% — Name"
+
             android.widget.TextView label = new android.widget.TextView(this);
             label.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
                     0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -558,11 +536,11 @@ public class StatisticsActivity extends BaseActivity {
 
     private List<Integer> buildMultiColors(int count) {
         List<Integer> colors = new ArrayList<>();
-        // Always put grey last (Others slot)
-        int paletteSize = SLICE_PALETTE.length - 1; // exclude last grey
+
+        int paletteSize = SLICE_PALETTE.length - 1;
         for (int i = 0; i < count; i++) {
             if (i == count - 1 && count > 1) {
-                // Last entry is "Others" → grey
+
                 colors.add(SLICE_PALETTE[SLICE_PALETTE.length - 1]);
             } else {
                 colors.add(SLICE_PALETTE[i % paletteSize]);
@@ -631,9 +609,6 @@ public class StatisticsActivity extends BaseActivity {
         return null;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Dialogs
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void showStatsDialog() {
         executor.execute(() -> {
@@ -970,9 +945,6 @@ public class StatisticsActivity extends BaseActivity {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Inner classes
-    // ─────────────────────────────────────────────────────────────────────────
 
     private static class TopOffender {
         final String appName, packageName;
@@ -1046,9 +1018,6 @@ public class StatisticsActivity extends BaseActivity {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void bindOptionalText(TextView view, String text) {
         if (text == null || text.trim().isEmpty()) { view.setVisibility(View.GONE); view.setText(""); return; }

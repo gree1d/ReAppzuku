@@ -21,7 +21,6 @@ public class AppModel {
     private float cpuUsageValue = -1f;
     private int pid = -1;
 
-    // Initialize app model
     public AppModel(String appName, String packageName, String appRam, long appRamBytes, Drawable appIcon,
             boolean isSystemApp, boolean isPersistentApp, boolean isProtected) {
         this.appName = appName;
@@ -117,7 +116,6 @@ public class AppModel {
         this.cpuUsageValue = value;
     }
 
-    // Get and set app name
     public String getAppName() {
         return appName;
     }
@@ -126,7 +124,6 @@ public class AppModel {
         this.appName = appName;
     }
 
-    // Get and set package name
     public String getPackageName() {
         return packageName;
     }
@@ -135,7 +132,6 @@ public class AppModel {
         this.packageName = packageName;
     }
 
-    // Get and set app ram usage
     public String getAppRam() {
         return appRam;
     }
@@ -144,7 +140,6 @@ public class AppModel {
         this.appRam = appRam;
     }
 
-    // Get and set app ram bytes (for sorting)
     public long getAppRamBytes() {
         return appRamBytes;
     }
@@ -153,7 +148,6 @@ public class AppModel {
         this.appRamBytes = appRamBytes;
     }
 
-    // Get and set app icon
     public Drawable getAppIcon() {
         return appIcon;
     }
@@ -162,7 +156,6 @@ public class AppModel {
         this.appIcon = appIcon;
     }
 
-    // Get and set system app status
     public boolean isSystemApp() {
         return isSystemApp;
     }
@@ -171,7 +164,6 @@ public class AppModel {
         isSystemApp = systemApp;
     }
 
-    // Get and set Persistent app status
     public boolean isPersistentApp() {
         return isPersistentApp;
     }
@@ -180,7 +172,6 @@ public class AppModel {
         isPersistentApp = PersistentApp;
     }
 
-    // Get and set selection state
     public boolean isSelected() {
         return selected;
     }
@@ -189,7 +180,6 @@ public class AppModel {
         this.selected = selected;
     }
 
-    // Get and set protection state
     public boolean isProtected() {
         return isProtected;
     }
@@ -198,7 +188,6 @@ public class AppModel {
         isProtected = aProtected;
     }
 
-    // Get and set whitelist state
     public boolean isWhitelisted() {
         return isWhitelisted;
     }

@@ -40,42 +40,21 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
 
     private final boolean restrictionMode;
 
-    // packageName → SOFT / HARD / MANUAL (absent = SOFT)
     private final Map<String, BackgroundAppManager.RestrictionType> restrictionTypeMap;
 
-    // packageName → bitmask of selected ops (only meaningful when type == MANUAL)
     private final Map<String, Integer> manualOpsMaskMap;
 
     private OnSelectionChangedListener selectionChangedListener;
 
-    // -----------------------------------------------------------------------
-    // Constructors
-    // -----------------------------------------------------------------------
-
-    /** Standard constructor — whitelist / blacklist / hidden dialogs. */
     public FilterAppsAdapter(Context context, List<AppModel> apps, Set<String> selectedApps) {
         this(context, apps, selectedApps, null, null, null, false);
     }
 
-    /**
-     * Restriction-mode constructor — background restriction dialog.
-     *
-     * @param selectedApps      packages currently restricted (checked)
-     * @param hardRestrictedApps packages within selectedApps that use HARD restriction
-     */
     public FilterAppsAdapter(Context context, List<AppModel> apps,
                              Set<String> selectedApps, Set<String> hardRestrictedApps) {
         this(context, apps, selectedApps, hardRestrictedApps, null, null, true);
     }
 
-    /**
-     * Full restriction-mode constructor — supports SOFT / HARD / MANUAL.
-     *
-     * @param selectedApps       packages currently restricted (checked)
-     * @param hardRestrictedApps packages using HARD restriction
-     * @param manualRestrictedApps packages using MANUAL restriction
-     * @param initialMasks       packageName → saved ops bitmask for Manual packages
-     */
     public FilterAppsAdapter(Context context, List<AppModel> apps,
                              Set<String> selectedApps,
                              Set<String> hardRestrictedApps,
@@ -137,10 +116,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         this.selectionChangedListener = listener;
     }
 
-    // -----------------------------------------------------------------------
-    // Public accessors
-    // -----------------------------------------------------------------------
-
     public Set<String> getSelectedPackages() {
         Set<String> selected = new HashSet<>();
         for (AppModel app : allApps) {
@@ -173,7 +148,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         return manual;
     }
 
-    /** Returns a copy of the ops bitmask map for all Manual packages. */
     public Map<String, Integer> getManualOpsMasks() {
         return new HashMap<>(manualOpsMaskMap);
     }
@@ -184,10 +158,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         }
         notifyDataSetChanged();
     }
-
-    // -----------------------------------------------------------------------
-    // Filter support
-    // -----------------------------------------------------------------------
 
     private void filterInitialList() {
         this.filteredApps.clear();
@@ -209,10 +179,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         if (showRunningOnly && app.getAppRamBytes() <= 0) return false;
         return true;
     }
-
-    // -----------------------------------------------------------------------
-    // BaseAdapter
-    // -----------------------------------------------------------------------
 
     @Override public int getCount() { return filteredApps.size(); }
     @Override public AppModel getItem(int position) { return filteredApps.get(position); }
@@ -248,7 +214,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         holder.appIcon.setImageDrawable(app.getAppIcon());
         holder.checkBox.setChecked(app.isSelected());
 
-        // --- Restriction type chip ---
         if (restrictionMode && holder.restrictionType != null) {
             if (app.isSelected()) {
                 BackgroundAppManager.RestrictionType type =
@@ -266,7 +231,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
             holder.restrictionType.setVisibility(View.GONE);
         }
 
-        // --- Row / checkbox click ---
         final ViewHolder h = holder;
 
         holder.checkBox.setOnClickListener(v -> {
@@ -302,10 +266,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Restriction type dialog (Soft / Hard / Manual)
-    // -----------------------------------------------------------------------
-
     private void showRestrictionTypeDialog(AppModel app, TextView chipView) {
         BackgroundAppManager.RestrictionType current =
                 restrictionTypeMap.getOrDefault(app.getPackageName(),
@@ -319,7 +279,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
         radioGroup.setOrientation(android.widget.RadioGroup.VERTICAL);
         int paddingH = (int) (context.getResources().getDisplayMetrics().density * 24);
 
-        // Soft
         android.widget.RadioButton softBtn = new android.widget.RadioButton(context);
         softBtn.setId(View.generateViewId());
         softBtn.setText(context.getString(R.string.filter_restriction_soft_option));
@@ -329,7 +288,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
 
         radioGroup.addView(makeDivider(paddingH));
 
-        // Hard
         android.widget.RadioButton hardBtn = new android.widget.RadioButton(context);
         hardBtn.setId(View.generateViewId());
         hardBtn.setText(context.getString(R.string.filter_restriction_hard_option));
@@ -339,7 +297,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
 
         radioGroup.addView(makeDivider(paddingH));
 
-        // Manual
         android.widget.RadioButton manualBtn = new android.widget.RadioButton(context);
         manualBtn.setId(View.generateViewId());
         manualBtn.setText(context.getString(R.string.filter_restriction_manual_option));
@@ -362,14 +319,12 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
                         chipView.setText(badgeLabel(chosen));
                         notifySelectionChanged();
                     } else if (manualBtn.isChecked()) {
-                        // Open ops picker immediately after this dialog closes
                         chosen = BackgroundAppManager.RestrictionType.MANUAL;
                         restrictionTypeMap.put(app.getPackageName(), chosen);
                         int existingMask = manualOpsMaskMap.getOrDefault(
                                 app.getPackageName(), 0x01);
                         showManualOpsDialog(app, chipView, existingMask);
                     } else {
-                        // Soft
                         chosen = BackgroundAppManager.RestrictionType.SOFT;
                         restrictionTypeMap.remove(app.getPackageName());
                         manualOpsMaskMap.remove(app.getPackageName());
@@ -380,14 +335,9 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
                 .show();
     }
 
-    /**
-     * Second-level dialog: checkboxes for each op in BackgroundAppManager.ALL_OPS.
-     * Pre-checks the ops encoded in currentMask.
-     */
     private void showManualOpsDialog(AppModel app, TextView chipView, int currentMask) {
         String[] ops = BackgroundAppManager.ALL_OPS;
 
-        // Human-readable labels matching ops order
         String[] labels = {
             context.getString(R.string.manual_op_run_any_in_background),
             context.getString(R.string.manual_op_run_in_background),
@@ -404,7 +354,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
             checked[i] = (currentMask & (1 << i)) != 0;
         }
 
-        // Build scrollable checkbox list
         android.widget.ScrollView scrollView = new android.widget.ScrollView(context);
         android.widget.LinearLayout listLayout = new android.widget.LinearLayout(context);
         listLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
@@ -430,7 +379,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
                         app.getAppName()))
                 .setView(scrollView)
                 .setNegativeButton(context.getString(R.string.dialog_cancel), (d, w) -> {
-                    // Revert to SOFT if user cancels without picking any ops
                     if (!manualOpsMaskMap.containsKey(app.getPackageName())) {
                         restrictionTypeMap.remove(app.getPackageName());
                         chipView.setText(badgeLabel(BackgroundAppManager.RestrictionType.SOFT));
@@ -443,7 +391,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
                         if (checked[i]) mask |= (1 << i);
                     }
                     if (mask == 0) {
-                        // Nothing selected → revert to Soft silently
                         restrictionTypeMap.remove(app.getPackageName());
                         manualOpsMaskMap.remove(app.getPackageName());
                         chipView.setText(badgeLabel(BackgroundAppManager.RestrictionType.SOFT));
@@ -470,10 +417,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
     private void notifySelectionChanged() {
         if (selectionChangedListener != null) selectionChangedListener.onSelectionChanged();
     }
-
-    // -----------------------------------------------------------------------
-    // Filterable
-    // -----------------------------------------------------------------------
 
     @Override
     public Filter getFilter() {
@@ -509,10 +452,6 @@ public class FilterAppsAdapter extends BaseAdapter implements Filterable {
             notifyDataSetChanged();
         }
     }
-
-    // -----------------------------------------------------------------------
-    // ViewHolder
-    // -----------------------------------------------------------------------
 
     public static class ViewHolder {
         public TextView appName;

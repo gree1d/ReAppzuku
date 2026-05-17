@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-// Transparent, no-UI activity invoked via the launcher long-press static shortcut.
-// Resolves the previously active app and force-stops it.
 public class KillShortcutActivity extends Activity {
     private static final String SYSTEM_UI_PACKAGE = "com.android.systemui";
 
@@ -213,7 +211,7 @@ public class KillShortcutActivity extends Activity {
 
                 appStatsDao.incrementKill(packageName, System.currentTimeMillis());
             } catch (Exception ignored) {
-                // Keep shortcut kill flow non-blocking even if stats logging fails.
+
             }
         });
     }
@@ -234,7 +232,6 @@ public class KillShortcutActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // shutdown() (not shutdownNow()) lets the logKilledPackage DB task finish gracefully.
         executor.shutdown();
     }
 }

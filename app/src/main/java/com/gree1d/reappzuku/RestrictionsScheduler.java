@@ -29,99 +29,57 @@ import java.util.concurrent.ExecutorService;
 
 import static com.gree1d.reappzuku.PreferenceKeys.*;
 
-/**
- * RestrictionsScheduler — temporary protection of restricted apps from Auto-Kill,
- * Background Restrictions, and Sleep Mode on a schedule.
- *
- * ── How it works ────────────────────────────────────────────────────────────
- * The user creates a ScheduleEntry for apps from the Background Restrictions list.
- * Each schedule defines: package, time window, protection bitmask, action on activation.
- * On window activation:
- *   - package is added to the "temp_protected" group
- *   - appops restrictions are lifted (if PROTECT_BG_RESTRICTIONS)
- *   - package is unfrozen (if PROTECT_SLEEP_MODE)
- *   - main activity is optionally launched
- * On window deactivation:
- *   - restrictions are restored
- *   - am force-stop / am kill is executed (per KEY_AUTO_KILL_TYPE)
- *   - package is removed from temp_protected
- *
- * ── Scheduler ───────────────────────────────────────────────────────────────
- * scheduleNext() sets ONE exact AlarmManager alarm for the nearest upcoming event
- * (start or end of any active schedule).
- * Fires via SchedulerReceiver → ShappkyService action "SCHEDULER_TICK".
- * After each fire, the next alarm is scheduled.
- * On reboot, BOOT_COMPLETED restores the alarm via scheduleNext().
- *
- * ── Integration ─────────────────────────────────────────────────────────────
- * AutoKillManager.performAutoKill()       — skip isProtected(pkg, PROTECT_AUTO_KILL)
- * SleepModeManager.freezeBackground...()  — skip getTempProtectedPackages()
- * BackgroundAppManager.reapplySaved...()  — skip getTempProtectedPackages()
- * ShappkyService.onStartCommand()         — add case "SCHEDULER_TICK": scheduler.tick()
- * KillTriggerReceiver / BOOT_COMPLETED    — call scheduler.scheduleNext()
- *
- * ── Limits ──────────────────────────────────────────────────────────────────
- * Maximum MAX_SCHEDULES (15) schedules.
- */
+
 public class RestrictionsScheduler {
 
     private static final String TAG = "RestrictionsScheduler";
 
-    // ── ShappkyService action ────────────────────────────────────────────────
-    /** Intent action — ShappkyService calls tick() when received. */
+
     public static final String ACTION_SCHEDULER_TICK = "SCHEDULER_TICK";
 
-    // ── AlarmManager ─────────────────────────────────────────────────────────
+
     private static final int SCHEDULER_ALARM_REQUEST_CODE = 2001;
 
-    // ── Limit ────────────────────────────────────────────────────────────────
+
     public static final int MAX_SCHEDULES = 15;
 
-    // ── Preference keys ──────────────────────────────────────────────────────
+
     private static final String KEY_SCHEDULES      = "restrictions_schedules";
     private static final String KEY_TEMP_PROTECTED = "temp_protected_packages";
 
-    // ── Protection flags (bitmask) ───────────────────────────────────────────
+
     public static final int PROTECT_AUTO_KILL       = 1;
     public static final int PROTECT_BG_RESTRICTIONS = 1 << 1;
     public static final int PROTECT_SLEEP_MODE      = 1 << 2;
     public static final int PROTECT_ALL             = PROTECT_AUTO_KILL | PROTECT_BG_RESTRICTIONS | PROTECT_SLEEP_MODE;
 
-    // ── Activation actions ───────────────────────────────────────────────────
+
     public static final int ON_ACTIVATE_NOTHING  = 0;
-    public static final int ON_ACTIVATE_ACTIVITY = 1; // am start -n
-    public static final int ON_ACTIVATE_SERVICE  = 2; // am start-foreground-service -n
-    public static final int ON_ACTIVATE_RECEIVER = 3; // am broadcast -n
+    public static final int ON_ACTIVATE_ACTIVITY = 1;
+    public static final int ON_ACTIVATE_SERVICE  = 2;
+    public static final int ON_ACTIVATE_RECEIVER = 3;
 
 
-    // =========================================================================
-    // ScheduleEntry
-    // =========================================================================
-
-    /** A single temporary protection schedule. */
     public static class ScheduleEntry {
-        /** Unique ID (System.currentTimeMillis() at creation). */
+
         public long id;
-        /** App package name. */
+
         public String packageName;
-        /** Protection start hour (0-23). */
+
         public int startHour;
-        /** Protection start minute (0-59). */
+
         public int startMinute;
-        /** Protection end hour (0-23). */
+
         public int endHour;
-        /** Protection end minute (0-59). */
+
         public int endMinute;
-        /** Bitmask of PROTECT_* flags. */
+
         public int protectFlags;
-        /** Action on activation: ON_ACTIVATE_NOTHING / ON_ACTIVATE_ACTIVITY / ON_ACTIVATE_SERVICE / ON_ACTIVATE_RECEIVER. */
+
         public int onActivateAction;
-        /**
-         * Full component name to launch on activation, e.g. "ru.vk.store/.push.FCMReceiver".
-         * null = no component selected (onActivateAction must be ON_ACTIVATE_NOTHING).
-         */
+
         public String componentName;
-        /** Whether the schedule is enabled. */
+
         public boolean enabled;
 
         public ScheduleEntry() {
@@ -131,10 +89,7 @@ public class RestrictionsScheduler {
             this.enabled          = true;
         }
 
-        /**
-         * Returns true if the current time falls within the [start, end) window.
-         * Supports midnight crossover (e.g. 23:00–02:00).
-         */
+
         public boolean isActiveNow(int currentHour, int currentMinute) {
             if (!enabled) return false;
             int now  = currentHour  * 60 + currentMinute;
@@ -142,15 +97,15 @@ public class RestrictionsScheduler {
             int to   = endHour      * 60 + endMinute;
             if (from == to) return false;
             if (from < to)  return now >= from && now < to;
-            return now >= from || now < to; // midnight crossover
+            return now >= from || now < to;
         }
 
-        /** Next timestamp for the window start (>= now). */
+
         public long nextStartMillis() {
             return nextEventMillis(startHour, startMinute);
         }
 
-        /** Next timestamp for the window end (>= now). */
+
         public long nextEndMillis() {
             return nextEventMillis(endHour, endMinute);
         }
@@ -199,27 +154,7 @@ public class RestrictionsScheduler {
         }
     }
 
-    // =========================================================================
-    // SchedulerLog
-    // =========================================================================
 
-    /**
-     * Scheduler event log. Entries are stored in Room (table: scheduler_log).
-     *
-     * action:
-     *   "lift"    — background restrictions lifted
-     *   "restore" — background restrictions restored
-     *
-     * outcome for "lift":
-     *   "ok" / "error" / "denied" / "skipped"
-     *
-     * outcome for "restore":
-     *   "ok" / "error" / "skipped"
-     *
-     * detail:
-     *   "lift"    → "action=launch" / "action=none"
-     *   "restore" → "stop=force-stop" / "stop=am-kill"
-     */
     public static final class SchedulerLog {
 
         private static final int MAX_ENTRIES    = 200;
@@ -227,13 +162,7 @@ public class RestrictionsScheduler {
 
         private SchedulerLog() {}
 
-        /**
-         * Log a background restrictions lift event.
-         *
-         * @param outcome       "ok" / "partial" / "error" / "skipped"
-         * @param componentName launched component name, or null if no launch
-         * @param use24h        time format (12h / 24h)
-         */
+
         public static void logLift(Context context, String packageName,
                                    String outcome, String componentName, boolean use24h) {
             String detail = componentName != null
@@ -242,19 +171,13 @@ public class RestrictionsScheduler {
             append(context, "lift", packageName, outcome, detail);
         }
 
-        /** Extracts short class name from a component: "ru.vk.store/.push.FCMReceiver" → "FCMReceiver" */
+
         private static String shortName(String componentName) {
             int dot = componentName.lastIndexOf('.');
             return dot >= 0 ? componentName.substring(dot + 1) : componentName;
         }
 
-        /**
-         * Log a background restrictions restore event.
-         *
-         * @param outcome   "ok" / "error" / "skipped"
-         * @param forceStop true = am force-stop, false = am kill
-         * @param use24h    time format
-         */
+
         public static void logRestore(Context context, String packageName,
                                       String outcome, boolean forceStop, boolean use24h) {
             String detail = "stop=" + (forceStop ? "force-stop" : "am-kill");
@@ -273,7 +196,7 @@ public class RestrictionsScheduler {
             return sb.toString();
         }
 
-        /** Returns entries sorted newest first. */
+
         public static List<SchedulerLog.Entry> readEntries(Context context) {
             List<com.gree1d.reappzuku.db.SchedulerLog> rows =
                     AppDatabase.getInstance(context).schedulerLogDao().getRecent(MAX_ENTRIES);
@@ -310,7 +233,7 @@ public class RestrictionsScheduler {
                     AppDatabase.getInstance(context).schedulerLogDao();
             dao.insert(entry);
 
-            // Trim to MAX_ENTRIES
+
             int count = dao.getCount();
             if (count > MAX_ENTRIES) {
                 dao.deleteOldest(count - MAX_ENTRIES);
@@ -328,7 +251,7 @@ public class RestrictionsScheduler {
             return s.length() > MAX_DETAIL_LEN ? s.substring(0, MAX_DETAIL_LEN - 3) + "..." : s;
         }
 
-        /** Public read-only log entry. */
+
         public static final class Entry {
             public final String timestamp;
             public final String action;
@@ -357,17 +280,7 @@ public class RestrictionsScheduler {
         }
     }
 
-    // =========================================================================
-    // SchedulerReceiver (nested BroadcastReceiver)
-    // =========================================================================
 
-    /**
-     * Receives alarm from AlarmManager and starts ShappkyService with action SCHEDULER_TICK.
-     *
-     * Register in AndroidManifest.xml:
-     *   <receiver android:name=".RestrictionsScheduler$SchedulerReceiver"
-     *             android:exported="false" />
-     */
     public static final class SchedulerReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -381,9 +294,6 @@ public class RestrictionsScheduler {
         }
     }
 
-    // =========================================================================
-    // Fields
-    // =========================================================================
 
     private final Context              context;
     private final Handler              handler;
@@ -405,9 +315,6 @@ public class RestrictionsScheduler {
         this.prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 
-    // =========================================================================
-    // Public API — schedule management
-    // =========================================================================
 
     public List<ScheduleEntry> getSchedules() {
         List<ScheduleEntry> list = new ArrayList<>();
@@ -433,10 +340,7 @@ public class RestrictionsScheduler {
         prefs.edit().putString(KEY_SCHEDULES, arr.toString()).apply();
     }
 
-    /**
-     * Adds a schedule. Automatically reschedules the alarm.
-     * @return false if MAX_SCHEDULES limit is reached.
-     */
+
     public boolean addSchedule(ScheduleEntry entry) {
         List<ScheduleEntry> list = getSchedules();
         if (list.size() >= MAX_SCHEDULES) {
@@ -449,10 +353,7 @@ public class RestrictionsScheduler {
         return true;
     }
 
-    /**
-     * Updates a schedule by id. Automatically reschedules the alarm.
-     * @return false if not found.
-     */
+
     public boolean updateSchedule(ScheduleEntry updated) {
         List<ScheduleEntry> list = getSchedules();
         for (int i = 0; i < list.size(); i++) {
@@ -466,7 +367,7 @@ public class RestrictionsScheduler {
         return false;
     }
 
-    /** Removes a schedule by id. Automatically reschedules the alarm. */
+
     public void removeSchedule(long id) {
         List<ScheduleEntry> list = getSchedules();
         list.removeIf(e -> e.id == id);
@@ -474,18 +375,12 @@ public class RestrictionsScheduler {
         scheduleNext();
     }
 
-    /**
-     * Returns packages that are currently temporarily protected.
-     * Used by AutoKillManager, SleepModeManager, BackgroundAppManager.
-     */
+
     public Set<String> getTempProtectedPackages() {
         return new HashSet<>(prefs.getStringSet(KEY_TEMP_PROTECTED, new HashSet<>()));
     }
 
-    /**
-     * Checks whether a package is protected by the given flag right now.
-     * Convenience helper for integration in other managers.
-     */
+
     public boolean isProtected(String packageName, int flag) {
         if (!getTempProtectedPackages().contains(packageName)) return false;
         Calendar cal = Calendar.getInstance();
@@ -499,17 +394,7 @@ public class RestrictionsScheduler {
         return false;
     }
 
-    // =========================================================================
-    // AlarmManager — next event scheduling
-    // =========================================================================
 
-    /**
-     * Finds the nearest upcoming event across all schedules and sets one exact alarm.
-     * Call:
-     *   - after any schedule change (already done in add/update/remove)
-     *   - in ShappkyService.onCreate()
-     *   - in BOOT_COMPLETED receiver
-     */
     public void scheduleNext() {
         List<ScheduleEntry> schedules = getSchedules();
         if (schedules.isEmpty()) {
@@ -526,7 +411,7 @@ public class RestrictionsScheduler {
 
         for (ScheduleEntry e : schedules) {
             if (!e.enabled) continue;
-            // If already inside the window — nearest event is the window end
+
             long candidate = e.isActiveNow(h, m) ? e.nextEndMillis() : e.nextStartMillis();
             if (candidate < nearest) nearest = candidate;
         }
@@ -548,12 +433,7 @@ public class RestrictionsScheduler {
         Log.d(TAG, "scheduleNext: alarm in " + ((nearest - now) / 1000 / 60) + " min");
     }
 
-    /**
-     * Static variant for use from BootReceiver where a full RestrictionsScheduler
-     * instance is not available. Reads schedules from SharedPreferences and sets
-     * the next AlarmManager alarm. Shares getAlarmIntent() so the PendingIntent
-     * is identical to the one used by the instance method.
-     */
+
     public static void scheduleNextStatic(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         String json = prefs.getString(KEY_SCHEDULES, null);
@@ -616,20 +496,7 @@ public class RestrictionsScheduler {
         );
     }
 
-    // =========================================================================
-    // tick() — called from ShappkyService on ACTION_SCHEDULER_TICK
-    // =========================================================================
 
-    /**
-     * Main scheduler method. Add to ShappkyService.onStartCommand():
-     *   case "SCHEDULER_TICK":
-     *       scheduler.tick();
-     *       break;
-     *
-     * Computes the diff of active/inactive schedules, applies or removes protection,
-     * optionally launches apps, then schedules the next alarm.
-     * All heavy operations run on the executor thread.
-     */
     public void tick() {
         executor.execute(() -> {
             Calendar cal = Calendar.getInstance();
@@ -639,7 +506,7 @@ public class RestrictionsScheduler {
             List<ScheduleEntry> schedules    = getSchedules();
             Set<String>         wasProtected = getTempProtectedPackages();
 
-            // Compute what should be protected right now
+
             Set<String> shouldBeProtected = new HashSet<>();
             for (ScheduleEntry e : schedules) {
                 if (e.isActiveNow(hour, minute)) shouldBeProtected.add(e.packageName);
@@ -648,13 +515,12 @@ public class RestrictionsScheduler {
             Set<String> newlyActivated   = diff(shouldBeProtected, wasProtected);
             Set<String> newlyDeactivated = diff(wasProtected, shouldBeProtected);
 
-            // Persist new state immediately (before operations, so other managers
-            // see the updated temp_protected during concurrent calls)
+
             saveTempProtectedPackages(shouldBeProtected);
 
             boolean use24h = android.text.format.DateFormat.is24HourFormat(context);
 
-            // ── Activations ──────────────────────────────────────────────────
+
             for (String pkg : newlyActivated) {
                 ScheduleEntry entry = findActiveEntry(schedules, pkg, hour, minute);
                 if (entry == null) continue;
@@ -672,12 +538,12 @@ public class RestrictionsScheduler {
                 if (entry.onActivateAction != ON_ACTIVATE_NOTHING && entry.componentName != null) {
                     final String component = entry.componentName;
                     final int    action    = entry.onActivateAction;
-                    // Небольшая задержка — даём appops примениться перед запуском
+
                     handler.postDelayed(() -> launchComponent(component, action), 500);
                 }
             }
 
-            // ── Deactivations ────────────────────────────────────────────────
+
             for (String pkg : newlyDeactivated) {
                 ScheduleEntry entry = findEntryForPackage(schedules, pkg);
                 if (entry == null) continue;
@@ -689,46 +555,33 @@ public class RestrictionsScheduler {
                     String outcome = backgroundAppManager.restoreRestrictionsForScheduler(pkg);
                     SchedulerLog.logRestore(context, pkg, outcome, forceStop, use24h);
                 } else if ((entry.protectFlags & PROTECT_AUTO_KILL) != 0) {
-                    // Restrictions were not lifted, but Auto-Kill protection has ended —
-                    // stop the app
+
+
                     stopApp(pkg, forceStop);
                     SchedulerLog.logRestore(context, pkg, "ok", forceStop, use24h);
                 }
-                // PROTECT_SLEEP_MODE: package removed from temp_protected;
-                // next call to freezeBackgroundRestrictedApps() will freeze it normally.
+
+
             }
 
-            // Schedule the next event
+
             scheduleNext();
         });
     }
 
-    /** Runs am force-stop or am kill depending on forceStop. */
+
     private void stopApp(String packageName, boolean forceStop) {
         String cmd = (forceStop ? "am force-stop " : "am kill ") + packageName;
         shellManager.runShellCommandForResult(cmd);
         Log.d(TAG, "stopApp: " + cmd);
     }
 
-    /**
-     * Determines stop mode from KEY_AUTO_KILL_TYPE setting.
-     * KEY_AUTO_KILL_TYPE: 0 = am force-stop (default), 1 = am kill
-     */
+
     private boolean isForceStopMode() {
         return prefs.getInt(KEY_AUTO_KILL_TYPE, 0) == 0;
     }
 
-    // =========================================================================
-    // Component launch
-    // =========================================================================
 
-    /**
-     * Launches a component via shell depending on its type.
-     * Must be called on the main thread (via handler.post/postDelayed).
-     *
-     * @param componentName full component name, e.g. "ru.vk.store/.push.FCMReceiver"
-     * @param type          ON_ACTIVATE_ACTIVITY / ON_ACTIVATE_SERVICE / ON_ACTIVATE_RECEIVER
-     */
     private void launchComponent(String componentName, int type) {
         String cmd;
         switch (type) {
@@ -753,11 +606,7 @@ public class RestrictionsScheduler {
         }
     }
 
-    /**
-     * Returns a human-readable label for the activation action.
-     * Uses scheduler_action_launch_main string as prefix + short component name.
-     * Example: "Launch FCMReceiver"
-     */
+
     public String getActivationLabel(Context context, ScheduleEntry entry) {
         if (entry.onActivateAction == ON_ACTIVATE_NOTHING || entry.componentName == null) {
             return context.getString(R.string.scheduler_action_none);
@@ -769,11 +618,7 @@ public class RestrictionsScheduler {
         return context.getString(R.string.scheduler_action_launch_main, shortName);
     }
 
-    // =========================================================================
-    // Utilities
-    // =========================================================================
 
-    /** Set difference: elements in a that are not in b. */
     private static Set<String> diff(Set<String> a, Set<String> b) {
         Set<String> result = new HashSet<>(a);
         result.removeAll(b);

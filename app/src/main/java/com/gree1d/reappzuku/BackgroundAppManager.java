@@ -42,10 +42,7 @@ public class BackgroundAppManager {
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+");
     private static final String FORCE_STOP_COMMAND_PREFIX = "am force-stop ";
 
-    /**
-     * All known appops in order: index matches ManualOps bit positions and
-     * the ALL_OPS array used in applyAllHardOps / applyManualOps.
-     */
+
     public static final String[] ALL_OPS = {
         BACKGROUND_RESTRICTION_OP,
         BG_RUN_RESTRICTION_OP,
@@ -57,12 +54,7 @@ public class BackgroundAppManager {
         INTERACT_ACROSS_PROFILES_OP
     };
 
-    /**
-     * Restriction type for a single app.
-     * SOFT  – only RUN_ANY_IN_BACKGROUND → ignore
-     * HARD  – all ops in ALL_OPS → ignore + battery whitelist removed
-     * MANUAL– user-chosen subset of ALL_OPS; stored as a bitmask per package
-     */
+
     public enum RestrictionType { SOFT, HARD, MANUAL }
 
     private final Context context;
@@ -100,7 +92,6 @@ public class BackgroundAppManager {
         return supportsBackgroundRestriction() && shellManager.hasAnyShellPermission();
     }
 
-    // --- Load apps ---
 
     public void loadBackgroundApps(Consumer<List<AppModel>> callback) {
         executor.execute(() -> {
@@ -386,7 +377,6 @@ public class BackgroundAppManager {
         this.showPersistentApps = show;
     }
 
-    // --- Background Restriction ---
 
     public void setBackgroundRestricted(String packageName, boolean restricted, Runnable onComplete) {
         Set<String> targetPackages = getBackgroundRestrictedApps();
@@ -402,13 +392,7 @@ public class BackgroundAppManager {
         applyBackgroundRestriction(targetPackages, null, onComplete);
     }
 
-    /**
-     * Applies background restrictions.
-     * @param targetPackages  full set of packages that should be restricted
-     * @param hardPackages    subset that should use HARD restriction.
-     *                        Pass null to preserve existing assignments from preferences.
-     * @param onComplete      called on main thread when done
-     */
+
     public void applyBackgroundRestriction(Set<String> targetPackages, Set<String> hardPackages, Runnable onComplete) {
         Set<String> desiredPackages = sanitizeBackgroundRestrictionTargets(targetPackages);
         Log.d(TAG, "[DBG] applyBackgroundRestriction called: targetPackages=" + (targetPackages != null ? targetPackages.size() : "null")
@@ -431,7 +415,6 @@ public class BackgroundAppManager {
         Set<String> dbgManual = getManualRestrictedApps();
         Log.d(TAG, "[DBG] manualSet in prefs at call time: " + dbgManual.size() + " packages: " + dbgManual);
 
-        // Manual packages not in hardPackages stay as-is in preferences
 
         if (!supportsBackgroundRestriction()) {
             BackgroundRestrictionLog.log(context, null, "apply", "skipped", "Android 11+ required");
@@ -451,7 +434,7 @@ public class BackgroundAppManager {
         }
 
         executor.execute(() -> {
-            // Шаг 1: снимаем ограничения с пакетов которых больше нет в списке
+
             Set<String> currentPackages = getActualBackgroundRestrictedApps();
             Set<String> packagesToAllow = new HashSet<>(currentPackages);
             packagesToAllow.removeAll(desiredPackages);
@@ -467,9 +450,7 @@ public class BackgroundAppManager {
                 logRestrictionResult(packageName, "allow", null, null, opsCount);
             }
 
-            // Шаг 2: reapply всех оставшихся пакетов из prefs (уже обновлённых).
-            // Это гарантирует что смена типа (soft/hard/manual) применяется корректно
-            // на любой прошивке, аналогично нажатию кнопки reapply.
+
             Set<String> hardSet = getHardRestrictedApps();
             Set<String> manualSet = getManualRestrictedApps();
             Log.d(TAG, "[DBG] step2 start: desiredPackages=" + desiredPackages.size()
@@ -600,7 +581,7 @@ public class BackgroundAppManager {
         Set<String> hardSet = getHardRestrictedApps();
         Set<String> manualSet = getManualRestrictedApps();
 
-        // Clear from both sets first, then add to the right one
+
         hardSet.remove(packageName);
         manualSet.remove(packageName);
 
@@ -620,7 +601,7 @@ public class BackgroundAppManager {
         saveManualRestrictedApps(manualSet);
     }
 
-    /** Legacy boolean setter kept for existing callers (hard=true → HARD, false → SOFT). */
+
     public void setRestrictionType(String packageName, boolean hard) {
         setRestrictionType(packageName, hard ? RestrictionType.HARD : RestrictionType.SOFT);
     }
@@ -631,7 +612,6 @@ public class BackgroundAppManager {
         return RestrictionType.SOFT;
     }
 
-    // --- Shell command builders ---
 
     private String buildBackgroundRestrictionCommand(String packageName, String mode) {
         return "cmd appops set --user current " + packageName + " " + BACKGROUND_RESTRICTION_OP + " " + mode;
@@ -645,10 +625,7 @@ public class BackgroundAppManager {
         return "cmd appops set --user current " + packageName + " " + BOOT_RESTRICTION_OP + " " + mode;
     }
 
-    /**
-     * Applies all hard restriction ops and returns [ok, fail] counts.
-     * Includes every op in ALL_OPS. Logs each op individually for test visibility.
-     */
+
     int[] applyAllHardOps(String packageName, String mode) {
         Log.d(TAG, "applyAllHardOps → " + packageName + " mode=" + mode
                 + " ops=" + Arrays.toString(ALL_OPS));
@@ -676,13 +653,7 @@ public class BackgroundAppManager {
         return new int[]{ok, fail};
     }
 
-    /**
-     * Applies only the ops selected by the user for Manual type.
-     * opsMask bit positions correspond to ALL_OPS indices.
-     * Logs each op individually so test logs show exactly what was applied.
-     *
-     * @return [ok, fail] counts
-     */
+
     int[] applyManualOps(String packageName, int opsMask, String mode) {
         int selectedCount = Integer.bitCount(opsMask);
         Log.d(TAG, "applyManualOps → " + packageName + " mode=" + mode
@@ -717,19 +688,13 @@ public class BackgroundAppManager {
         return new int[]{ok, fail};
     }
 
-    /** @deprecated Use applyAllHardOps which tracks results. Kept for any legacy callers. */
+
     @Deprecated
     void applyHardExtraOps(String packageName, String mode) {
         applyAllHardOps(packageName, mode);
     }
 
-    // --- Scheduler integration ---
 
-    /**
-     * Lifts all appops restrictions for a package (called by RestrictionsScheduler).
-     *
-     * @return "ok" / "partial" / "error" / "skipped"
-     */
     public String liftRestrictionsForScheduler(String packageName) {
         if (!getBackgroundRestrictedApps().contains(packageName)) return "skipped";
         restoreBatteryWhitelist(packageName);
@@ -739,12 +704,7 @@ public class BackgroundAppManager {
         return "partial";
     }
 
-    /**
-     * Restores appops restrictions for a package (called by RestrictionsScheduler).
-     * Respects SOFT / HARD / MANUAL restriction type saved in preferences.
-     *
-     * @return "ok" / "partial" / "error" / "skipped"
-     */
+
     public String restoreRestrictionsForScheduler(String packageName) {
         if (!getBackgroundRestrictedApps().contains(packageName)) return "skipped";
         RestrictionType type = getRestrictionType(packageName);
@@ -770,7 +730,6 @@ public class BackgroundAppManager {
         return "partial";
     }
 
-    // --- Battery whitelist ---
 
     private boolean isInBatteryWhitelist(String packageName) {
         String output = shellManager.runShellCommandAndGetFullOutput("dumpsys deviceidle whitelist");
@@ -807,7 +766,6 @@ public class BackgroundAppManager {
                 "battery-whitelist-restored", "restored to deviceidle whitelist");
     }
 
-    // --- BackgroundRestrictionState ---
 
     private Set<String> getActualBackgroundRestrictedApps() {
         return getBackgroundRestrictionState().restrictedPackages;
@@ -888,15 +846,7 @@ public class BackgroundAppManager {
         return desiredPackages;
     }
 
-    // --- Restrictions Watchdog ---
 
-    /**
-     * Queries actual appops state and re-applies only the ops that have drifted.
-     * Called from RestrictionsWatchdogManager. Runs shell commands on executor thread.
-     *
-     * @param desired   sanitized set of packages that must be restricted
-     * @param scheduler used to skip scheduler-protected packages; may be null
-     */
     public void checkAndRepairRestrictions(Set<String> desired, RestrictionsScheduler scheduler) {
         executor.execute(() -> {
             Set<String> hardSet   = getHardRestrictedApps();
@@ -914,7 +864,7 @@ public class BackgroundAppManager {
                 String pkg           = entry.getKey();
                 List<String> missing = entry.getValue();
 
-                // Scheduler temporarily lifted restrictions for this package — skip
+
                 if (scheduler != null
                         && scheduler.isProtected(pkg, RestrictionsScheduler.PROTECT_BG_RESTRICTIONS)) {
                     Log.d(TAG, "watchdog SKIP (scheduler active): " + pkg);
@@ -948,15 +898,11 @@ public class BackgroundAppManager {
         });
     }
 
-    /**
-     * Queries which ops have silently lost their "ignore" state for each desired package.
-     * Returns Map: packageName → list of ops that should be "ignore" but are not.
-     * Must be called from a background thread.
-     */
+
     private Map<String, List<String>> collectDriftedOps(Set<String> desired,
             Set<String> hardSet, Set<String> manualSet) {
 
-        // Query each op once across all packages
+
         Map<String, Set<String>> actualRestrictedByOp = new HashMap<>();
         for (String op : ALL_OPS) {
             Set<String> restricted = new HashSet<>();
@@ -983,24 +929,21 @@ public class BackgroundAppManager {
         return drifted;
     }
 
-    /**
-     * Returns the list of ops that must be set to "ignore" for the given package,
-     * based on its restriction type (SOFT / HARD / MANUAL).
-     */
+
     private List<String> getRequiredOpsForPackage(String pkg,
             Set<String> hardSet, Set<String> manualSet) {
         if (hardSet.contains(pkg) || manualSet.contains(pkg)) {
             int appliedMask = getAppliedOpsMask(pkg);
             if (appliedMask != 0) {
-                // Watchdog checks only ops the system actually accepted on last apply
+
                 List<String> ops = new ArrayList<>();
                 for (int i = 0; i < ALL_OPS.length; i++) {
                     if ((appliedMask & (1 << i)) != 0) ops.add(ALL_OPS[i]);
                 }
                 return ops;
             }
-            // appliedMask == 0: not saved yet (pre-update install).
-            // Fallback: HARD → all ops, MANUAL → user-selected ops.
+
+
             if (hardSet.contains(pkg)) return Arrays.asList(ALL_OPS);
             int mask = getManualOpsMask(pkg);
             List<String> ops = new ArrayList<>();
@@ -1009,11 +952,10 @@ public class BackgroundAppManager {
             }
             return ops;
         }
-        // SOFT: only RUN_ANY_IN_BACKGROUND
+
         return Collections.singletonList(BACKGROUND_RESTRICTION_OP);
     }
 
-    // --- Logging ---
 
     private void logRestrictionResult(String packageName, String action,
             ShellManager.ShellResult appOpsResult, ShellManager.ShellResult forceStopResult) {
@@ -1084,7 +1026,6 @@ public class BackgroundAppManager {
         BackgroundRestrictionLog.clear(context);
     }
 
-    // --- Inner classes ---
 
     private static final class BackgroundRestrictionState {
         private final Set<String> restrictedPackages;
@@ -1096,7 +1037,6 @@ public class BackgroundAppManager {
         }
     }
 
-    // --- Preferences ---
 
     public Set<String> getHiddenApps() {
         return new HashSet<>(sharedpreferences.getStringSet(KEY_HIDDEN_APPS, new HashSet<>()));
@@ -1122,13 +1062,7 @@ public class BackgroundAppManager {
         sharedpreferences.edit().putStringSet(KEY_AUTOSTART_DISABLED_APPS, new HashSet<>(packageNames)).apply();
     }
 
-    // --- Applied ops mask (watchdog) ---
 
-    /**
-     * Returns the bitmask of ops that were successfully applied for this package.
-     * Bit i = 1 means ALL_OPS[i] was accepted by the system on last apply.
-     * Returns 0 if no mask is saved yet (pre-update installs).
-     */
     public int getAppliedOpsMask(String packageName) {
         return sharedpreferences.getInt(KEY_APPLIED_OPS_MASK_PREFIX + packageName, 0);
     }
@@ -1159,12 +1093,7 @@ public class BackgroundAppManager {
         return getHardRestrictedApps().contains(packageName);
     }
 
-    // --- Manual restriction preferences ---
 
-    /**
-     * Returns the set of packages that have MANUAL restriction type.
-     * Add KEY_MANUAL_RESTRICTION_APPS = "manual_restriction_apps" to PreferenceKeys.
-     */
     public Set<String> getManualRestrictedApps() {
         return new HashSet<>(sharedpreferences.getStringSet(KEY_MANUAL_RESTRICTION_APPS, new HashSet<>()));
     }
@@ -1173,12 +1102,7 @@ public class BackgroundAppManager {
         sharedpreferences.edit().putStringSet(KEY_MANUAL_RESTRICTION_APPS, new HashSet<>(packageNames)).apply();
     }
 
-    /**
-     * Gets the ops bitmask for a package in Manual mode.
-     * Bit i = 1 means ALL_OPS[i] should be set to "ignore".
-     * Default mask = 0x01 (only RUN_ANY_IN_BACKGROUND, same as Soft) if nothing saved yet.
-     * Store key: KEY_MANUAL_OPS_PREFIX + packageName
-     */
+
     public int getManualOpsMask(String packageName) {
         return sharedpreferences.getInt(KEY_MANUAL_OPS_PREFIX + packageName, 0x01);
     }
@@ -1189,10 +1113,7 @@ public class BackgroundAppManager {
                 + " ops=" + describeOpsMask(mask));
     }
 
-    /**
-     * Returns a human-readable description of which ops are enabled in the mask.
-     * Useful for debugging in tests.
-     */
+
     public String describeOpsMask(int mask) {
         if (mask == 0) return "[none]";
         StringBuilder sb = new StringBuilder("[");
@@ -1214,7 +1135,6 @@ public class BackgroundAppManager {
         sharedpreferences.edit().putStringSet(KEY_BATTERY_WHITELIST_REMOVED, new HashSet<>(packages)).apply();
     }
 
-    // --- Shared utility ---
 
     public String formatMemorySize(long kb) {
         if (kb < 1024)

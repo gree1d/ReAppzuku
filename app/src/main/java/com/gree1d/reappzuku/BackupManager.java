@@ -52,7 +52,7 @@ public class BackupManager {
             root.put(KEY_SYSTEM_APPS_WARNING_SHOWN, prefs.getBoolean(KEY_SYSTEM_APPS_WARNING_SHOWN, false));
             root.put(KEY_SLEEP_MODE_ENABLED, prefs.getBoolean(KEY_SLEEP_MODE_ENABLED, false));
             root.put(KEY_SLEEP_MODE_DELAY, prefs.getLong(KEY_SLEEP_MODE_DELAY, AppConstants.DEFAULT_SLEEP_MODE_DELAY_MS));
-            return root.toString(4); // Pretty print with 4 spaces
+            return root.toString(4);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -114,11 +114,6 @@ public class BackupManager {
         root.put(key, new JSONArray(set));
     }
 
-    /**
-     * Сохраняет маски ops для Manual-пакетов как JSON-объект:
-     * { "com.example.app": 42, ... }
-     * Ключи динамические (префикс + packageName), поэтому putStringSet не подходит.
-     */
     private void putManualOpsMasks(JSONObject root) throws Exception {
         Set<String> manualPackages = prefs.getStringSet(KEY_MANUAL_RESTRICTION_APPS, new java.util.HashSet<>());
         if (manualPackages == null) manualPackages = new java.util.HashSet<>();
