@@ -1,11 +1,9 @@
 package com.gree1d.reappzuku;
 
-/**
- * Centralized preference keys to ensure consistency across the app.
- */
+
 public final class PreferenceKeys {
     private PreferenceKeys() {
-        // Prevent instantiation
+       
     }
 
     public static final String PREFERENCES_NAME = "AppPreferences";
@@ -16,21 +14,18 @@ public final class PreferenceKeys {
     public static final String KEY_BLACKLISTED_APPS = "blacklisted_apps";
     public static final String KEY_AUTOSTART_DISABLED_APPS = "autostart_disabled_apps";
 
-    // Background Restriction type: packages in this set use HARD restriction (START_FOREGROUND deny)
-    // Packages NOT in this set but in KEY_AUTOSTART_DISABLED_APPS use SOFT restriction (RUN_ANY_IN_BACKGROUND ignore)
     public static final String KEY_HARD_RESTRICTION_APPS = "hard_restriction_apps";
-    public static final String KEY_MANUAL_RESTRICTION_APPS = "manual_restriction_apps";  // Set<String>
-    public static final String KEY_MANUAL_OPS_PREFIX = "manual_ops_mask_";              // + packageName → int (bitmask)
+    public static final String KEY_MANUAL_RESTRICTION_APPS = "manual_restriction_apps";
+    public static final String KEY_MANUAL_OPS_PREFIX = "manual_ops_mask_";
+    public static final String KEY_APPLIED_OPS_MASK_PREFIX = "applied_ops_mask_";
 
-    // Packages that were removed from battery optimization whitelist by ReAppzuku during hard restriction.
-    // Restored automatically when hard restriction is lifted.
     public static final String KEY_BATTERY_WHITELIST_REMOVED = "battery_whitelist_removed";
 
     // Kill Mode
-    public static final String KEY_KILL_MODE = "kill_mode"; // 0 = Whitelist (default), 1 = Blacklist
+    public static final String KEY_KILL_MODE = "kill_mode"; 
 
     // Auto-Kill Type: which shell command to use when killing apps
-    public static final String KEY_AUTO_KILL_TYPE = "auto_kill_type"; // 0 = am force-stop (default), 1 = am kill
+    public static final String KEY_AUTO_KILL_TYPE = "auto_kill_type";
 
     // Service & Automation
     public static final String KEY_AUTO_KILL_ENABLED = "autoKillEnabled";

@@ -653,19 +653,26 @@ public class BackgroundAppManager {
         Log.d(TAG, "applyAllHardOps → " + packageName + " mode=" + mode
                 + " ops=" + Arrays.toString(ALL_OPS));
         int ok = 0, fail = 0;
-        for (String op : ALL_OPS) {
+        int succeededMask = 0;
+        for (int i = 0; i < ALL_OPS.length; i++) {
             boolean succeeded = shellManager.runShellCommandForResult(
-                    "cmd appops set --user current " + packageName + " " + op + " " + mode)
+                    "cmd appops set --user current " + packageName + " " + ALL_OPS[i] + " " + mode)
                     .succeeded();
             if (succeeded) {
                 ok++;
-                Log.d(TAG, "  [OK  ] " + op);
+                succeededMask |= (1 << i);
+                Log.d(TAG, "  [OK  ] " + ALL_OPS[i]);
             } else {
                 fail++;
-                Log.w(TAG, "  [FAIL] " + op);
+                Log.w(TAG, "  [FAIL] " + ALL_OPS[i]);
             }
         }
         Log.d(TAG, "applyAllHardOps result: ok=" + ok + " fail=" + fail + " pkg=" + packageName);
+        if ("ignore".equals(mode)) {
+            saveAppliedOpsMask(packageName, succeededMask);
+        } else {
+            clearAppliedOpsMask(packageName);
+        }
         return new int[]{ok, fail};
     }
 
@@ -683,6 +690,7 @@ public class BackgroundAppManager {
                 + " selectedOps=" + selectedCount + "/" + ALL_OPS.length);
 
         int ok = 0, fail = 0;
+        int succeededMask = 0;
         for (int i = 0; i < ALL_OPS.length; i++) {
             if ((opsMask & (1 << i)) == 0) {
                 Log.d(TAG, "  [SKIP] " + ALL_OPS[i] + " (not selected)");
@@ -693,6 +701,7 @@ public class BackgroundAppManager {
                     .succeeded();
             if (succeeded) {
                 ok++;
+                succeededMask |= (1 << i);
                 Log.d(TAG, "  [OK  ] " + ALL_OPS[i]);
             } else {
                 fail++;
@@ -700,6 +709,11 @@ public class BackgroundAppManager {
             }
         }
         Log.d(TAG, "applyManualOps result: ok=" + ok + " fail=" + fail + " pkg=" + packageName);
+        if ("ignore".equals(mode)) {
+            saveAppliedOpsMask(packageName, succeededMask);
+        } else {
+            clearAppliedOpsMask(packageName);
+        }
         return new int[]{ok, fail};
     }
 
@@ -975,10 +989,19 @@ public class BackgroundAppManager {
      */
     private List<String> getRequiredOpsForPackage(String pkg,
             Set<String> hardSet, Set<String> manualSet) {
-        if (hardSet.contains(pkg)) {
-            return Arrays.asList(ALL_OPS);
-        }
-        if (manualSet.contains(pkg)) {
+        if (hardSet.contains(pkg) || manualSet.contains(pkg)) {
+            int appliedMask = getAppliedOpsMask(pkg);
+            if (appliedMask != 0) {
+                // Watchdog checks only ops the system actually accepted on last apply
+                List<String> ops = new ArrayList<>();
+                for (int i = 0; i < ALL_OPS.length; i++) {
+                    if ((appliedMask & (1 << i)) != 0) ops.add(ALL_OPS[i]);
+                }
+                return ops;
+            }
+            // appliedMask == 0: not saved yet (pre-update install).
+            // Fallback: HARD → all ops, MANUAL → user-selected ops.
+            if (hardSet.contains(pkg)) return Arrays.asList(ALL_OPS);
             int mask = getManualOpsMask(pkg);
             List<String> ops = new ArrayList<>();
             for (int i = 0; i < ALL_OPS.length; i++) {
@@ -1097,6 +1120,31 @@ public class BackgroundAppManager {
 
     public void saveBackgroundRestrictedApps(Set<String> packageNames) {
         sharedpreferences.edit().putStringSet(KEY_AUTOSTART_DISABLED_APPS, new HashSet<>(packageNames)).apply();
+    }
+
+    // --- Applied ops mask (watchdog) ---
+
+    /**
+     * Returns the bitmask of ops that were successfully applied for this package.
+     * Bit i = 1 means ALL_OPS[i] was accepted by the system on last apply.
+     * Returns 0 if no mask is saved yet (pre-update installs).
+     */
+    public int getAppliedOpsMask(String packageName) {
+        return sharedpreferences.getInt(KEY_APPLIED_OPS_MASK_PREFIX + packageName, 0);
+    }
+
+    private void saveAppliedOpsMask(String packageName, int mask) {
+        sharedpreferences.edit()
+                .putInt(KEY_APPLIED_OPS_MASK_PREFIX + packageName, mask)
+                .apply();
+        Log.d(TAG, "saveAppliedOpsMask " + packageName
+                + " mask=0x" + Integer.toHexString(mask) + " ops=" + describeOpsMask(mask));
+    }
+
+    private void clearAppliedOpsMask(String packageName) {
+        sharedpreferences.edit()
+                .remove(KEY_APPLIED_OPS_MASK_PREFIX + packageName)
+                .apply();
     }
 
     public Set<String> getHardRestrictedApps() {
