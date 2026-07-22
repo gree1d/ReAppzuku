@@ -4,7 +4,7 @@
 
 ![Logo](https://github.com/gree1d/ReAppzuku/blob/main/docs/images/logo.png)
 <p align="center">
-<img src="https://img.shields.io/badge/Status-EOL-red.svg"/> <br>
+<img src="https://img.shields.io/badge/Status-EOL-orange.svg"/> <br>
 <img src="https://img.shields.io/github/v/release/gree1d/ReAppzuku?label=Release&" alt="Latest Release">
 <img src="https://img.shields.io/github/downloads/gree1d/ReAppzuku/total?label=Downloads&color=a855f7" alt="Downloads">
 <img src="https://img.shields.io/badge/License-GPLv3-64748b.svg" alt="License">
