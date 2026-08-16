@@ -128,10 +128,22 @@ public class ShappkyQuickTile extends TileService {
 
                 final String killedPackage = packageName;
                 AppDebugManager.d(Category.SHORTCUTS_WIDGETS, "ShappkyQuickTile: onClick killing foreground pkg=" + killedPackage);
+
+                // Resolve the recents taskId for this package BEFORE killing it —
+                // the recents entry stays even after force-stop, so we need the id now.
+                Integer taskId = resolveTaskIdForPackage(killedPackage);
+
                 String cmd = "am force-stop " + killedPackage;
                 shellManager.runShellCommand(cmd, () -> {
                     AppDebugManager.i(Category.SHORTCUTS_WIDGETS, "ShappkyQuickTile: onClick kill success pkg=" + killedPackage);
                     executor.execute(() -> autoKillManager.recordQuickTileKill(killedPackage));
+
+                    if (taskId != null) {
+                        removeFromRecents(taskId, killedPackage);
+                    } else {
+                        AppDebugManager.w(Category.SHORTCUTS_WIDGETS, "ShappkyQuickTile: onClick no taskId resolved, skipping recents removal for pkg=" + killedPackage);
+                    }
+
                     handler.post(() -> {
                         Toast.makeText(this, "Killed: " + killedPackage, Toast.LENGTH_SHORT).show();
                         updateTileState();
@@ -150,6 +162,81 @@ public class ShappkyQuickTile extends TileService {
                     updateTileState();
                 });
             }
+        });
+    }
+
+    /**
+     * Finds the recents taskId that currently hosts the given package,
+     * by parsing "dumpsys activity recents". Must be called BEFORE
+     * force-stopping the app — some devices drop the task's baseIntent
+     * info once the process is gone.
+     */
+    private Integer resolveTaskIdForPackage(String packageName) {
+        String recentsOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity recents");
+        if (recentsOutput == null || recentsOutput.isEmpty()) {
+            AppDebugManager.w(Category.SHORTCUTS_WIDGETS, "ShappkyQuickTile: resolveTaskIdForPackage dumpsys recents returned empty");
+            return null;
+        }
+
+        Integer lastMatchedTaskId = null;
+        String[] lines = recentsOutput.split("\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+
+            // MIUI/HyperOS format: "Recent #0: Task{abc123#3049 ..."
+            // Standard format: "* TaskRecord{... #1234 A=com.example.app U=0 ...}"
+            // We need the number after "Task{...#" (the task ID), NOT "Recent #" (the position)
+            
+            if (trimmed.contains("Task{") && trimmed.contains(packageName)) {
+                // Find "Task{" position
+                int taskStart = trimmed.indexOf("Task{");
+                if (taskStart == -1) continue;
+                
+                // Find the # after "Task{"
+                int hashIdx = trimmed.indexOf('#', taskStart);
+                if (hashIdx == -1) continue;
+                
+                // Extract digits after #
+                int idStart = hashIdx + 1;
+                int idEnd = idStart;
+                while (idEnd < trimmed.length() && Character.isDigit(trimmed.charAt(idEnd))) {
+                    idEnd++;
+                }
+                if (idEnd == idStart) continue;
+
+                try {
+                    int candidateId = Integer.parseInt(trimmed.substring(idStart, idEnd));
+                    lastMatchedTaskId = candidateId;
+                    AppDebugManager.i(Category.SHORTCUTS_WIDGETS,
+                            "ShappkyQuickTile: resolveTaskIdForPackage matched taskId=" + candidateId + " for pkg=" + packageName + " in line: " + trimmed);
+                    break; // Found it, stop searching
+                } catch (NumberFormatException e) {
+                    AppDebugManager.w(Category.SHORTCUTS_WIDGETS, "ShappkyQuickTile: failed to parse taskId from: " + trimmed);
+                }
+            }
+        }
+
+        if (lastMatchedTaskId == null) {
+            AppDebugManager.w(Category.SHORTCUTS_WIDGETS, "ShappkyQuickTile: resolveTaskIdForPackage no taskId found for pkg=" + packageName);
+        }
+        return lastMatchedTaskId;
+    }
+
+    /**
+     * Removes the given task from the Recents (overview) screen.
+     * Uses "am stack remove" which is confirmed working on MIUI/HyperOS.
+     */
+    private void removeFromRecents(int taskId, String packageName) {
+        String cmd = "am stack remove " + taskId;
+        AppDebugManager.i(Category.SHORTCUTS_WIDGETS,
+                "ShappkyQuickTile: removeFromRecents executing: " + cmd + " for pkg=" + packageName);
+        
+        shellManager.runShellCommand(cmd, () -> {
+            AppDebugManager.i(Category.SHORTCUTS_WIDGETS,
+                    "ShappkyQuickTile: removeFromRecents SUCCESS taskId=" + taskId + " pkg=" + packageName);
+        }, () -> {
+            AppDebugManager.w(Category.SHORTCUTS_WIDGETS,
+                    "ShappkyQuickTile: removeFromRecents FAILED taskId=" + taskId + " pkg=" + packageName);
         });
     }
 
