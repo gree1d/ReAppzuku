@@ -89,15 +89,6 @@ public class AutoKillManager {
             AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: blacklistedApps=" + blacklistedApps);
             AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: hiddenApps=" + hiddenApps);
 
-            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
-            AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: dumpsys output length: " + (dumpOutput == null ? "null" : dumpOutput.length()));
-            if (dumpOutput == null) {
-                AppDebugManager.w(Category.AUTO_KILL_BASE, "AutoKillManager: dumpsys returned null — aborting kill");
-                if (onComplete != null)
-                    handler.post(onComplete);
-                return;
-            }
-
             long meminfoStart = System.currentTimeMillis();
 
             Set<String> runningPackages = new HashSet<>();
@@ -243,7 +234,7 @@ public class AutoKillManager {
             String currentKeyboard = ProtectedApps.getCurrentKeyboardPackage(context);
             String currentLauncher = ProtectedApps.getCurrentLauncherPackage(context);
 
-            List<String> toKill = runningPackages.stream()
+            List<String> candidates = runningPackages.stream()
                     .filter(pkg -> {
                         try {
                             if (hiddenApps.contains(pkg)) {
@@ -260,10 +251,6 @@ public class AutoKillManager {
                             }
                             if (!presetActive && scheduler != null && scheduler.isProtected(pkg, RestrictionsScheduler.PROTECT_AUTO_KILL)) {
                                 AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: SKIP (temp protected): " + pkg);
-                                return false;
-                            }
-                            if (containsPackage(dumpOutput, pkg)) {
-                                AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: SKIP (foreground): " + pkg);
                                 return false;
                             }
                             if (killMode == 1) {
@@ -286,6 +273,26 @@ public class AutoKillManager {
                         }
                     })
                     .collect(Collectors.toList());
+
+            Map<String, String> protectedReasons = Collections.emptyMap();
+            if (!candidates.isEmpty()) {
+                protectedReasons = collectProtectedForeground(candidates);
+                if (protectedReasons == null) {
+                    AppDebugManager.w(Category.AUTO_KILL_BASE, "AutoKillManager: foreground detection failed — aborting kill");
+                    if (onComplete != null)
+                        handler.post(onComplete);
+                    return;
+                }
+            }
+            List<String> toKill = new ArrayList<>();
+            for (String pkg : candidates) {
+                String reason = protectedReasons.get(pkg);
+                if (reason != null) {
+                    AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: SKIP (" + reason + "): " + pkg);
+                } else {
+                    toKill.add(pkg);
+                }
+            }
 
             AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: toKill list (" + toKill.size() + "): " + toKill);
 
@@ -732,6 +739,190 @@ public class AutoKillManager {
             shellManager.runShellCommandAndGetFullOutput("kill -9 " + String.join(" ", toKill));
             AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: Killed orphan shell PIDs: " + toKill);
         }
+    }
+
+    private static final String FG_SECTION_PREFIX = "===RAZ_";
+    private static final String FG_SECTION_SUFFIX = "===";
+    private static final String FG_SEC_RESUMED = "RESUMED";
+    private static final String FG_SEC_MEDIA = "MEDIA";
+    private static final String FG_SEC_FGS = "FGS";
+    private static final String FG_SEC_RECENTS = "RECENTS";
+
+    private static final String FG_COMBINED_COMMAND =
+            "echo " + FG_SECTION_PREFIX + FG_SEC_RESUMED + FG_SECTION_SUFFIX + "; "
+            + "dumpsys activity activities | grep -E 'topResumedActivity|mResumedActivity|mFocusedActivity|ResumedActivity'; "
+            + "echo " + FG_SECTION_PREFIX + FG_SEC_MEDIA + FG_SECTION_SUFFIX + "; "
+            + "dumpsys media_session | grep -E '^ *package=|state=PlaybackState'; "
+            + "echo " + FG_SECTION_PREFIX + FG_SEC_FGS + FG_SECTION_SUFFIX + "; "
+            + "dumpsys activity services | grep -E '^ *packageName=|isForeground=true'; "
+            + "echo " + FG_SECTION_PREFIX + FG_SEC_RECENTS + FG_SECTION_SUFFIX + "; "
+            + "dumpsys activity recents | grep -E 'Recent #|realActivity=|cmp='";
+
+    private static final java.util.regex.Pattern FG_RESUMED_PATTERN = java.util.regex.Pattern.compile(
+            "(?:topResumedActivity|mResumedActivity|mFocusedActivity|ResumedActivity)[=:]\\s*ActivityRecord\\{\\S+ u\\d+ ([A-Za-z0-9_.]+)/");
+    private static final java.util.regex.Pattern FG_RECENT_AFFINITY_PATTERN = java.util.regex.Pattern.compile(
+            "Recent #\\d+:.*?\\bA=([A-Za-z0-9_.]+)");
+    private static final java.util.regex.Pattern FG_COMPONENT_PATTERN = java.util.regex.Pattern.compile(
+            "(?:realActivity|cmp)=([A-Za-z0-9_.]+)/");
+    private static final java.util.regex.Pattern FG_MEDIA_PACKAGE_PATTERN = java.util.regex.Pattern.compile(
+            "^\\s*package=([A-Za-z0-9_.]+)\\s*$");
+    private static final java.util.regex.Pattern FG_MEDIA_STATE_PATTERN = java.util.regex.Pattern.compile(
+            "state=PlaybackState \\{state=(\\d+)");
+    private static final java.util.regex.Pattern FG_SERVICE_PACKAGE_PATTERN = java.util.regex.Pattern.compile(
+            "^\\s*packageName=([A-Za-z0-9_.]+)\\s*$");
+
+    private Map<String, String> collectProtectedForeground(List<String> candidates) {
+        long start = System.currentTimeMillis();
+        String output = shellManager.runShellCommandAndGetFullOutput(FG_COMBINED_COMMAND);
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground combined output length: "
+                + (output == null ? "null" : output.length()) + " (took " + (System.currentTimeMillis() - start) + "ms)");
+        if (output == null) {
+            return null;
+        }
+
+        Map<String, StringBuilder> sections = splitForegroundSections(output);
+        Set<String> resumed = parseResumedPackages(sections.get(FG_SEC_RESUMED));
+        Set<String> media = parseMediaPackages(sections.get(FG_SEC_MEDIA));
+        Set<String> services = parseForegroundServicePackages(sections.get(FG_SEC_FGS));
+        Set<String> recents = parseRecentPackages(sections.get(FG_SEC_RECENTS));
+
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground resumed=" + resumed);
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground media=" + media);
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground services=" + services);
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground recents=" + recents);
+
+        Map<String, String> reasons = new HashMap<>();
+        if (resumed.isEmpty()) {
+            AppDebugManager.w(Category.AUTO_KILL_BASE,
+                    "AutoKillManager: no resumed activity parsed — falling back to full dumpsys activity activities");
+            String dumpOutput = shellManager.runShellCommandAndGetFullOutput("dumpsys activity activities");
+            AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: fallback dumpsys output length: "
+                    + (dumpOutput == null ? "null" : dumpOutput.length()));
+            if (dumpOutput == null) {
+                return null;
+            }
+            for (String pkg : candidates) {
+                if (containsPackage(dumpOutput, pkg)) {
+                    reasons.put(pkg, "foreground");
+                }
+            }
+        } else {
+            for (String pkg : candidates) {
+                if (resumed.contains(pkg)) {
+                    reasons.put(pkg, "foreground");
+                }
+            }
+        }
+        for (String pkg : candidates) {
+            if (reasons.containsKey(pkg)) continue;
+            if (media.contains(pkg)) {
+                reasons.put(pkg, "media playing");
+            } else if (services.contains(pkg)) {
+                reasons.put(pkg, "foreground service");
+            } else if (recents.contains(pkg)) {
+                reasons.put(pkg, "recents");
+            }
+        }
+
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground protection resolved " + reasons.size()
+                + " of " + candidates.size() + " candidates (total " + (System.currentTimeMillis() - start) + "ms)");
+        return reasons;
+    }
+
+    private Map<String, StringBuilder> splitForegroundSections(String output) {
+        Map<String, StringBuilder> sections = new HashMap<>();
+        StringBuilder current = null;
+        try (BufferedReader reader = new BufferedReader(new StringReader(output))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (trimmed.startsWith(FG_SECTION_PREFIX) && trimmed.endsWith(FG_SECTION_SUFFIX)) {
+                    String name = trimmed.substring(FG_SECTION_PREFIX.length(), trimmed.length() - FG_SECTION_SUFFIX.length());
+                    current = new StringBuilder();
+                    sections.put(name, current);
+                } else if (current != null) {
+                    current.append(line).append('\n');
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return sections;
+    }
+
+    private Set<String> parseResumedPackages(StringBuilder section) {
+        Set<String> result = new HashSet<>();
+        if (section == null) return result;
+        java.util.regex.Matcher matcher = FG_RESUMED_PATTERN.matcher(section);
+        while (matcher.find()) {
+            result.add(matcher.group(1));
+        }
+        return result;
+    }
+
+    private Set<String> parseRecentPackages(StringBuilder section) {
+        Set<String> result = new HashSet<>();
+        if (section == null) return result;
+        try (BufferedReader reader = new BufferedReader(new StringReader(section.toString()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                java.util.regex.Matcher affinity = FG_RECENT_AFFINITY_PATTERN.matcher(line);
+                if (affinity.find()) {
+                    result.add(affinity.group(1));
+                }
+                java.util.regex.Matcher component = FG_COMPONENT_PATTERN.matcher(line);
+                if (component.find()) {
+                    result.add(component.group(1));
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return result;
+    }
+
+    private Set<String> parseMediaPackages(StringBuilder section) {
+        Set<String> result = new HashSet<>();
+        if (section == null) return result;
+        try (BufferedReader reader = new BufferedReader(new StringReader(section.toString()))) {
+            String line;
+            String currentPackage = null;
+            while ((line = reader.readLine()) != null) {
+                java.util.regex.Matcher pkgMatcher = FG_MEDIA_PACKAGE_PATTERN.matcher(line);
+                if (pkgMatcher.matches()) {
+                    currentPackage = pkgMatcher.group(1);
+                    continue;
+                }
+                java.util.regex.Matcher stateMatcher = FG_MEDIA_STATE_PATTERN.matcher(line);
+                if (currentPackage != null && stateMatcher.find()) {
+                    int state = Integer.parseInt(stateMatcher.group(1));
+                    if (state == 2 || state == 3 || state == 6) {
+                        result.add(currentPackage);
+                    }
+                }
+            }
+        } catch (IOException | NumberFormatException ignored) {
+        }
+        return result;
+    }
+
+    private Set<String> parseForegroundServicePackages(StringBuilder section) {
+        Set<String> result = new HashSet<>();
+        if (section == null) return result;
+        try (BufferedReader reader = new BufferedReader(new StringReader(section.toString()))) {
+            String line;
+            String currentPackage = null;
+            while ((line = reader.readLine()) != null) {
+                java.util.regex.Matcher pkgMatcher = FG_SERVICE_PACKAGE_PATTERN.matcher(line);
+                if (pkgMatcher.matches()) {
+                    currentPackage = pkgMatcher.group(1);
+                    continue;
+                }
+                if (currentPackage != null && line.contains("isForeground=true")) {
+                    result.add(currentPackage);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return result;
     }
 
     private static boolean containsPackage(String output, String packageName) {
