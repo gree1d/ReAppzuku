@@ -761,13 +761,13 @@ public class AutoKillManager {
     private static final java.util.regex.Pattern FG_RESUMED_PATTERN = java.util.regex.Pattern.compile(
             "(?:topResumedActivity|mResumedActivity|mFocusedActivity|ResumedActivity)[=:]\\s*ActivityRecord\\{\\S+ u\\d+ ([A-Za-z0-9_.]+)/");
     private static final java.util.regex.Pattern FG_RECENT_AFFINITY_PATTERN = java.util.regex.Pattern.compile(
-            "Recent #\\d+:.*?\\bA=([A-Za-z0-9_.]+)");
+            "Recent #\\d+:.*?\\bA=(?:\\d+:)?([A-Za-z0-9_.]+)");
     private static final java.util.regex.Pattern FG_COMPONENT_PATTERN = java.util.regex.Pattern.compile(
-            "(?:realActivity|cmp)=([A-Za-z0-9_.]+)/");
+            "(?:realActivity|cmp)=\\{?([A-Za-z0-9_.]+)/");
     private static final java.util.regex.Pattern FG_MEDIA_PACKAGE_PATTERN = java.util.regex.Pattern.compile(
             "^\\s*package=([A-Za-z0-9_.]+)\\s*$");
     private static final java.util.regex.Pattern FG_MEDIA_STATE_PATTERN = java.util.regex.Pattern.compile(
-            "state=PlaybackState \\{state=(\\d+)");
+            "state=PlaybackState \\{state=(?:[A-Z_]+\\()?(\\d+)");
     private static final java.util.regex.Pattern FG_SERVICE_PACKAGE_PATTERN = java.util.regex.Pattern.compile(
             "^\\s*packageName=([A-Za-z0-9_.]+)\\s*$");
 
@@ -787,9 +787,11 @@ public class AutoKillManager {
         Set<String> recents = parseRecentPackages(sections.get(FG_SEC_RECENTS));
 
         AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground resumed=" + resumed);
-        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground media=" + media);
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground media=" + media
+                + " (section lines=" + countSectionLines(sections.get(FG_SEC_MEDIA)) + ")");
         AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground services=" + services);
-        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground recents=" + recents);
+        AppDebugManager.d(Category.AUTO_KILL_BASE, "AutoKillManager: foreground recents=" + recents
+                + " (section lines=" + countSectionLines(sections.get(FG_SEC_RECENTS)) + ")");
 
         Map<String, String> reasons = new HashMap<>();
         if (resumed.isEmpty()) {
@@ -847,6 +849,15 @@ public class AutoKillManager {
         } catch (IOException ignored) {
         }
         return sections;
+    }
+
+    private int countSectionLines(StringBuilder section) {
+        if (section == null || section.length() == 0) return 0;
+        int count = 0;
+        for (int i = 0; i < section.length(); i++) {
+            if (section.charAt(i) == '\n') count++;
+        }
+        return count;
     }
 
     private Set<String> parseResumedPackages(StringBuilder section) {
