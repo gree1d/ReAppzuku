@@ -24,10 +24,12 @@ import org.junit.Test;
  */
 public class KillPreferenceDefaultsSourcePolicyTest {
 
-    private static final Pattern KILL_MODE_READ =
-            Pattern.compile("getInt\\((?:KEY_BACKUP_PREFIX \\+ )?KEY_KILL_MODE, ([^)]+)\\)");
-    private static final Pattern KILL_INTERVAL_READ =
-            Pattern.compile("getInt\\((?:KEY_BACKUP_PREFIX \\+ )?KEY_KILL_INTERVAL, ([^)]+)\\)");
+    private static final Pattern KILL_MODE_READ = Pattern.compile(
+            "(?:getInt|optInt)\\((?:KEY_BACKUP_PREFIX \\+ )?"
+                    + "(?:KEY_KILL_MODE|P_KILL_MODE|\"killMode\"),\\s*([^)]+)\\)");
+    private static final Pattern KILL_INTERVAL_READ = Pattern.compile(
+            "(?:getInt|optInt)\\((?:KEY_BACKUP_PREFIX \\+ )?"
+                    + "(?:KEY_KILL_INTERVAL|P_KILL_INTERVAL|\"killInterval\"),\\s*([^)]+)\\)");
 
     @Test
     public void everyKillModeReadUsesTheSharedDefault() throws Exception {
@@ -60,6 +62,19 @@ public class KillPreferenceDefaultsSourcePolicyTest {
         String source = readRepositoryFile(
                 "app/src/main/java/com/gree1d/reappzuku/service/AutoKillWorker.java");
         assertEquals(1, count(source, "KillIntervalPolicy.workerIntervalMinutes("));
+    }
+
+    @Test
+    public void presetApplicationClampsTheIntervalItWritesIntoTheLiveKey() throws Exception {
+        // A preset slot persisted by an older build can still hold the minute-scale
+        // fallback; applying it must not re-poison the live millisecond key.
+        String presetManager = readRepositoryFile(
+                "app/src/main/java/com/gree1d/reappzuku/manager/PresetManager.java");
+        assertEquals(1, count(presetManager, "KillIntervalPolicy.clampServiceIntervalMs("));
+
+        String presetModel = readRepositoryFile(
+                "app/src/main/java/com/gree1d/reappzuku/utils/PresetModel.java");
+        assertEquals(1, count(presetModel, "KillIntervalPolicy.clampServiceIntervalMs("));
     }
 
     @Test

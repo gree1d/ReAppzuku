@@ -4,6 +4,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.gree1d.reappzuku.core.AppConstants;
+import com.gree1d.reappzuku.core.KillIntervalPolicy;
 import com.gree1d.reappzuku.core.PackageNameValidator;
 import com.gree1d.reappzuku.core.PresetInputPolicy;
 
@@ -107,12 +109,13 @@ public class PresetModel {
         model.enabled = obj.optBoolean("enabled", true);
         model.autoKillEnabled = obj.optBoolean("autoKillEnabled", false);
         model.periodicKillEnabled = obj.optBoolean("periodicKillEnabled", false);
-        model.killInterval = obj.optInt("killInterval", 15);
+        model.killInterval = KillIntervalPolicy.clampServiceIntervalMs(
+                obj.optInt("killInterval", AppConstants.DEFAULT_KILL_INTERVAL_MS));
         model.killOnScreenOff = obj.optBoolean("killOnScreenOff", false);
         model.ramThresholdEnabled = obj.optBoolean("ramThresholdEnabled", false);
         model.ramThreshold = obj.optInt("ramThreshold", 80);
         model.autoKillType = obj.optInt("autoKillType", 0);
-        model.killMode = obj.optInt("killMode", 1);
+        model.killMode = obj.optInt("killMode", AppConstants.DEFAULT_KILL_MODE);
         model.hwTriggerHeadset = obj.optBoolean("hwTriggerHeadset", false);
         model.hwTriggerUsb = obj.optBoolean("hwTriggerUsb", false);
         model.hwTriggerCharger = obj.optBoolean("hwTriggerCharger", false);

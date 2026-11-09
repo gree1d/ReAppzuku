@@ -9,6 +9,7 @@ import android.net.Uri;
 import com.gree1d.reappzuku.core.AlarmScheduler;
 import com.gree1d.reappzuku.core.AppConstants;
 import com.gree1d.reappzuku.core.Clock;
+import com.gree1d.reappzuku.core.KillIntervalPolicy;
 import com.gree1d.reappzuku.core.BackupFileStore;
 import com.gree1d.reappzuku.core.ScheduleTime;
 import com.gree1d.reappzuku.manager.AdditionalScenariosManager;
@@ -194,12 +195,12 @@ public class PresetManager {
         model.enabled = p.getBoolean(P_ENABLED, true);
         model.autoKillEnabled = p.getBoolean(P_AUTO_KILL_ENABLED, false);
         model.periodicKillEnabled = p.getBoolean(P_PERIODIC_KILL_ENABLED, false);
-        model.killInterval = p.getInt(P_KILL_INTERVAL, 15);
+        model.killInterval = p.getInt(P_KILL_INTERVAL, AppConstants.DEFAULT_KILL_INTERVAL_MS);
         model.killOnScreenOff = p.getBoolean(P_KILL_ON_SCREEN_OFF, false);
         model.ramThresholdEnabled = p.getBoolean(P_RAM_THRESHOLD_ENABLED, false);
         model.ramThreshold = p.getInt(P_RAM_THRESHOLD, 80);
         model.autoKillType = p.getInt(P_AUTO_KILL_TYPE, 0);
-        model.killMode = p.getInt(P_KILL_MODE, 1);
+        model.killMode = p.getInt(P_KILL_MODE, AppConstants.DEFAULT_KILL_MODE);
         model.hwTriggerHeadset = p.getBoolean(P_HW_HEADSET, false);
         model.hwTriggerUsb = p.getBoolean(P_HW_USB, false);
         model.hwTriggerCharger = p.getBoolean(P_HW_CHARGER, false);
@@ -306,7 +307,8 @@ public class PresetManager {
         SharedPreferences.Editor editor = mainPrefs.edit();
         editor.putBoolean(KEY_AUTO_KILL_ENABLED, model.autoKillEnabled);
         editor.putBoolean(KEY_PERIODIC_KILL_ENABLED, model.periodicKillEnabled);
-        editor.putInt(KEY_KILL_INTERVAL, model.killInterval);
+        editor.putInt(KEY_KILL_INTERVAL,
+                KillIntervalPolicy.clampServiceIntervalMs(model.killInterval));
         editor.putBoolean(KEY_KILL_ON_SCREEN_OFF, model.killOnScreenOff);
         editor.putBoolean(KEY_RAM_THRESHOLD_ENABLED, model.ramThresholdEnabled);
         editor.putInt(KEY_RAM_THRESHOLD, model.ramThreshold);
