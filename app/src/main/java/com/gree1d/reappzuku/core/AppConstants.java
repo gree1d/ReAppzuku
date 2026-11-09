@@ -14,6 +14,13 @@ public final class AppConstants {
         public static final int DEFAULT_KILL_INTERVAL_MS = 18000; // 18 seconds
         public static final int[] KILL_INTERVALS_MS = { 10000, 18000, 30000, 60000, 300000 };
 
+        // Kill mode: whitelist (0) kills everything except whitelisted apps;
+        // blacklist (1) kills only blacklisted apps. Blacklist is the safe default
+        // and must stay consistent across every reader.
+        public static final int KILL_MODE_WHITELIST = 0;
+        public static final int KILL_MODE_BLACKLIST = 1;
+        public static final int DEFAULT_KILL_MODE = KILL_MODE_BLACKLIST;
+
         // RAM Thresholds
         public static final int DEFAULT_RAM_THRESHOLD_PERCENT = 80;
         public static final int[] RAM_THRESHOLD_VALUES = { 75, 80, 85, 90, 95, 100 };

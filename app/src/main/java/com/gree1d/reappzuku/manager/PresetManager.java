@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import com.gree1d.reappzuku.core.AlarmScheduler;
+import com.gree1d.reappzuku.core.AppConstants;
 import com.gree1d.reappzuku.core.Clock;
 import com.gree1d.reappzuku.core.BackupFileStore;
 import com.gree1d.reappzuku.core.ScheduleTime;
@@ -334,12 +335,12 @@ public class PresetManager {
         SharedPreferences.Editor e = mainPrefs.edit();
         e.putBoolean(KEY_BACKUP_PREFIX + KEY_AUTO_KILL_ENABLED, mainPrefs.getBoolean(KEY_AUTO_KILL_ENABLED, false));
         e.putBoolean(KEY_BACKUP_PREFIX + KEY_PERIODIC_KILL_ENABLED, mainPrefs.getBoolean(KEY_PERIODIC_KILL_ENABLED, false));
-        e.putInt(KEY_BACKUP_PREFIX + KEY_KILL_INTERVAL, mainPrefs.getInt(KEY_KILL_INTERVAL, 15));
+        e.putInt(KEY_BACKUP_PREFIX + KEY_KILL_INTERVAL, mainPrefs.getInt(KEY_KILL_INTERVAL, AppConstants.DEFAULT_KILL_INTERVAL_MS));
         e.putBoolean(KEY_BACKUP_PREFIX + KEY_KILL_ON_SCREEN_OFF, mainPrefs.getBoolean(KEY_KILL_ON_SCREEN_OFF, false));
         e.putBoolean(KEY_BACKUP_PREFIX + KEY_RAM_THRESHOLD_ENABLED, mainPrefs.getBoolean(KEY_RAM_THRESHOLD_ENABLED, false));
         e.putInt(KEY_BACKUP_PREFIX + KEY_RAM_THRESHOLD, mainPrefs.getInt(KEY_RAM_THRESHOLD, 80));
         e.putInt(KEY_BACKUP_PREFIX + KEY_AUTO_KILL_TYPE, mainPrefs.getInt(KEY_AUTO_KILL_TYPE, 0));
-        e.putInt(KEY_BACKUP_PREFIX + KEY_KILL_MODE, mainPrefs.getInt(KEY_KILL_MODE, 1));
+        e.putInt(KEY_BACKUP_PREFIX + KEY_KILL_MODE, mainPrefs.getInt(KEY_KILL_MODE, AppConstants.DEFAULT_KILL_MODE));
         e.putBoolean(KEY_BACKUP_PREFIX + KEY_HW_TRIGGER_HEADSET, mainPrefs.getBoolean(KEY_HW_TRIGGER_HEADSET, false));
         e.putBoolean(KEY_BACKUP_PREFIX + KEY_HW_TRIGGER_USB, mainPrefs.getBoolean(KEY_HW_TRIGGER_USB, false));
         e.putBoolean(KEY_BACKUP_PREFIX + KEY_HW_TRIGGER_CHARGER, mainPrefs.getBoolean(KEY_HW_TRIGGER_CHARGER, false));
@@ -367,12 +368,12 @@ public class PresetManager {
         SharedPreferences.Editor e = mainPrefs.edit();
         e.putBoolean(KEY_AUTO_KILL_ENABLED, mainPrefs.getBoolean(KEY_BACKUP_PREFIX + KEY_AUTO_KILL_ENABLED, false));
         e.putBoolean(KEY_PERIODIC_KILL_ENABLED, mainPrefs.getBoolean(KEY_BACKUP_PREFIX + KEY_PERIODIC_KILL_ENABLED, false));
-        e.putInt(KEY_KILL_INTERVAL, mainPrefs.getInt(KEY_BACKUP_PREFIX + KEY_KILL_INTERVAL, 15));
+        e.putInt(KEY_KILL_INTERVAL, mainPrefs.getInt(KEY_BACKUP_PREFIX + KEY_KILL_INTERVAL, AppConstants.DEFAULT_KILL_INTERVAL_MS));
         e.putBoolean(KEY_KILL_ON_SCREEN_OFF, mainPrefs.getBoolean(KEY_BACKUP_PREFIX + KEY_KILL_ON_SCREEN_OFF, false));
         e.putBoolean(KEY_RAM_THRESHOLD_ENABLED, mainPrefs.getBoolean(KEY_BACKUP_PREFIX + KEY_RAM_THRESHOLD_ENABLED, false));
         e.putInt(KEY_RAM_THRESHOLD, mainPrefs.getInt(KEY_BACKUP_PREFIX + KEY_RAM_THRESHOLD, 80));
         e.putInt(KEY_AUTO_KILL_TYPE, mainPrefs.getInt(KEY_BACKUP_PREFIX + KEY_AUTO_KILL_TYPE, 0));
-        e.putInt(KEY_KILL_MODE, mainPrefs.getInt(KEY_BACKUP_PREFIX + KEY_KILL_MODE, 1));
+        e.putInt(KEY_KILL_MODE, mainPrefs.getInt(KEY_BACKUP_PREFIX + KEY_KILL_MODE, AppConstants.DEFAULT_KILL_MODE));
         e.putBoolean(KEY_HW_TRIGGER_HEADSET, mainPrefs.getBoolean(KEY_BACKUP_PREFIX + KEY_HW_TRIGGER_HEADSET, false));
         e.putBoolean(KEY_HW_TRIGGER_USB, mainPrefs.getBoolean(KEY_BACKUP_PREFIX + KEY_HW_TRIGGER_USB, false));
         e.putBoolean(KEY_HW_TRIGGER_CHARGER, mainPrefs.getBoolean(KEY_BACKUP_PREFIX + KEY_HW_TRIGGER_CHARGER, false));
@@ -427,7 +428,6 @@ public class PresetManager {
     private void rescheduleWorker() {
         boolean autoKillEnabled = mainPrefs.getBoolean(KEY_AUTO_KILL_ENABLED, false);
         boolean periodicEnabled = mainPrefs.getBoolean(KEY_PERIODIC_KILL_ENABLED, false);
-        int interval = mainPrefs.getInt(KEY_KILL_INTERVAL, 15);
 
         boolean presetActive = mainPrefs.getInt(KEY_ACTIVE_PRESET, 0) != 0;
         AutoKillWorker.cancel(context);

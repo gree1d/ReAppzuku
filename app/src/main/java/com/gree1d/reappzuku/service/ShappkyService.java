@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 
+import com.gree1d.reappzuku.core.KillIntervalPolicy;
 import com.gree1d.reappzuku.core.ShellManager;
 import com.gree1d.reappzuku.core.ShellBackendState;
 import com.gree1d.reappzuku.core.App;
@@ -871,7 +872,8 @@ public class ShappkyService extends Service {
             return;
 
         SharedPreferences prefs = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        int killInterval = prefs.getInt(KEY_KILL_INTERVAL, DEFAULT_KILL_INTERVAL_MS);
+        int killInterval = KillIntervalPolicy.clampServiceIntervalMs(
+                prefs.getInt(KEY_KILL_INTERVAL, DEFAULT_KILL_INTERVAL_MS));
 
         handler.postDelayed(() -> {
             if (!isRunning)

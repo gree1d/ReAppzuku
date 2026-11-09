@@ -82,7 +82,6 @@ public class AdditionalScenariosManager {
         }
         if (wifi) {
             filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-            filter.addAction("android.net.conn.CONNECTIVITY_ACTION");
         }
         if (bluetooth) filter.addAction("android.bluetooth.adapter.action.STATE_CHANGED");
         if (gps) filter.addAction("android.location.PROVIDERS_CHANGED");

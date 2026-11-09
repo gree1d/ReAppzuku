@@ -936,7 +936,7 @@ public class SettingsActivity extends SettingsActivityDialogs
     protected void applyAutomationStateFromPreferences() {
         boolean automationEnabled = sharedPreferences.getBoolean(KEY_AUTO_KILL_ENABLED, false);
         if (automationEnabled) {
-            int killMode = sharedPreferences.getInt(KEY_KILL_MODE, 0);
+            int killMode = sharedPreferences.getInt(KEY_KILL_MODE, DEFAULT_KILL_MODE);
             Set<String> whitelistedApps = sharedPreferences.getStringSet(KEY_WHITELISTED_APPS, new HashSet<>());
             if (killMode == 0 && whitelistedApps.isEmpty()) {
                 sharedPreferences.edit()

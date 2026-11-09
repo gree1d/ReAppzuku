@@ -98,7 +98,7 @@ public class BackupManager {
             putStringSet(root, KEY_APP_LAUNCH_TRIGGER_PACKAGES);
 
 
-            root.put(KEY_KILL_MODE, prefs.getInt(KEY_KILL_MODE, 0));
+            root.put(KEY_KILL_MODE, prefs.getInt(KEY_KILL_MODE, AppConstants.DEFAULT_KILL_MODE));
             root.put(KEY_AUTO_KILL_ENABLED, getSafeBool(KEY_AUTO_KILL_ENABLED, false));
             root.put(KEY_PERIODIC_KILL_ENABLED, getSafeBool(KEY_PERIODIC_KILL_ENABLED, false));
             root.put(KEY_KILL_INTERVAL, prefs.getInt(KEY_KILL_INTERVAL, AppConstants.DEFAULT_KILL_INTERVAL_MS));

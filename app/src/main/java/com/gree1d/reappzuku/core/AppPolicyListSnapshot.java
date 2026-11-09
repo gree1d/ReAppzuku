@@ -81,7 +81,7 @@ public final class AppPolicyListSnapshot {
                 AppPolicyLegacyMigrator.isMigrationSnapshotCurrent(prefs),
                 autoKillEnabled,
                 prefs.getBoolean(KEY_SMART_LIFECYCLE_ENABLED, false),
-                prefs.getInt(KEY_KILL_MODE, 1) == 0,
+                prefs.getInt(KEY_KILL_MODE, AppConstants.DEFAULT_KILL_MODE) == 0,
                 whitelist,
                 blacklist);
     }

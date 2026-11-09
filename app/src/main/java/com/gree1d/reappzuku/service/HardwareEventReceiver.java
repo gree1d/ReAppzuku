@@ -69,10 +69,6 @@ public class HardwareEventReceiver extends BroadcastReceiver {
                 eventDescription = "WiFi state: " + wifiStateStr;
                 relevant = wifiState == WifiManager.WIFI_STATE_ENABLED || wifiState == WifiManager.WIFI_STATE_DISABLED;
                 break;
-            case "android.net.conn.CONNECTIVITY_ACTION":
-                eventDescription = "Connectivity changed";
-                relevant = true;
-                break;
             case "android.bluetooth.adapter.action.STATE_CHANGED":
                 int btState = intent.getIntExtra("android.bluetooth.adapter.extra.STATE", -1);
                 String btStateStr;

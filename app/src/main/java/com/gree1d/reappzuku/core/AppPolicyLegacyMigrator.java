@@ -357,7 +357,7 @@ public final class AppPolicyLegacyMigrator {
                 || snapshot.activePresetNumber != 0;
         snapshot.smartLifecycleEnabled = prefs.getBoolean(KEY_SMART_LIFECYCLE_ENABLED, false);
         snapshot.sleepModeEnabled = prefs.getBoolean(KEY_SLEEP_MODE_ENABLED, false);
-        snapshot.whitelistMode = prefs.getInt(KEY_KILL_MODE, 1) == 0;
+        snapshot.whitelistMode = prefs.getInt(KEY_KILL_MODE, AppConstants.DEFAULT_KILL_MODE) == 0;
         snapshot.killMethod = prefs.getInt(KEY_AUTO_KILL_TYPE, 0) == 1
                 ? AppPolicy.KILL_METHOD_AM_KILL
                 : AppPolicy.KILL_METHOD_FORCE_STOP;

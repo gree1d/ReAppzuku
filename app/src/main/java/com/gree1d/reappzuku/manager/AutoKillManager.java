@@ -895,7 +895,7 @@ public class AutoKillManager {
     }
 
     public int getKillMode() {
-        return sharedpreferences.getInt(KEY_KILL_MODE, 1);
+        return sharedpreferences.getInt(KEY_KILL_MODE, DEFAULT_KILL_MODE);
     }
 
     public void setKillMode(int mode) {

@@ -7,6 +7,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.provider.Settings;
 
+import com.gree1d.reappzuku.core.AppConstants;
 import com.gree1d.reappzuku.core.AppPolicyLegacyMigrator;
 import com.gree1d.reappzuku.core.AppPolicyResolver;
 import com.gree1d.reappzuku.core.ProtectedApps;
@@ -95,7 +96,7 @@ public final class SmartLifecycleManager {
                 prefs.getStringSet(KEY_WHITELISTED_APPS, Collections.emptySet()));
         boolean legacyAutoKillEnabled = prefs.getBoolean(KEY_AUTO_KILL_ENABLED, false)
                 || prefs.getInt(KEY_ACTIVE_PRESET, 0) != 0;
-        boolean whitelistMode = prefs.getInt(KEY_KILL_MODE, 1) == 0;
+        boolean whitelistMode = prefs.getInt(KEY_KILL_MODE, AppConstants.DEFAULT_KILL_MODE) == 0;
 
         boolean migrationSnapshotCurrent =
                 AppPolicyLegacyMigrator.isMigrationSnapshotCurrent(prefs);

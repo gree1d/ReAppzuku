@@ -17,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.gree1d.reappzuku.core.KillIntervalPolicy;
 import com.gree1d.reappzuku.core.ShellManager;
 import com.gree1d.reappzuku.core.App;
 import com.gree1d.reappzuku.manager.BackgroundAppManager;
@@ -36,8 +37,8 @@ public class AutoKillWorker extends Worker {
 
     public static void schedule(Context context, String source) {
         SharedPreferences prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        int intervalMinutes = prefs.getInt(KEY_KILL_INTERVAL, 15);
-        long clampedInterval = Math.max(intervalMinutes, 15);
+        int intervalMs = prefs.getInt(KEY_KILL_INTERVAL, DEFAULT_KILL_INTERVAL_MS);
+        long clampedInterval = KillIntervalPolicy.workerIntervalMinutes(intervalMs);
 
         Data inputData = new Data.Builder()
                 .putString(KEY_SOURCE, source)
